@@ -13,9 +13,6 @@
 #include <iostream>
 
 #include <JuceHeader.h>
-
-
-
 //
 //  S1.h
 //  FourrerN
@@ -23,11 +20,16 @@
 //  Created by Maria Isabella Hallberg Møller on 25/07/12.
 //  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
 //
+#if defined (_MSC_VER)
+// code specific to Visual Studio compiler
+#define _USE_MATH_DEFINES
 #include <math.h>
-//#include "CoreFoundation/CoreFoundation.h"  // Pat: j'enleve CoreFoundation
+// without those, no M_PI.
+#else
+// regular stuff for other compilers
+#include <math.h>
+#endif
 
-#ifndef FourrerN_S1_h
-#define FourrerN_S1_h
 #define DeuxPieSampleRate 2.* M_PI /44100
 #define MAX_Partiel 200
 #define NOMBRE_DE_NOTE 80
@@ -46,6 +48,19 @@ public:
 		Sirene(const std::string& str);
 		~Sirene();
 
+private:
+    // Pat added ------------------
+    std::string name;
+    int noteMidiCentMax;
+    int noteMin;
+    int pourcentClapetOff;
+    
+    int coeffPicolo;
+public:
+	// gauthier added
+    bool isReady = false;
+
+public:
     void setMidicent(int note);
     void setnoteFromExt(int note);
     void setnote();
@@ -146,52 +161,37 @@ public:
     }
 
 private:
-    //CFRunLoopTimerRef 			timerSetNoteS1; //pat
-    //CFRunLoopRef		mRunLoopRef; //pat
-
     float tabAmp[NOMBRE_DE_NOTE][MAX_TAB][MAX_Partiel];
     float tabFreq[NOMBRE_DE_NOTE][MAX_TAB][MAX_Partiel];
     float dureTabs[NOMBRE_DE_NOTE][3];//0=dureTab en samples // 1=nombreMax de Tab // 2=FreqMoyenne
     float vector_interval[392];
 
-    bool count8bit;
-    double vitesseClape;
-    int countKInf;
-    int countKSup;
-    int midiCentVoulue;
-    int ancienNoteVoulue;
-    int qualite;
-    double phaseInf[MAX_Partiel];
-    double phaseSup[MAX_Partiel];
-    int countP[NOMBRE_DE_NOTE];
-    float pitchSchift[NOMBRE_DE_NOTE];
-    float anciennewaveInf;
-    int eloignementfreq;
-    int noteInf;
-    int noteSup;
-    float ampvoulu;
-    float ampvouluz;
-    bool isChangementdenote;
-    float ampz[MAX_Partiel];
-    float amp[MAX_Partiel];
+    bool count8bit = true;
+	double vitesseClape = 0.0002;
+    int countKInf = 0;
+    int countKSup = 0;
+    int midiCentVoulue = 0;
+    int ancienNoteVoulue = 0;
+    int qualite = 30;
+    double phaseInf[MAX_Partiel] = { 0 };
+    double phaseSup[MAX_Partiel] = { 0 };
+    int countP[NOMBRE_DE_NOTE] = { 0 };
+    float pitchSchift[NOMBRE_DE_NOTE] = {0};
+    float anciennewaveInf = 0.;
+    int eloignementfreq = 0;
+    int noteInf = 0;
+    int noteSup = 0;
+    float ampvoulu = 1.;
+    float ampvouluz = 1.;
+    bool isChangementdenote = false;
+    float ampz[MAX_Partiel] = { 0 };
+    float amp[MAX_Partiel] = { 0 };
 
-    float ampMax;
-    bool is16Bit;
-    int noteVoulueAvantSlide;
-    float noteEncour;
-    int interDepart;
-    int ouJeSuis;
-    bool boutonveloONS1;
-    bool isCrossfade;
-
-    // Pat added ------------------
-    std::string name;
-	int noteMidiCentMax;
-	int noteMin;
-	int pourcentClapetOff;
-	int noteEncourMax;
-	int coeffPicolo;
+    float ampMax = 1.;
+    bool is16Bit = false;
+    int noteVoulueAvantSlide = 0; // gauthier: deterministically init noteVoulueAvantSlide to 0
+    float noteEncour = 0; // gauthier: deterministically init noteEncour to 0
+    int interDepart = 0;  // gauthier: deterministically init interDepart to 0
+    int ouJeSuis = 0; // gauthier: deterministically init ouJeSuis to 0
+    bool isCrossfade = false; // gauthier: deterministically init isCrossfade to false
 };
-
-
-#endif
