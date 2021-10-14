@@ -35,16 +35,16 @@ float vector_interval[392];
 
 
 enum {
-    Montant			=0,
-    Descandant		=1,
-    TonUpBefore		=2,
-    DemiUpBefore	=3,
-    QuartUpBefore	=4,
-    Boucle			=5,
-    QuartDownAfter	=6,
-    QuartDownBefore	=7,
-    QuartUpAfter	=8,
-    jesuisrest		=9,
+	Montant			=0,
+	Descandant		=1,
+	TonUpBefore		=2,
+	DemiUpBefore	=3,
+	QuartUpBefore	=4,
+	Boucle			=5,
+	QuartDownAfter	=6,
+	QuartDownBefore	=7,
+	QuartUpAfter	=8,
+	jesuisrest		=9,
 };
 
 //Timer myTimer;
@@ -63,17 +63,17 @@ Sirene::Sirene(const std::string& str): name(str)
 #else
     std::string dataFilePath = juce::File::getSpecialLocation (juce::File::currentApplicationFile).getChildFile ("Contents/Resources/").getFullPathName().toStdString() + '/';
 #endif
-    std::string sireneNameForData;
-    if (name=="S2")
-        sireneNameForData="S1"; // s2 has the same data files than s1
-    else if (name=="S6")
-        sireneNameForData="S5"; // s6 has the same data files than s5
-    else
-        sireneNameForData=name;
-    isReady = false;
-    readDataFromBinaryFile(dataFilePath, "dataAmp" + sireneNameForData, "dataFreq" + sireneNameForData, "datadureTabs" + sireneNameForData, "dataVectorInterval" + sireneNameForData);
-    isReady = true;
-      std::cout << "tabFreq[46][20][3] : " << std::fixed << std::setprecision(7) <<tabFreq[46][20][3] << std::endl;
+	std::string sireneNameForData;
+	if (name=="S2")
+		sireneNameForData="S1"; // s2 has the same data files than s1
+	else if (name=="S6")
+		sireneNameForData="S5"; // s6 has the same data files than s5
+	else
+		sireneNameForData=name;
+	isReady = false;
+	readDataFromBinaryFile(dataFilePath, "dataAmp" + sireneNameForData, "dataFreq" + sireneNameForData, "datadureTabs" + sireneNameForData, "dataVectorInterval" + sireneNameForData);
+	isReady = true;
+	std::cout << "tabFreq[46][20][3] : " << std::fixed << std::setprecision(7) <<tabFreq[46][20][3] << std::endl;
 
     if (name=="S1") {noteMidiCentMax=7200; pourcentClapetOff=7; noteMin=24; coeffPicolo=1.;}
     else if (name=="S2") {noteMidiCentMax=7200; pourcentClapetOff=7; noteMin=24; coeffPicolo=1.;}
@@ -101,41 +101,41 @@ Sirene::~Sirene(){
 
 void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmpFile, std::string tabFreqFile, std::string dureTabFile, std::string vectorIntervalFile){
 
-    std::ifstream myfile;
+	std::ifstream myfile;
 
-    // Read tabAmpFile
+	// Read tabAmpFile
     myfile.open(dataFilePath + tabAmpFile, std::ios::binary);
     if (myfile.is_open())
     {
         myfile.read(reinterpret_cast<char *>(tabAmp), sizeof tabAmp); // todo: check that input.gcount() is the number of bytes expected
-    	myfile.close();
+		myfile.close();
     }
     else std::cout <<  "Error. Binary file not found: " <<  dataFilePath + tabAmpFile << "\n";
 
-    // Read dataFreqFile
+	// Read dataFreqFile
     myfile.open(dataFilePath + tabFreqFile, std::ios::binary);
     if (myfile.is_open())
     {
         myfile.read(reinterpret_cast<char *>(tabFreq), sizeof tabFreq); // todo: check that input.gcount() is the number of bytes expected
-    	myfile.close();
+		myfile.close();
     }
     else std::cout <<  "Error. Binary file not found.\n";
 
-    // Read dureTabFile
+	// Read dureTabFile
     myfile.open(dataFilePath + dureTabFile, std::ios::binary);
     if (myfile.is_open())
     {
         myfile.read(reinterpret_cast<char *>(dureTabs), sizeof dureTabs); // todo: check that input.gcount() is the number of bytes expected
-    	myfile.close();
+		myfile.close();
     }
     else std::cout <<  "Error. Binary file not found.\n";
 
-    // Read vectorIntervalFile
+	// Read vectorIntervalFile
     myfile.open(dataFilePath + vectorIntervalFile, std::ios::binary);
     if (myfile.is_open())
     {
         myfile.read(reinterpret_cast<char *>(vector_interval), sizeof vector_interval); // todo: check that input.gcount() is the number of bytes expected
-    	myfile.close();
+		myfile.close();
     }
     else std::cout <<  "Error. Binary file not found.\n";
 }
@@ -147,16 +147,15 @@ void Sirene::setMidicent(int note){
     if (midiCentVoulue>=noteMidiCentMax) midiCentVoulue=noteMidiCentMax;
     else if (midiCentVoulue%100==99) midiCentVoulue++;
     noteInf=midiCentVoulue/100;
-    //NSLog(@"midiCentVoulue %i",midiCentVoulue);
     noteSup=noteInf+1 ;
     pitchSchift[noteInf]=((440.0 * pow(2., ((midiCentVoulue/100.) - 69.) / 12.))  /  (440.0 * pow(2., ((noteInf) - 69.) / 12.)))  * DeuxPieSampleRate;
     pitchSchift[noteSup]=((440.0 * pow(2., ((midiCentVoulue/100.) - 69.) / 12.))  /   (440.0 * pow(2., ((noteSup) - 69.) / 12.)))  * DeuxPieSampleRate;
-    //std::cout << "noteInf:" << noteInf << std::endl;
+	//std::cout << "noteInf:" << noteInf << std::endl;
 }
 
 void Sirene::setnoteFromExt(int note)
 {
-    //std::cout << "Note from ext: " << note << std::endl;
+	//std::cout << "Note from ext: " << note << std::endl;
     noteVoulueAvantSlide=note;
     if (noteVoulueAvantSlide > noteMidiCentMax) noteVoulueAvantSlide=noteMidiCentMax;
     interDepart=(int)noteVoulueAvantSlide-noteEncour;
@@ -164,7 +163,7 @@ void Sirene::setnoteFromExt(int note)
     else if (noteEncour < noteVoulueAvantSlide)noteEncour=noteEncour+1;
 }
 void Sirene::setnote(){
-    //std::cout << "Sirene::setnote()" << std::endl;
+	//std::cout << "Sirene::setnote()" << std::endl;
     oujesuis();
     int note=(int)((noteEncour-50)/100.);
     if (note <= noteMin) note=noteMin;
@@ -219,7 +218,7 @@ void Sirene::oujesuis(){
     else if (inter >= 50 && inter < 150 ) ouJeSuis=DemiUpBefore;
     else if (inter > 0 && inter < 50) ouJeSuis=QuartUpBefore;
     /* benoit
-    switch (ouJeSuis) {
+	switch (ouJeSuis) {
         case QuartDownBefore: printf("QuartDownBefore\n"); break;
             case QuartDownAfter: printf("QuartDownAfter\n"); break;
             case QuartUpAfter: printf("QuartUpAfter\n"); break;
