@@ -29,7 +29,7 @@
 #include <math.h>
 #endif
 
-#define DeuxPieSampleRate 2.* M_PI /44100
+#define DeuxPieSampleRate (2.* M_PI / 44100)
 #define MAX_Partiel 200
 #define NOMBRE_DE_NOTE 80
 #define MAX_TAB 1000
@@ -139,10 +139,10 @@ public:
     }
 
 private:
-    float tabAmp[NOMBRE_DE_NOTE][MAX_TAB][MAX_Partiel] = {0};
-    float tabFreq[NOMBRE_DE_NOTE][MAX_TAB][MAX_Partiel] = {0};
-    float dureTabs[NOMBRE_DE_NOTE][3] = {0};//0=dureTab en samples // 1=nombreMax de Tab // 2=FreqMoyenne
-    float vector_interval[392] = {0};
+    float tabAmp[NOMBRE_DE_NOTE][MAX_TAB][MAX_Partiel];
+    float tabFreq[NOMBRE_DE_NOTE][MAX_TAB][MAX_Partiel];
+    float dureTabs[NOMBRE_DE_NOTE][3];//0=dureTab en samples // 1=nombreMax de Tab // 2=FreqMoyenne
+    float vector_interval[392];
 
     bool count8bit = true;
 	double vitesseClape = 0.0002;

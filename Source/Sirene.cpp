@@ -53,10 +53,10 @@ enum {
 
 Sirene::Sirene(const std::string& str, const std::string& dataFilePath): name(str)
 {
-    std::cout << "Lancement de la sirene " << name << "\n";
-    /*
-
-     */
+    memset(&tabAmp, 0, sizeof(tabAmp));
+    memset(&tabFreq, 0, sizeof(tabFreq));
+    memset(&dureTabs, 0, sizeof(dureTabs));
+    memset(&vector_interval, 0, sizeof(vector_interval));
 	std::string sireneNameForData;
 	if (name=="S2")
 		sireneNameForData="S1"; // s2 has the same data files than s1
