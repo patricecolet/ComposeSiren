@@ -51,18 +51,12 @@ enum {
 
 
 
-Sirene::Sirene(const std::string& str): name(str)
+Sirene::Sirene(const std::string& str, const std::string& dataFilePath): name(str)
 {
-    memset(&tabAmp, 0, sizeof(tabAmp));
-    memset(&tabFreq, 0, sizeof(tabFreq));
-    memset(&dureTabs, 0, sizeof(dureTabs));
-    memset(&vector_interval, 0, sizeof(vector_interval));    
     std::cout << "Lancement de la sirene " << name << "\n";
-#if defined (_MSC_VER)
-    std::string dataFilePath = "C:\\dev\\src\\github.com\\patriceguyot\\ComposeSiren\\Resources\\";
-#else
-    std::string dataFilePath = juce::File::getSpecialLocation (juce::File::currentApplicationFile).getChildFile ("Contents/Resources/").getFullPathName().toStdString() + '/';
-#endif
+    /*
+
+     */
 	std::string sireneNameForData;
 	if (name=="S2")
 		sireneNameForData="S1"; // s2 has the same data files than s1
@@ -70,9 +64,9 @@ Sirene::Sirene(const std::string& str): name(str)
 		sireneNameForData="S5"; // s6 has the same data files than s5
 	else
 		sireneNameForData=name;
-	isReady = false;
+	
 	readDataFromBinaryFile(dataFilePath, "dataAmp" + sireneNameForData, "dataFreq" + sireneNameForData, "datadureTabs" + sireneNameForData, "dataVectorInterval" + sireneNameForData);
-	isReady = true;
+	
 	std::cout << "tabFreq[46][20][3] : " << std::fixed << std::setprecision(7) <<tabFreq[46][20][3] << std::endl;
 
     if (name=="S1") {noteMidiCentMax=7200; pourcentClapetOff=7; noteMin=24; coeffPicolo=1.;}
