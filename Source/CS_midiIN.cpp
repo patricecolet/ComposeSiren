@@ -15,10 +15,10 @@
 
 using namespace std;
 
-MidiIn::MidiIn(const std::function<void(int,int)>& onVelocityChanged,
-               const std::function<void(int, int)>& onEnginePitchChanged
+MidiIn::MidiIn(const std::function<void(int,int)> onVelocityChanged,
+               const std::function<void(int, int)> onEnginePitchChanged
                ) : onVelocityChanged(onVelocityChanged)
-    , onEnginePitchChanged(onEnginePitchChanged)
+    , onEngineSpeedChanged(onEnginePitchChanged)
 
 {
     for (int i =0; i<17; i++)
@@ -305,7 +305,7 @@ void MidiIn::sendVariaCh(int Ch){
             //***** end Portamento
         }
         if(isWithSynth){
-            onEnginePitchChanged(Ch, vitesseCh[Ch]+vibrato);
+            onEngineSpeedChanged(Ch, vitesseCh[Ch]+vibrato);
         }
 }
 

@@ -26,27 +26,20 @@ SirenePlugAudioProcessor::SirenePlugAudioProcessor()
 {
     startTimer(1);
     this->mySynth = new Synth();
-    
     auto onVelocityChanged =
-        std::bind(
-                  &Synth::setVelocite
-                  , mySynth
-                  , std::placeholders::_1
-                  , std::placeholders::_2
-                  );
+        [this](int ch, int val)
+        {
+	        mySynth->setVelocite(ch, val);
+        };
 
     auto onEnginePitchChanged =
-        std::bind(
-                  &Synth::setVitesse
-                  , mySynth
-                  , std::placeholders::_1
-                  , std::placeholders::_2
-                  );
+        [this](int ch, int val)
+        {
+            mySynth->setVitesse(ch, val);
+        };
 
     myMidiInHandler = new MidiIn(onVelocityChanged, onEnginePitchChanged);
-    
-    
-    
+
 }
 
 SirenePlugAudioProcessor::~SirenePlugAudioProcessor()
@@ -217,23 +210,34 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         auto* channelLeft = buffer.getWritePointer (0);
         auto* channelRight = buffer.getWritePointer (1);
             
-            
+        auto s1 = mySynth->s1;
+        auto s2 = mySynth->s2;
+        auto s3 = mySynth->s3;
+        auto s4 = mySynth->s4;
+        auto s5 = mySynth->s5;
+        auto s6 = mySynth->s6;
+        auto s7 = mySynth->s7;
             for (auto sample = 0; sample < buffer.getNumSamples(); sample++)
             {
                 
                 // ..do something to the data...
-                sampleS1 = mySynth -> s1 -> calculwave();
-                sampleS2 = mySynth -> s2 -> calculwave();
-                sampleS3 = mySynth -> s3 -> calculwave();
-                sampleS4 = mySynth -> s4 -> calculwave();
-                sampleS5 = mySynth -> s5 -> calculwave();
-                sampleS6 = mySynth -> s6 -> calculwave();
-                sampleS7 = mySynth -> s7 -> calculwave();
+                sampleS1 = s1 -> calculwave();
+                sampleS2 = s2 -> calculwave();
+                sampleS3 = s3 -> calculwave();
+                sampleS4 = s4 -> calculwave();
+                sampleS5 = s5 -> calculwave();
+                sampleS6 = s6 -> calculwave();
+                sampleS7 = s7 -> calculwave();
                  
                 
                 channelLeft[sample]  = sampleS1 * mySynth->getPan(1,0) + sampleS2 * mySynth->getPan(2,0) + sampleS3 * mySynth->getPan(3,0) + sampleS4 * mySynth->getPan(4,0) + sampleS5 * mySynth->getPan(5,0) + sampleS6 * mySynth->getPan(6,0) + sampleS7 * mySynth->getPan(7,0);
                 channelRight[sample]  = sampleS1 * mySynth->getPan(1,1) + sampleS2 * mySynth->getPan(2,1) + sampleS3 * mySynth->getPan(3,1) + sampleS4 * mySynth->getPan(4,1) + sampleS5 * mySynth->getPan(5,1) + sampleS6 * mySynth->getPan(6,1) + sampleS7 * mySynth->getPan(7,1);
-            //}
+
+                if(channelLeft[sample] != 0)
+                {
+                    ;
+                }
+            	//}
     }
     
 }

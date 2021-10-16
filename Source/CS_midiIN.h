@@ -13,7 +13,7 @@
 
 #include <math.h>
 #include "synth.h"
-
+#include <functional>
 
 
 #define constescursion 10					// valeur maxi de l'amplitude VFO en % de la vitesse correspondant ‡ une note
@@ -23,8 +23,8 @@ class MidiIn
 {
 public:
     MidiIn(
-           const std::function<void(int,int)>& onVelocityChanged,
-           const std::function<void(int, int)>& onEnginePitchChanged
+           const std::function<void(int,int)> onVelocityChanged,
+           const std::function<void(int, int)> onEnginePitchChanged
            );
   ~MidiIn();
 
@@ -110,7 +110,7 @@ private:
 
   //Synth* mySynth;
 
-    const std::function<void(int,int)>& onVelocityChanged;
+    const std::function<void(int,int)> onVelocityChanged;
     
-    const std::function<void(int, int)>& onEnginePitchChanged;
+    const std::function<void(int, int)> onEngineSpeedChanged;
 };
