@@ -9,6 +9,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+#include <functional>
+
 //==============================================================================
 SirenePlugAudioProcessor::SirenePlugAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -23,7 +25,25 @@ SirenePlugAudioProcessor::SirenePlugAudioProcessor()
 #endif
 {
     startTimer(1);
-    myMidiInHandler = new MidiIn;
+    this->mySynth = new Synth();
+    
+    auto onVelocityChanged =
+        std::bind(
+                  &Synth::setVelocite
+                  , mySynth
+                  , std::placeholders::_1
+                  , std::placeholders::_2
+                  );
+
+    auto onEnginePitchChanged =
+        std::bind(
+                  &Synth::setVitesse
+                  , mySynth
+                  , std::placeholders::_1
+                  , std::placeholders::_2
+                  );
+
+    myMidiInHandler = new MidiIn(onVelocityChanged, onEnginePitchChanged);
     
     
     
@@ -202,17 +222,17 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             {
                 
                 // ..do something to the data...
-                sampleS1 = myMidiInHandler -> mySynth -> s1 -> calculwave();
-                sampleS2 = myMidiInHandler -> mySynth -> s2 -> calculwave();
-                sampleS3 = myMidiInHandler -> mySynth -> s3 -> calculwave();
-                sampleS4 = myMidiInHandler -> mySynth -> s4 -> calculwave();
-                sampleS5 = myMidiInHandler -> mySynth -> s5 -> calculwave();
-                sampleS6 = myMidiInHandler -> mySynth -> s6 -> calculwave();
-                sampleS7 = myMidiInHandler -> mySynth -> s7 -> calculwave();
+                sampleS1 = mySynth -> s1 -> calculwave();
+                sampleS2 = mySynth -> s2 -> calculwave();
+                sampleS3 = mySynth -> s3 -> calculwave();
+                sampleS4 = mySynth -> s4 -> calculwave();
+                sampleS5 = mySynth -> s5 -> calculwave();
+                sampleS6 = mySynth -> s6 -> calculwave();
+                sampleS7 = mySynth -> s7 -> calculwave();
                  
                 
-                channelLeft[sample]  = sampleS1 * myMidiInHandler -> mySynth->getPan(1,0) + sampleS2 * myMidiInHandler -> mySynth->getPan(2,0) + sampleS3 * myMidiInHandler -> mySynth->getPan(3,0) + sampleS4 * myMidiInHandler -> mySynth->getPan(4,0) + sampleS5 * myMidiInHandler -> mySynth->getPan(5,0) + sampleS6 * myMidiInHandler -> mySynth->getPan(6,0) + sampleS7 * myMidiInHandler -> mySynth->getPan(7,0);
-                channelRight[sample]  = sampleS1 * myMidiInHandler -> mySynth->getPan(1,1) + sampleS2 * myMidiInHandler -> mySynth->getPan(2,1) + sampleS3 * myMidiInHandler -> mySynth->getPan(3,1) + sampleS4 * myMidiInHandler -> mySynth->getPan(4,1) + sampleS5 * myMidiInHandler -> mySynth->getPan(5,1) + sampleS6 * myMidiInHandler -> mySynth->getPan(6,1) + sampleS7 * myMidiInHandler -> mySynth->getPan(7,1);
+                channelLeft[sample]  = sampleS1 * mySynth->getPan(1,0) + sampleS2 * mySynth->getPan(2,0) + sampleS3 * mySynth->getPan(3,0) + sampleS4 * mySynth->getPan(4,0) + sampleS5 * mySynth->getPan(5,0) + sampleS6 * mySynth->getPan(6,0) + sampleS7 * mySynth->getPan(7,0);
+                channelRight[sample]  = sampleS1 * mySynth->getPan(1,1) + sampleS2 * mySynth->getPan(2,1) + sampleS3 * mySynth->getPan(3,1) + sampleS4 * mySynth->getPan(4,1) + sampleS5 * mySynth->getPan(5,1) + sampleS6 * mySynth->getPan(6,1) + sampleS7 * mySynth->getPan(7,1);
             //}
     }
     
@@ -271,15 +291,13 @@ int* SirenePlugAudioProcessor::getIntFromMidiMessage(const void * data, int size
 
 void SirenePlugAudioProcessor::timerCallback()
 {
-    
-    myMidiInHandler -> mySynth -> s1 -> setnote();
-    myMidiInHandler -> mySynth -> s2 -> setnote();
-    myMidiInHandler -> mySynth -> s3 -> setnote();
-    myMidiInHandler -> mySynth -> s4 -> setnote();
-    myMidiInHandler -> mySynth -> s5 -> setnote();
-    myMidiInHandler -> mySynth -> s6 -> setnote();
-    myMidiInHandler -> mySynth -> s7 -> setnote();
-     
+    mySynth -> s1 -> setnote();
+    mySynth -> s2 -> setnote();
+    mySynth -> s3 -> setnote();
+    mySynth -> s4 -> setnote();
+    mySynth -> s5 -> setnote();
+    mySynth -> s6 -> setnote();
+    mySynth -> s7 -> setnote();
 }
 
 

@@ -62,10 +62,10 @@ public:
     int* getIntFromMidiMessage(const void* data, int size);
     void timerCallback() override;
     MidiIn* myMidiInHandler;
-
+    Synth* mySynth;
 private:
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SirenePlugAudioProcessor)
-    
     int* midiMessageIntArray;
+    
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SirenePlugAudioProcessor)
 };

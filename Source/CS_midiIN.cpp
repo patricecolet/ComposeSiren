@@ -11,65 +11,32 @@
 #include "CS_midiIN.h"
 
 #include <iostream>
-
+#include <functional>
 
 using namespace std;
 
-MidiIn::MidiIn(){
+MidiIn::MidiIn(const std::function<void(int,int)>& onVelocityChanged,
+               const std::function<void(int, int)>& onEnginePitchChanged
+               ) : onVelocityChanged(onVelocityChanged)
+    , onEnginePitchChanged(onEnginePitchChanged)
 
-    mySynth = new Synth;
-
-    countvibra = 0;
-    incrementationVibrato=(512./44100.)/0.025;
-    //appDelegate=Controleurdelegate;
-    //isWithSynth=NO;
-    isWithSynth=true;
-    VolumeDuClic=100;
-
-    countTimerAudio=0;
+{
     for (int i =0; i<17; i++)
     {
         ChangevolumegeneralCh[i]=1.0;
-        noteonCh[i]=0.0;
-        velociteCh[i]=0.0;
-        pitchbendCh[i]=0.0;
-
-        for (int c=1; c<128; c++)
-        {
-            ControlCh[c][i]=0.0;
-        }
         ControlCh[7][i]=127.;
         ControlCh[12][i]=127.;
         ControlCh[13][i]=127.;
         ControlCh[6][i]=60;
-        noteonfinalCh[i]=0.;
         volumefinalCh[i]=500.;
-        tourmoteurCh[i]=0.;
-        LSBCh[i]=0;
         MSBCh[i]=64;
-        varvfoCh[i]=0.;
-        vartremoloCh[i]=0.;
         isEnVeilleCh[i]=1;
-        vitesseCh[i]=0.;
-        vitesseClapetCh[i]=0.;
         ancienVeloCh[i]=-1;
         AncienVolFinalCh[i]=-1;
-        isMuteEthernetCh[i]=0;
-        Control1FinalCh[i]=0.;
-        tremoloCh[i]=0.;
         veloFinal[i]=500;
-        countcreaterelease[i]=0;
-        countcreateattac[i]=0;
-        pitch_bend = 0;
     }
-    for(int i=0;i<9;i++){
-        isAttacVibrato[i] = 0;
-    }
-
     isEnVeilleCh[8]=0;
     velociteCh[8]=127;
-
-
 }
 
 MidiIn::~MidiIn(){
@@ -337,12 +304,9 @@ void MidiIn::sendVariaCh(int Ch){
             vitesseCh[Ch]=(((1.-nbr) * tourmoteurCh[Ch]) + (nbr*vitesseCh[Ch]));
             //***** end Portamento
         }
-
         if(isWithSynth){
-            //[appDelegate.MonSynth setVitesse:Ch :vitesseCh[Ch]+vibrato ]; //todo
-            mySynth -> setVitesse(Ch, vitesseCh[Ch]+vibrato);
+            onEnginePitchChanged(Ch, vitesseCh[Ch]+vibrato);
         }
-
 }
 
 void MidiIn::sendVolCh(int message, int Ch){
@@ -390,9 +354,7 @@ void MidiIn::sendVolCh(int message, int Ch){
             else vitesseClapetCh[Ch]=veloFinal[Ch]=message;
 
             if(isWithSynth && Ch !=8){
-            //    [appDelegate.MonSynth setVelocite:Ch :veloFinal[Ch]]; //todo
-                mySynth -> setVelocite(Ch, veloFinal[Ch]);
-
+                onVelocityChanged(Ch, veloFinal[Ch]);
             }
         }
 
@@ -422,8 +384,7 @@ void MidiIn::createReleaseCh(int Ch){
         veloFinal[Ch]=(int)tremoloCh[Ch];
     }else veloFinal[Ch]=around;
     if(isWithSynth && Ch !=8){
-        //[appDelegate.MonSynth setVelocite:Ch :veloFinal[Ch]]; //todo
-        mySynth -> setVelocite(Ch, veloFinal[Ch]);
+        onVelocityChanged(Ch, veloFinal[Ch]);
     }
 }
 
@@ -445,16 +406,9 @@ void MidiIn::createRampeCh(int Ch){
     }else  veloFinal[Ch]=around;
 
     if(isWithSynth && Ch !=8){
-        //[appDelegate.MonSynth setVelocite:Ch :veloFinal[Ch]]; //todo
-        mySynth -> setVelocite(Ch, veloFinal[Ch]);
-
+        onVelocityChanged(Ch, veloFinal[Ch]);
     }
-    // }
-
 }
-
-
-
 
 void MidiIn::isWithSound(bool is){
     isWithSynth=is;
@@ -543,6 +497,7 @@ void MidiIn::resetSireneCh(int Ch){
         countcreaterelease[Ch]--;
         isReleaseCh[Ch]=0;
     }
+    
     ControlCh[7][Ch]=127;
     veloFinal[Ch]=500;
     volumefinalCh[Ch]=500.;
