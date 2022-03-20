@@ -10,21 +10,8 @@
 
 #include "synth.h"
 
-
+#include <JuceHeader.h>
 #include <iostream>
-
-
-//static const  char clic1[] =
-//#include "clic1Wave_16_stereo_clip.h"
-//;
-
-//static const char clic2[] =
-//#include "clic2Wave_16_stereo_clip.h"
-//;
-
-
-
-
 
 Synth::Synth(){
 
@@ -57,17 +44,19 @@ Synth::Synth(){
     //Volsynthz = 1.;
     //VolClicz = 1.;
     WideCoeff=1.5;
-    s1 = new Sirene("S1");
-    s2 = new Sirene("S2");
-    s3 = new Sirene("S3");
-    s4 = new Sirene("S4");
-    s5 = new Sirene("S5");
-    s6 = new Sirene("S6");
-    s7 = new Sirene("S7");
     
-    
-     
-
+#if defined (_MSC_VER)
+    std::string dataFilePath = "C:\\Program Files\\Common Files\\Mécanique Vivante\\ComposeSiren\\Resources\\";
+#else
+    std::string dataFilePath = juce::File::getSpecialLocation (juce::File::currentApplicationFile).getChildFile ("Contents/Resources/").getFullPathName().toStdString() + '/';
+#endif
+    s1 = new Sirene("S1", dataFilePath);
+    s2 = new Sirene("S2", dataFilePath);
+    s3 = new Sirene("S3", dataFilePath);
+    s4 = new Sirene("S4", dataFilePath);
+    s5 = new Sirene("S5", dataFilePath);
+    s6 = new Sirene("S6", dataFilePath);
+    s7 = new Sirene("S7", dataFilePath);
 }
 
 Synth::~Synth(){

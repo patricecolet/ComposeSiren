@@ -13,7 +13,7 @@
 
 #include <math.h>
 #include "synth.h"
-
+#include <functional>
 
 
 #define constescursion 10					// valeur maxi de l'amplitude VFO en % de la vitesse correspondant ‡ une note
@@ -22,11 +22,13 @@
 class MidiIn
 {
 public:
-  MidiIn();
+    MidiIn(
+           const std::function<void(int,int)> onVelocityChanged,
+           const std::function<void(int, int)> onEnginePitchChanged
+           );
   ~MidiIn();
 
   void definiMuteEthernet(bool ismuted, int Ch);
-  //id initWithControleur(id Controleurdelegate) ;//remplace par le constructeur
   void handleMIDIMessage2(int Ch, int value1, int value2);
 
   void RealTimeStartNote(int Ch, int value1, int value2);
@@ -59,53 +61,56 @@ public:
   void timerAudio();
   void sirenium_in(unsigned char *buf);
 
-  Synth* mySynth;
+  //Synth* mySynth;
 
 private:
 
   float ChangevolumegeneralCh[17];
 
-  float noteonCh[17] ;
-  float velociteCh[17];
-  float pitchbendCh[17];
-  float ControlCh[127][17];
-  float Control1FinalCh[17];
-  float noteonfinalCh[17] ;
+    float noteonCh[17] = {0} ;
+    float velociteCh[17] = {0};
+    float pitchbendCh[17] = {0};
+    float ControlCh[127][17] = {0};
+    float Control1FinalCh[17] = {0};
+    float noteonfinalCh[17]  = {0};
   float volumefinalCh[17] ;
-  float tourmoteurCh[17];
-  int LSBCh[17];
+    float tourmoteurCh[17] = {0};
+    int LSBCh[17] = {0};
   int MSBCh[17];
-  float varvfoCh[17];
-  float vartremoloCh[17];
+    float varvfoCh[17] = {0};
+    float vartremoloCh[17] = {0};
   int isEnVeilleCh[17];
-  float vitesseCh[17];
-  float tremoloCh[17];
+    float vitesseCh[17] = {0};
+    float tremoloCh[17] = {0};
   int veloFinal[17];
-  float incrementationVibrato;
+  float incrementationVibrato=(512./44100.)/0.025;
 
 
   bool isWithSoundON;
-  int VolumeDuClic;
+  int VolumeDuClic = 100;
 
-  float vitesseClapetCh[17];
+    float vitesseClapetCh[17] = {0};
   int ancienVeloCh[17];
 
-  bool isWithSynth;
+  bool isWithSynth = true;
 
   int AncienVolFinalCh[17];
-  int isMuteEthernetCh[17];
+    int isMuteEthernetCh[17] = {0};
 
-  int countcreaterelease[17];
-  int countcreateattac[17];
+    int countcreaterelease[17] = {0};
+    int countcreateattac[17] = {0};
 
-  int isAttacVibrato[9];
-  int countTimerAudio ;
+    int isAttacVibrato[9] = {0};
+  int countTimerAudio = 0;
   int isRampeCh[9];
   int isReleaseCh[9];
 
-  int countvibra;
+  int countvibra = 0;
   int pitch_bend;
 
   //Synth* mySynth;
 
+    const std::function<void(int,int)> onVelocityChanged;
+    
+    const std::function<void(int, int)> onEngineSpeedChanged;
 };
