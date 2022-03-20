@@ -46,7 +46,7 @@ Synth::Synth(){
     WideCoeff=1.5;
     
 #if defined (_MSC_VER)
-    std::string dataFilePath = "C:\\dev\\src\\github.com\\patriceguyot\\ComposeSiren\\Resources\\";
+    std::string dataFilePath = "C:\\Program Files\\Common Files\\Mécanique Vivante\\ComposeSiren\\Resources\\";
 #else
     std::string dataFilePath = juce::File::getSpecialLocation (juce::File::currentApplicationFile).getChildFile ("Contents/Resources/").getFullPathName().toStdString() + '/';
 #endif
