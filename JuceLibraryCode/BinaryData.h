@@ -9,7 +9,7 @@
 namespace BinaryData
 {
     extern const char*   Picto_Siren_40x37_png;
-    const int            Picto_Siren_40x37_pngSize = 4486;
+    const int            Picto_Siren_40x37_pngSize = 22417;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
     const int namedResourceListSize = 1;
