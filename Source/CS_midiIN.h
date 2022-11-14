@@ -10,22 +10,20 @@
 
 #pragma once
 
-
 #include <math.h>
 #include "synth.h"
 #include <functional>
 
-
-#define constescursion 10					// valeur maxi de l'amplitude VFO en % de la vitesse correspondant ‡ une note
-
+// valeur maxi de l'amplitude VFO en % de la vitesse correspondant ‡ une note
+#define constescursion 10
 
 class MidiIn
 {
 public:
-    MidiIn(
-           const std::function<void(int,int)> onVelocityChanged,
-           const std::function<void(int, int)> onEnginePitchChanged
-           );
+  MidiIn(
+          const std::function<void(int,int)> onVelocityChanged,
+          const std::function<void(int, int)> onEnginePitchChanged
+        );
   ~MidiIn();
 
   void definiMuteEthernet(bool ismuted, int Ch);
@@ -41,12 +39,9 @@ public:
   void sendVolCh(int message, int Ch);
   void sendVariaCh(int Ch);
 
-
-
   void JouerClic(int value);
   void isWithSound(bool is);
   void changingvolumeclic(int VolumeClic);
-
 
   void STOffVariateurCh(int Ch);
   void STOnVariateurCh(int Ch);
@@ -67,40 +62,39 @@ private:
 
   float ChangevolumegeneralCh[17];
 
-    float noteonCh[17] = {0} ;
-    float velociteCh[17] = {0};
-    float pitchbendCh[17] = {0};
-    float ControlCh[127][17] = {0};
-    float Control1FinalCh[17] = {0};
-    float noteonfinalCh[17]  = {0};
+  float noteonCh[17] = {0} ;
+  float velociteCh[17] = {0};
+  float pitchbendCh[17] = {0};
+  float ControlCh[127][17] = {0};
+  float Control1FinalCh[17] = {0};
+  float noteonfinalCh[17]  = {0};
   float volumefinalCh[17] ;
-    float tourmoteurCh[17] = {0};
-    int LSBCh[17] = {0};
+  float tourmoteurCh[17] = {0};
+  int LSBCh[17] = {0};
   int MSBCh[17];
-    float varvfoCh[17] = {0};
-    float vartremoloCh[17] = {0};
+  float varvfoCh[17] = {0};
+  float vartremoloCh[17] = {0};
   int isEnVeilleCh[17];
-    float vitesseCh[17] = {0};
-    float tremoloCh[17] = {0};
+  float vitesseCh[17] = {0};
+  float tremoloCh[17] = {0};
   int veloFinal[17];
   float incrementationVibrato=(512./44100.)/0.025;
-
 
   bool isWithSoundON;
   int VolumeDuClic = 100;
 
-    float vitesseClapetCh[17] = {0};
+  float vitesseClapetCh[17] = {0};
   int ancienVeloCh[17];
 
   bool isWithSynth = true;
 
   int AncienVolFinalCh[17];
-    int isMuteEthernetCh[17] = {0};
+  int isMuteEthernetCh[17] = {0};
 
-    int countcreaterelease[17] = {0};
-    int countcreateattac[17] = {0};
+  int countcreaterelease[17] = {0};
+  int countcreateattac[17] = {0};
 
-    int isAttacVibrato[9] = {0};
+  int isAttacVibrato[9] = {0};
   int countTimerAudio = 0;
   int isRampeCh[9];
   int isReleaseCh[9];
@@ -110,7 +104,7 @@ private:
 
   //Synth* mySynth;
 
-    const std::function<void(int,int)> onVelocityChanged;
-    
-    const std::function<void(int, int)> onEngineSpeedChanged;
+  const std::function<void(int,int)> onVelocityChanged;
+  
+  const std::function<void(int, int)> onEngineSpeedChanged;
 };

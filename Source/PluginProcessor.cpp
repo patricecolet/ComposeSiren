@@ -137,15 +137,15 @@ bool SirenePlugAudioProcessor::isBusesLayoutSupported (const BusesLayout& layout
   #else
     // This is the place where you check if the layout is supported.
     // In this template code we only support mono or stereo.
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
-     && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
+    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono() &&
+        layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
         return false;
 
     // This checks if the input layout matches the output layout
-   #if ! JucePlugin_IsSynth
-    if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
+    #if !JucePlugin_IsSynth
+      if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
         return false;
-   #endif
+    #endif
 
     return true;
   #endif
@@ -154,20 +154,17 @@ bool SirenePlugAudioProcessor::isBusesLayoutSupported (const BusesLayout& layout
 
 void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
-        
     buffer.clear();
 
     // process midi message
-    for (const auto meta : midiMessages)
-    {
+    for (const auto meta : midiMessages) {
         const auto msg = meta.getMessage();
         midiMessageIntArray = getIntFromMidiMessage(msg.getRawData(), msg.getRawDataSize());
         std::cout << "Message reçu ----------------------------------------------------------------------" << std::endl;
         std::cout << "Message: " << midiMessageIntArray[0] << "-" << midiMessageIntArray[1] << "-" << midiMessageIntArray[2] << "\n";
-        myMidiInHandler -> handleMIDIMessage2(midiMessageIntArray[0], midiMessageIntArray[1], midiMessageIntArray[2]);
+        myMidiInHandler->handleMIDIMessage2(midiMessageIntArray[0], midiMessageIntArray[1], midiMessageIntArray[2]);
     }
- 
-    
+
     float sampleS1 = 0;
     float sampleS2 = 0;
     float sampleS3 = 0;
@@ -176,70 +173,75 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     float sampleS6 = 0;
     float sampleS7 = 0;
     
-    
-    myMidiInHandler -> timerAudio();
+    myMidiInHandler->timerAudio();
     
     //Pat: original code of the audio plug in template
     juce::ScopedNoDenormals noDenormals;
     //auto totalNumInputChannels  = getTotalNumInputChannels();
     //auto totalNumOutputChannels = getTotalNumOutputChannels();
     
-    
-
     // In case we have more outputs than inputs, this code clears any output
     // channels that didn't contain input data, (because these aren't
     // guaranteed to be empty - they may contain garbage).
     // This is here to avoid people getting screaming feedback
     // when they first compile a plugin, but obviously you don't need to keep
     // this code if your algorithm always overwrites all the output channels.
-    //for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        
-        //buffer.clear (i, 0, buffer.getNumSamples());
+    // for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+    //   buffer.clear (i, 0, buffer.getNumSamples());
 
-        // This is the place where you'd normally do the guts of your plugin's
-        // audio processing...
-        // Make sure to reset the state if your inner loop is processing
-        // the samples and the outer loop is handling the channels.
-        // Alternatively, you can process the samples with the channels
-        // interleaved by keeping the same state.
-        
-        //int channel = 0;
-        //for (int channel = 0; channel < totalNumOutputChannels; ++channel)
-        //{
-            
-        auto* channelLeft = buffer.getWritePointer (0);
-        auto* channelRight = buffer.getWritePointer (1);
-            
-        auto s1 = mySynth->s1;
-        auto s2 = mySynth->s2;
-        auto s3 = mySynth->s3;
-        auto s4 = mySynth->s4;
-        auto s5 = mySynth->s5;
-        auto s6 = mySynth->s6;
-        auto s7 = mySynth->s7;
-            for (auto sample = 0; sample < buffer.getNumSamples(); sample++)
-            {
-                
-                // ..do something to the data...
-                sampleS1 = s1 -> calculwave();
-                sampleS2 = s2 -> calculwave();
-                sampleS3 = s3 -> calculwave();
-                sampleS4 = s4 -> calculwave();
-                sampleS5 = s5 -> calculwave();
-                sampleS6 = s6 -> calculwave();
-                sampleS7 = s7 -> calculwave();
-                 
-                
-                channelLeft[sample]  = sampleS1 * mySynth->getPan(1,0) + sampleS2 * mySynth->getPan(2,0) + sampleS3 * mySynth->getPan(3,0) + sampleS4 * mySynth->getPan(4,0) + sampleS5 * mySynth->getPan(5,0) + sampleS6 * mySynth->getPan(6,0) + sampleS7 * mySynth->getPan(7,0);
-                channelRight[sample]  = sampleS1 * mySynth->getPan(1,1) + sampleS2 * mySynth->getPan(2,1) + sampleS3 * mySynth->getPan(3,1) + sampleS4 * mySynth->getPan(4,1) + sampleS5 * mySynth->getPan(5,1) + sampleS6 * mySynth->getPan(6,1) + sampleS7 * mySynth->getPan(7,1);
-
-                if(channelLeft[sample] != 0)
-                {
-                    ;
-                }
-            	//}
-    }
+    // This is the place where you'd normally do the guts of your plugin's
+    // audio processing...
+    // Make sure to reset the state if your inner loop is processing
+    // the samples and the outer loop is handling the channels.
+    // Alternatively, you can process the samples with the channels
+    // interleaved by keeping the same state.
     
+    //int channel = 0;
+    //for (int channel = 0; channel < totalNumOutputChannels; ++channel)
+    //{
+        
+    auto* channelLeft = buffer.getWritePointer(0);
+    auto* channelRight = buffer.getWritePointer(1);
+        
+    // auto s1 = mySynth->s1;
+    // auto s2 = mySynth->s2;
+    // auto s3 = mySynth->s3;
+    // auto s4 = mySynth->s4;
+    // auto s5 = mySynth->s5;
+    // auto s6 = mySynth->s6;
+    // auto s7 = mySynth->s7;
+
+    for (auto sample = 0; sample < buffer.getNumSamples(); sample++) {
+        sampleS1 = mySynth->s1->calculwave();
+        sampleS2 = mySynth->s2->calculwave();
+        sampleS3 = mySynth->s3->calculwave();
+        sampleS4 = mySynth->s4->calculwave();
+        sampleS5 = mySynth->s5->calculwave();
+        sampleS6 = mySynth->s6->calculwave();
+        sampleS7 = mySynth->s7->calculwave();
+
+        channelLeft[sample] =
+            sampleS1 * mySynth->getPan(1,0) +
+            sampleS2 * mySynth->getPan(2,0) +
+            sampleS3 * mySynth->getPan(3,0) +
+            sampleS4 * mySynth->getPan(4,0) +
+            sampleS5 * mySynth->getPan(5,0) +
+            sampleS6 * mySynth->getPan(6,0) +
+            sampleS7 * mySynth->getPan(7,0);
+
+        channelRight[sample] =
+            sampleS1 * mySynth->getPan(1,1) +
+            sampleS2 * mySynth->getPan(2,1) +
+            sampleS3 * mySynth->getPan(3,1) +
+            sampleS4 * mySynth->getPan(4,1) +
+            sampleS5 * mySynth->getPan(5,1) +
+            sampleS6 * mySynth->getPan(6,1) +
+            sampleS7 * mySynth->getPan(7,1);
+
+        if(channelLeft[sample] != 0) {
+            ;
+        }
+    }    
 }
 
 //==============================================================================
@@ -295,13 +297,13 @@ int* SirenePlugAudioProcessor::getIntFromMidiMessage(const void * data, int size
 
 void SirenePlugAudioProcessor::timerCallback()
 {
-    mySynth -> s1 -> setnote();
-    mySynth -> s2 -> setnote();
-    mySynth -> s3 -> setnote();
-    mySynth -> s4 -> setnote();
-    mySynth -> s5 -> setnote();
-    mySynth -> s6 -> setnote();
-    mySynth -> s7 -> setnote();
+    mySynth->s1->setnote();
+    mySynth->s2->setnote();
+    mySynth->s3->setnote();
+    mySynth->s4->setnote();
+    mySynth->s5->setnote();
+    mySynth->s6->setnote();
+    mySynth->s7->setnote();
 }
 
 
