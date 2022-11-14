@@ -1,0 +1,22 @@
+message(">>>>>>>>>> CPACK POST BUILD SCRIPT >>>>>>>>>>")
+
+# Here we remove all .app bundles from the build tree so that Mac OS doesn't get
+# upset when we install our package using the installer build with cpack
+
+# first we delete the original standalone build :
+
+execute_process(COMMAND rm -rf "@STANDALONE_BUILD_DIR@")
+
+# then we delete the standalone that was installed during packaging :
+
+# CPACK_PACKAGE_FILES is the only populated variable accessible here
+# Fortunately the Standalone target we need to delete so that the installer
+# doesn't get confused is in a folder which absolute path is CPACK_PACKAGE_FILE
+# without the .pkg extension
+# So we just wipe this folder and the Standalone gets installed in /Applications
+
+foreach(FILE ${CPACK_PACKAGE_FILES})
+  cmake_path(REMOVE_EXTENSION FILE LAST_ONLY OUTPUT_VARIABLE TO_REMOVE)
+  execute_process(COMMAND rm -rf ${TO_REMOVE})
+endforeach()
+
