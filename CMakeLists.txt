@@ -25,7 +25,7 @@ if (APPLE)
 endif()
 
 juce_add_plugin(${BaseTargetName}
-  VERSION "1.4.0"
+  VERSION ${CMAKE_PROJECT_VERSION}
   COMPANY_NAME "MecaniqueVivante"
   PRODUCT_NAME "${BaseTargetName}"
   FORMATS ${FORMATS}
