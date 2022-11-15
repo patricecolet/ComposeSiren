@@ -13,7 +13,7 @@ endfunction()
 ################################################################################
 # sign the targets
 
-if(APPLE AND DEFINED APPLE_DEVELOPER_ID_APPLICATION)
+if(APPLE AND APPLE_DEVELOPER_ID_APPLICATION)
   message("setup signing targets with apple developer id application:")
   message("${APPLE_DEVELOPER_ID_APPLICATION}")
 
@@ -81,7 +81,7 @@ configure_file(
   ${CMAKE_CURRENT_LIST_DIR}/CPackPostBuildScripts.cmake
   @ONLY) # without @ONLY, regular variables in the .in file get discarded
 
-set(CPACK_POST_BUILD_SCRIPTS ${INSTALLERS_PATH}/CPackPostBuildScripts.cmake)
+set(CPACK_POST_BUILD_SCRIPTS ${CMAKE_CURRENT_LIST_DIR}/CPackPostBuildScripts.cmake)
 
 set(CPACK_PACKAGE_NAME ${BaseTargetName})
 set(CPACK_PACKAGE_VENDOR "MecaniqueVivante")
@@ -103,7 +103,7 @@ if(APPLE) ######################################################################
   set(CPACK_INSTALL_PREFIX "/Library/Audio/Plug-ins") # used for relative paths
 
   # sign the installers :
-  if (DEFINED APPLE_DEVELOPER_ID_INSTALLER)
+  if (APPLE_DEVELOPER_ID_INSTALLER)
     message("setup signing installer with apple developer id installer:")
     message("${APPLE_DEVELOPER_ID_INSTALLER}")
 
