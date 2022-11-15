@@ -79,7 +79,7 @@ set(CPACK_COMPONENTS_ALL ${COMPONENTS_LIST})
 configure_file(
   ${CMAKE_CURRENT_LIST_DIR}/CPackPostBuildScripts.cmake.in
   ${CMAKE_CURRENT_LIST_DIR}/CPackPostBuildScripts.cmake
-  @ONLY)
+  @ONLY) # without @ONLY, regular variables in the .in file get discarded
 
 set(CPACK_POST_BUILD_SCRIPTS ${INSTALLERS_PATH}/CPackPostBuildScripts.cmake)
 
