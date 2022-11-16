@@ -38,7 +38,7 @@ juce_add_plugin(${BaseTargetName}
   NEEDS_MIDI_OUTPUT TRUE            # Does the plugin need midi output?
   IS_MIDI_EFFECT FALSE              # Is this plugin a MIDI effect?
   EDITOR_WANTS_KEYBOARD_FOCUS TRUE  # Does the editor need keyboard focus?
-  COPY_PLUGIN_AFTER_BUILD TRUE      # Should the plugin be installed to a default location after building?
+  COPY_PLUGIN_AFTER_BUILD FALSE     # Should the plugin be installed to a default location after building?
   # VST3_CATEGORIES
   # AAX_CATEGORY
   # AU_MAIN_TYPE

@@ -10,7 +10,7 @@
 
 #include "Sirene.h"
 #include <JuceHeader.h>
-#include <BinaryData.h>
+// #include <BinaryData.h>
 
 #include <iostream>
 

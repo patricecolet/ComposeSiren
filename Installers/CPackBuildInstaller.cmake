@@ -13,33 +13,27 @@ endfunction()
 ################################################################################
 # sign the targets
 
-if(APPLE AND APPLE_DEVELOPER_ID_APPLICATION)
-  message("setup signing targets with apple developer id application:")
-  message("${APPLE_DEVELOPER_ID_APPLICATION}")
-
-  foreach(FORMAT ${FORMATS})
-    get_target_property(ARTEFACTS_DIR ${BaseTargetName}_${FORMAT} JUCE_PLUGIN_ARTEFACT_FILE)
-    add_custom_command(
-      TARGET ${BaseTargetName}_${FORMAT} POST_BUILD
-      COMMAND codesign -s ${APPLE_DEVELOPER_ID_APPLICATION} -f ${ARTEFACTS_DIR} --timestamp --deep
-      # without VERBATIM option, cmake adds backslashes to escape spaces
-      # in strings like APPLE_DEVELOPER_ID_APPLICATION
-      VERBATIM)
-
-    # then we store the standalone artefact build path for the cpack post build
-    # scripts to find and delete it after packaging :
-    # ACTUALLY DOESN'T WORK BECAUSE THE PATH CONTAINS A GENERATOR EXPRESSION
-    # TODO : FIND A WORKAROUND (ATM the build dir path is generated below after
-    # endforeach() and is used from CpackPostBuildScripts.cmake)
-
-    # if (${FORMAT} STREQUAL "Standalone")
-    #   set(STANDALONE_BUILD_DIR ${ARTEFACTS_DIR})
-    # endif()
-  endforeach()
-
+if(APPLE)
+  # todo: find a more abstract way to get the build dir from Standalone target
+  # e.g. works fine with ninja but not with Xcode
   set(
     STANDALONE_BUILD_DIR
     ${CMAKE_CURRENT_BINARY_DIR}/${BaseTargetName}_artefacts/Standalone)
+
+  if(APPLE_DEVELOPER_ID_APPLICATION)
+    message("setup signing targets with apple developer id application:")
+    message("${APPLE_DEVELOPER_ID_APPLICATION}")
+
+    foreach(FORMAT ${FORMATS})
+      get_target_property(ARTEFACTS_DIR ${BaseTargetName}_${FORMAT} JUCE_PLUGIN_ARTEFACT_FILE)
+      add_custom_command(
+        TARGET ${BaseTargetName}_${FORMAT} POST_BUILD
+        COMMAND codesign -s ${APPLE_DEVELOPER_ID_APPLICATION} -f ${ARTEFACTS_DIR} --timestamp --deep
+        # without VERBATIM option, cmake adds backslashes to escape spaces
+        # in strings like APPLE_DEVELOPER_ID_APPLICATION
+        VERBATIM)
+    endforeach()
+  endif()
 endif()
 
 ################################################################################
