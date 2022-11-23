@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.19.0)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED)
 project(ComposeSiren VERSION 1.4.0)
 set(BaseTargetName ${PROJECT_NAME})
 
@@ -50,6 +52,10 @@ juce_add_plugin(${BaseTargetName}
 )
 
 juce_generate_juce_header(${BaseTargetName})
+
+# without this, build uses c++14 somehow, disregarding other settings about CXX standard.
+target_compile_features ("${BaseTargetName}" PRIVATE cxx_std_20)
+target_compile_definitions("${BaseTargetName}" PRIVATE CMS_BUILD_WITH_CMAKE=1)
 
 add_subdirectory(Resources)
 add_subdirectory(Source)
