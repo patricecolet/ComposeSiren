@@ -43,10 +43,16 @@ You'll find [here][3] more info on how to use the plugins with Ableton Live.
 
 ### Building with CMake
 
-At the moment the plugin is built on Mac OS 11.6.4 using Ninja :
+At the moment the plugin is built :
 
- * `cmake -B build -G Ninja -C Config.cmake` to setup the build system
- * `cmake --build build` to build the plugins
- * `cpack --config build/CPackConfig.cmake` to generate the installer
+* on Mac OS 11.6.4 using Ninja
+  * `cmake -B build -G Ninja -C Config.cmake` to setup the build system
+  * `cmake --build build` to build the plugins
+  * `cpack --config build/CPackConfig.cmake` to generate the installer
+* on Windows 10 using Visual Studio (couldn't get Ninja to work on windows yet)
+  * `cmake -B build -G "Visual Studio 17 2022" -C Config.cmake`
+  * `cmake --build build --config Release`
+  * `cpack --config build/CPackConfig.cmake`
 
-
+The resulting installer (built with `productbuild` on mac and `NSIS` on windows)
+is created in `build\Installers`

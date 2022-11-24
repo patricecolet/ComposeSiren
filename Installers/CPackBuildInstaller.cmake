@@ -1,6 +1,6 @@
-# utility for finding paths
+# utilities for finding install paths
 
-function(_set_install_folder_from_format FORMAT)
+function(_set_apple_install_folder_from_format FORMAT)
   if(${FORMAT} STREQUAL "Standalone")
     set(INSTALL_FOLDER "/Applications" PARENT_SCOPE)
   elseif(${FORMAT} STREQUAL "AU")
@@ -10,12 +10,21 @@ function(_set_install_folder_from_format FORMAT)
   endif()
 endfunction()
 
+function(_set_win32_install_folder_from_format FORMAT)
+  if(${FORMAT} STREQUAL "Standalone")
+	set(INSTALL_FOLDER "${BaseTargetName} ${PROJECT_VERSION}" PARENT_SCOPE)
+  elseif(${FORMAT} STREQUAL "VST")
+	set(INSTALL_FOLDER "Common Files/VST2" PARENT_SCOPE)
+  else()
+	set(INSTALL_FOLDER "Common Files/${FORMAT}" PARENT_SCOPE)
+  endif()
+endfunction()
+
 ################################################################################
 # sign the targets
 
 if(APPLE)
   # todo: find a more abstract way to get the build dir from Standalone target
-  # e.g. works fine with ninja but not with Xcode
   set(
     STANDALONE_BUILD_DIR
     ${CMAKE_CURRENT_BINARY_DIR}/${BaseTargetName}_artefacts/Standalone)
@@ -31,7 +40,8 @@ if(APPLE)
         COMMAND codesign -s ${APPLE_DEVELOPER_ID_APPLICATION} -f ${ARTEFACTS_DIR} --timestamp --deep
         # without VERBATIM option, cmake adds backslashes to escape spaces
         # in strings like APPLE_DEVELOPER_ID_APPLICATION
-        VERBATIM)
+        VERBATIM
+	  )
     endforeach()
   endif()
 endif()
@@ -41,9 +51,12 @@ endif()
 
 foreach(FORMAT ${FORMATS})
   # will set INSTALL_FOLDER to the right value
-  _set_install_folder_from_format(${FORMAT})
-  # message(${FORMAT})
-  # message(${INSTALL_FOLDER})
+  if(APPLE)
+  	_set_apple_install_folder_from_format(${FORMAT})
+  elseif(WIN32)
+	_set_win32_install_folder_from_format(${FORMAT})
+  endif()
+
   install(
     TARGETS ${BaseTargetName}_${FORMAT}
     # PERMISSIONS
@@ -51,13 +64,21 @@ foreach(FORMAT ${FORMATS})
     #   GROUP_EXECUTE GROUP_WRITE GROUP_READ
     #   WORLD_EXECUTE WORLD_WRITE WORLD_READ  
     DESTINATION ${INSTALL_FOLDER}
-    COMPONENT ${FORMAT})
+    COMPONENT ${FORMAT}
+  )
 endforeach()
+
+if(APPLE)
+  set(INSTALL_FOLDER "Mecanique Vivante/${BaseTargetName}/Resources")
+elseif(WIN32)
+  set(INSTALL_FOLDER "Common Files/Mecanique Vivante/${BaseTargetName}/Resources")
+endif()
 
 install(
   DIRECTORY "${CMAKE_SOURCE_DIR}/Resources/"
-  DESTINATION "ComposeSiren/Resources"
-  COMPONENT "Resources")
+  DESTINATION ${INSTALL_FOLDER}
+  COMPONENT "Resources"
+)
 
 ################################################################################
 # configure cpack
@@ -68,14 +89,15 @@ set(COMPONENTS_LIST ${FORMATS})
 list(APPEND COMPONENTS_LIST "Resources")
 set(CPACK_COMPONENTS_ALL ${COMPONENTS_LIST})
 
-# setup post build script :
-# move this into if(APPLE) block ? (only used to remove .app build artefacts)
+# setup post build script (only used to remove .app build artefacts)
+if(APPLE)
 configure_file(
   ${CMAKE_CURRENT_LIST_DIR}/CPackPostBuildScripts.cmake.in
   ${CMAKE_CURRENT_LIST_DIR}/CPackPostBuildScripts.cmake
-  @ONLY) # without @ONLY, regular variables in the .in file get discarded
-
+  @ONLY # without @ONLY, regular variables in the .in file get discarded
+)
 set(CPACK_POST_BUILD_SCRIPTS ${CMAKE_CURRENT_LIST_DIR}/CPackPostBuildScripts.cmake)
+endif(APPLE)
 
 set(CPACK_PACKAGE_NAME ${BaseTargetName})
 set(CPACK_PACKAGE_VENDOR "MecaniqueVivante")
@@ -87,7 +109,7 @@ set(CPACK_PACKAGE_DIRECTORY ${PROJECT_BINARY_DIR}/Installers)
 set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_LIST_DIR}/License.txt)
 set(CPACK_RESOURCE_FILE_README ${CMAKE_CURRENT_LIST_DIR}/ReadMe.txt)
 set(CPACK_RESOURCE_FILE_WELCOME ${CMAKE_CURRENT_LIST_DIR}/Welcome.txt)
-set(CPACK_PACKAGE_RELOCATABLE "false")
+set(CPACK_PACKAGE_RELOCATABLE "true")
 
 if(APPLE) ######################################################################
   set(CPACK_GENERATOR "productbuild") ##########################################
@@ -98,7 +120,7 @@ if(APPLE) ######################################################################
 
   # sign the installers :
   if (APPLE_DEVELOPER_ID_INSTALLER)
-    message("setup signing installer with apple developer id installer:")
+    message("setup signing installers with apple developer id installer:")
     message("${APPLE_DEVELOPER_ID_INSTALLER}")
 
     set(CPACK_PRODUCTBUILD_IDENTITY_NAME ${APPLE_DEVELOPER_ID_INSTALLER})
@@ -114,12 +136,47 @@ if(APPLE) ######################################################################
 elseif(WIN32) ##################################################################
   set(CPACK_GENERATOR "NSIS") ##################################################
 
-  # specify icons :
+  # this allows us to use our custom NSIS.template.in, changing the
+  # uninstaller's $INSTDIR value to "$INSTDIR\.." so that we can install it in
+  # "$INSTDIR\${CPACK_NSIS_PACKAGE_INSTALL_DIRECTORY}"
+  # we do this because we want $INSTDIR to be "C:\Program Files" so that we can
+  # install plugins in "Common Files" and Standalone + uninstaller in
+  # ${CPACK_NSIS_PACKAGE_INSTALL_DIRECTORY}
+  list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
+
+  # if we want to add something to the path (might be useful for resources)
+  # set(CPACK_NSIS_MODIFY_PATH ON)
+
+  # we set $INSTDIR to "C:\Program Files"
+  set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
+  # if not specified, CPACK_PACKAGE_INSTALL_DIRECTORY defaults to
+  # ${PROJECT_NAME}-${PROJECT_VERSION}, we want to avoid that
+  set(CPACK_PACKAGE_INSTALL_DIRECTORY "")
+
+  # we create our own install directory name
+  set(CPACK_NSIS_PACKAGE_INSTALL_DIRECTORY "${BaseTargetName} ${PROJECT_VERSION}")
+  set(CPACK_NSIS_PACKAGE_NAME "${BaseTargetName} ${PROJECT_VERSION}")
+  # default registry key is based on the install directory so we need to provide
+  # it explicitly :
+  set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${BaseTargetName} ${PROJECT_VERSION}")
+  set(CPACK_NSIS_UNINSTALL_NAME "${BaseTargetName} ${PROJECT_VERSION} Uninstaller.exe")
+
+  # TODO - use CPACK to add NSIS commands to create and remove icons in startmenu
+  # For now this is achieved directly into the NSIS.template.in file (both approaches look as convoluted)
+  # set(CPACK_NSIS_CREATE_ICONS_EXTRA "CreateShortCut '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\${CPACK_NSIS_PACKAGE_NAME}.lnk' '$INSTDIR\\\\${CPACK_NSIS_PACKAGE_INSTALL_DIRECTORY}\\\${CPACK_PACKAGE_NAME}.exe'")
+  # set(CPACK_NSIS_DELETE_ICONS_EXTRA "Delete '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\${CPACK_NSIS_PACKAGE_NAME}.lnk'")
+
+  # TODO - specify icons :
   # set the install/uninstall icon used for the installer itself
-  set(CPACK_NSIS_MUI_ICON "${CMake_SOURCE_DIR}/Utilities/Release\\CMakeLogo.ico")
-  set( CPACK_NSIS_MUI_UNIICON "${CMake_SOURCE_DIR}/Utilities/Release\\CMakeLogo.ico")
+  # set(CPACK_NSIS_MUI_ICON "${${BaseTargetName}_SOURCE_DIR}/Utilities/Release\\CMakeLogo.ico")
+  # set(CPACK_NSIS_MUI_UNIICON "${${BaseTargetName}_SOURCE_DIR}/Utilities/Release\\CMakeLogo.ico")
   # set the add/remove programs icon using an installed executable
-  set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\cmake-gui.exe")
+  # set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\cmake-gui.exe")
+
+  # are these not helpful ? (shouldn't they be CPACK_NSIS_... vars instead ?)
+  # set(CPACK_Standalone_INSTALL_DIRECTORY "${BaseTargetName} ${PROJECT_VERSION}")
+  # set(CPACK_VST_INSTALL_DIRECTORY "Common Files/VST2")
+  # set(CPACK_VST3_INSTALL_DIRECTORY "Common Files/VST3")
 
 endif()
 
