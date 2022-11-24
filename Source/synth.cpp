@@ -46,10 +46,10 @@ Synth::Synth(){
     WideCoeff=1.5;
     
 #if defined (_MSC_VER)
-    std::string dataFilePath = "C:\\Program Files\\Common Files\\M�canique Vivante\\ComposeSiren\\Resources\\";
+    std::string dataFilePath = "C:\\Program Files\\Common Files\\Mecanique Vivante\\ComposeSiren\\Resources\\";
 #else
     // std::string dataFilePath = juce::File::getSpecialLocation(juce::File::currentApplicationFile).getChildFile ("Contents/Resources/").getFullPathName().toStdString() + '/';
-    std::string dataFilePath = "/Library/Audio/Plug-ins/ComposeSiren/Resources/";
+    std::string dataFilePath = "/Library/Audio/Plug-ins/Mecanique Vivante/ComposeSiren/Resources/";
 #endif
     s1 = new Sirene("S1", dataFilePath);
     s2 = new Sirene("S2", dataFilePath);
