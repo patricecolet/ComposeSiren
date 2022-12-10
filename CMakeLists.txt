@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.19.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED)
-project(ComposeSiren VERSION 1.4.0)
+project(ComposeSiren VERSION 1.5.0)
 set(BaseTargetName ${PROJECT_NAME})
+set(VendorName "MecaniqueVivante")
 
 set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE INTERNAL "")
 
@@ -27,9 +28,11 @@ if (APPLE)
 endif()
 
 juce_add_plugin(${BaseTargetName}
-  VERSION ${CMAKE_PROJECT_VERSION}
-  COMPANY_NAME "MecaniqueVivante"
   PRODUCT_NAME "${BaseTargetName}"
+  COMPANY_NAME "${VendorName}"
+  VERSION ${CMAKE_PROJECT_VERSION}
+  ICON_BIG "${CMAKE_SOURCE_DIR}/Resources/Icon.png"
+  ICON_SMALL "${CMAKE_SOURCE_DIR}/Resources/Icon.png"
   FORMATS ${FORMATS}
   # A four-character manufacturer id with at least one upper-case character
   PLUGIN_MANUFACTURER_CODE McVv
@@ -46,7 +49,7 @@ juce_add_plugin(${BaseTargetName}
   # AU_MAIN_TYPE
   # COMPANY_WEBSITE https://www.mecanique-vivante.com
   # COMPANY_EMAIL
-  BUNDLE_ID "com.mecaviv.ComposeSiren"
+  BUNDLE_ID "com.mecaviv.${BaseTargetName}"
   PLUGIN_NAME "${BaseTargetName}"
   PRODUCT_NAME "${BaseTargetName}"
 )
@@ -86,4 +89,19 @@ target_compile_definitions(${BaseTargetName}
     JUCE_WEB_BROWSER=0
 )
 
-include(Installers/CPackBuildInstaller.cmake)
+################################################################################
+# packaging
+
+# if JUCE_COPY_PLUGIN_AFTER_BUILD is set to true, means we will install non
+# signed binaries locally (e.g. for debugging purpose) and we likely don't want
+# to build an installer right now, so we stop here :
+
+if(JUCE_COPY_PLUGIN_AFTER_BUILD)
+  return()
+endif()
+
+if(APPLE) # we generate a cmake subproject to build the installer
+  include(Installers/Installer.Generate.cmake)
+elseif(WIN32) # we just proceed "normally"
+  include(Installers/CPackBuildInstaller.cmake)
+endif()

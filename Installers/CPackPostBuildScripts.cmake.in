@@ -1,24 +1,59 @@
 message(">>>>>>>>>> CPACK POST BUILD SCRIPT >>>>>>>>>>")
 
 if(APPLE)
+  message("${CPACK_PACKAGE_FILES}")
 
-# Here we remove all .app bundles from the build tree so that Mac OS doesn't get
-# upset when we install our package using the installer build with cpack
+  # Here we remove all .app bundles from the build tree so that Mac OS doesn't get
+  # upset when we install our package using the installer build with cpack
 
-# * first we delete the original standalone build :
+  file(
+    GLOB_RECURSE APPS
+    LIST_DIRECTORIES true
+    @CMAKE_CURRENT_BINARY_DIR@/*/@BaseTargetName@.app
+  )
 
-execute_process(COMMAND rm -rf "@STANDALONE_BUILD_DIR@")
+  # execute_process(
+  #   COMMAND find @MAIN_BINARY_DIR@ -type d -name @BaseTargetName@.app
+  #   OUTPUT_VARIABLE APPS
+  # )
 
-# * then we delete the standalone that was installed during packaging :
-#   CPACK_PACKAGE_FILES is the only populated variable accessible here
-#   Fortunately the Standalone target we need to delete so that the installer
-#   doesn't get confused is in a folder which absolute path
-#   is CPACK_PACKAGE_FILE without the .pkg extension
-#   So we just wipe this folder and the Standalone gets installed in /Applications
+  list(FILTER APPS INCLUDE REGEX "^.*(/@BaseTargetName@.app)$")
+  # message("${APPS}")
 
-foreach(FILE ${CPACK_PACKAGE_FILES})
-  cmake_path(REMOVE_EXTENSION FILE LAST_ONLY OUTPUT_VARIABLE TO_REMOVE)
-  execute_process(COMMAND rm -rf ${TO_REMOVE})
-endforeach()
+  foreach(APP ${APPS})
+    message(STATUS ">>>>>>>>>> Deleting\n ${APP}")
+    # execute_process(COMMAND rm -rf "${APP}")
+  endforeach()
+
+  # Now we create a dmg containing the generated pkg installer and an uninstall
+  # app built from an Apple Script with osacompile
+
+  execute_process(COMMAND @INSTALL_RESOURCES_DIR@/CreateDmg.sh)
+
+  # Then we submit the generated dmg file for notarization (using notarytool),
+  # and if it is validated by apple we "staple" it for distribution so that
+  # users can install it offline without being bothered by gatekeeper
+
+  if(@ENABLE_NOTARIZATION@)
+    execute_process(COMMAND @INSTALL_RESOURCES_DIR@/NotarizeDmg.sh)
+  endif()
+
+  ######################### original code :
+
+  # * first we delete the original standalone build :
+  
+  # execute_process(COMMAND rm -rf "@STANDALONE_BUILD_DIR@")
+
+  # * then we delete the standalone that was installed during packaging :
+  #   CPACK_PACKAGE_FILES is the only populated variable accessible here
+  #   Fortunately the Standalone target we need to delete so that the installer
+  #   doesn't get confused is in a folder which absolute path
+  #   is CPACK_PACKAGE_FILE without the .pkg extension
+  #   So we just wipe this folder and the Standalone gets installed in /Applications
+
+  # foreach(FILE ${CPACK_PACKAGE_FILES})
+  #   cmake_path(REMOVE_EXTENSION FILE LAST_ONLY OUTPUT_VARIABLE TO_REMOVE)
+  #   execute_process(COMMAND rm -rf ${TO_REMOVE})
+  # endforeach()
 
 endif(APPLE)

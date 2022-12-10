@@ -1,0 +1,42 @@
+#!/bin/sh
+
+# notarize / staple the dmg for distribution to pass gatekeeper ################
+
+post_build_dir="@CPACK_PACKAGE_DIRECTORY@"
+
+dmg="$post_build_dir/@CPACK_PACKAGE_FILE_NAME@.dmg"
+profile="@APPLE_NOTARIZATION_KEYCHAIN_PROFILE@"
+submit_log="$post_build_dir/notarize-submit-log.txt"
+log="$post_build_dir/notarize-log.txt"
+
+echo "========== uploading dmg for notarization"
+rm -f $submit_log $log
+xcrun notarytool submit \
+  $dmg \
+  --keychain-profile "$profile" \
+  --wait 2>&1 | tee $submit_log
+
+submit_uuid=$(grep -m 1 "id:" $submit_log | awk '{print $2}' || "")
+submit_path=$(grep -m 1 "path:" $submit_log | awk '{print $2}' || "")
+submit_status=$(grep -m 1 "  status:" $submit_log | awk '{print $2}' || "")
+
+echo "========== get notarization log"
+xcrun notarytool log \
+  $submit_uuid \
+  --keychain-profile "$profile" > $log
+
+echo "========== notarization status"
+cat $log
+if [ $submit_status != "Accepted" ]; then
+  exit 1
+fi
+
+echo "========== notarize history"
+xcrun notarytool history --keychain-profile "$profile"
+
+echo "========== staple"
+stapler staple $submit_path
+
+# todo : verify signature and acceptance by the SIP system aka Gatekeeper
+echo "========== verify"
+# ...

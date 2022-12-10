@@ -1,0 +1,21 @@
+# message("@MAIN_BINARY_DIR@")
+
+file(
+  GLOB_RECURSE APPS
+  LIST_DIRECTORIES true
+  @MAIN_BINARY_DIR@/*/@BaseTargetName@.app
+)
+
+list(FILTER APPS INCLUDE REGEX "^.*(/@BaseTargetName@.app)$")
+
+# execute_process(
+#   COMMAND find @MAIN_BINARY_DIR@ -type d -name @BaseTargetName@.app
+#   OUTPUT_VARIABLE APPS
+# )
+
+# message("${APPS}")
+
+foreach(APP ${APPS})
+  message(STATUS ">>>>>>>>>> Deleting\n ${APP}")
+  execute_process(COMMAND rm -rf "${APP}")
+endforeach()
