@@ -9,8 +9,8 @@ if(WIN32)
   # process (todo: find why this happens and implement a simpler and more
   # elegant way to get around it)
 
-  file(GLOB_RECURSE MY_FILES "${CPACK_TEMPORARY_INSTALL_DIRECTORY}/**/*.ico")
-  file(REMOVE ${MY_FILES})
+  # file(GLOB_RECURSE MY_FILES "${CPACK_TEMPORARY_INSTALL_DIRECTORY}/**/*.ico")
+  # file(REMOVE ${MY_FILES})
 
 elseif(APPLE)
 
