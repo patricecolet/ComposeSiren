@@ -63,23 +63,24 @@ endfunction()
 ################################################################################
 # sign and install the targets
 
+if(APPLE)
+  set(INSTALL_FOLDER "Mecanique Vivante/${BaseTargetName}")
+elseif(WIN32)
+  set(INSTALL_FOLDER "Common Files/Mecanique Vivante/${BaseTargetName}")
+endif()
+
+install(
+  DIRECTORY "${CMAKE_SOURCE_DIR}/Resources"
+  DESTINATION ${INSTALL_FOLDER}
+  COMPONENT "Resources"
+)
+
 foreach(FORMAT ${FORMATS})
   get_target_property(ARTEFACTS_DIR ${BaseTargetName}_${FORMAT} JUCE_PLUGIN_ARTEFACT_FILE)
   # _sign_component_from_format(${FORMAT})
   _install_component_from_format(${FORMAT})
 endforeach()
 
-if(APPLE)
-  set(INSTALL_FOLDER "Mecanique Vivante/${BaseTargetName}/Resources")
-elseif(WIN32)
-  set(INSTALL_FOLDER "Common Files/Mecanique Vivante/${BaseTargetName}/Resources")
-endif()
-
-install(
-  DIRECTORY "${CMAKE_SOURCE_DIR}/Resources/"
-  DESTINATION ${INSTALL_FOLDER}
-  COMPONENT "Resources"
-)
 
 # juce_enable_copy_plugin_step(${BaseTargetName})
 
@@ -91,7 +92,7 @@ set(INSTALL_RESOURCES_DIR "${CMAKE_SOURCE_DIR}/Installers")
 # this defines the exact list of components we want to package
 # (without this some parts of JUCE get included too)
 set(COMPONENTS_LIST ${FORMATS})
-# list(APPEND COMPONENTS_LIST "Resources")
+list(APPEND COMPONENTS_LIST "Resources")
 set(CPACK_COMPONENTS_ALL ${COMPONENTS_LIST})
 
 set(CPACK_PACKAGE_NAME ${BaseTargetName})
