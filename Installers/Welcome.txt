@@ -1,2 +1,0 @@
-Welcome to the ComposeSiren installer.
-This program will guide you through the installation of this software.
