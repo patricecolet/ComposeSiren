@@ -3,14 +3,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED)
 project(ComposeSiren VERSION 1.5.0)
 set(BaseTargetName ${PROJECT_NAME})
-set(VendorName "MecaniqueVivante")
+set(VendorName "Mecanique Vivante")
 
 set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE INTERNAL "")
 
 add_subdirectory(Dependencies/JUCE)
 
-# for now Standalone target is not supported (todo : check juce develop branch)
-# update 11/11/22 : works with pre-7.0.3 develop branch
 set(FORMATS "VST3" "Standalone")
 
 if (VST2_PATH)
@@ -31,8 +29,8 @@ juce_add_plugin(${BaseTargetName}
   PRODUCT_NAME "${BaseTargetName}"
   COMPANY_NAME "${VendorName}"
   VERSION ${CMAKE_PROJECT_VERSION}
-  ICON_BIG "${CMAKE_SOURCE_DIR}/Resources/Icon.png"
-  ICON_SMALL "${CMAKE_SOURCE_DIR}/Resources/Icon.png"
+  ICON_BIG "${CMAKE_SOURCE_DIR}/Assets/Icon.png"
+  ICON_SMALL "${CMAKE_SOURCE_DIR}/Assets/Icon.png"
   FORMATS ${FORMATS}
   # A four-character manufacturer id with at least one upper-case character
   PLUGIN_MANUFACTURER_CODE McVv
@@ -60,7 +58,7 @@ juce_generate_juce_header(${BaseTargetName})
 target_compile_features ("${BaseTargetName}" PRIVATE cxx_std_20)
 target_compile_definitions("${BaseTargetName}" PRIVATE CMS_BUILD_WITH_CMAKE=1)
 
-add_subdirectory(Resources)
+add_subdirectory(Assets)
 add_subdirectory(Source)
 
 target_link_libraries(${BaseTargetName}
@@ -101,7 +99,7 @@ if(JUCE_COPY_PLUGIN_AFTER_BUILD)
 endif()
 
 if(APPLE) # we generate a cmake subproject to build the installer
-  include(Installers/Installer.Generate.cmake)
-elseif(WIN32) # we just proceed "normally"
-  include(Installers/CPackBuildInstaller.cmake)
+  include(Packaging/Apple/MakePackage.cmake)
+elseif(WIN32) # we just proceed the regular way
+  include(Packaging/Windows/MakePackage.cmake)
 endif()
