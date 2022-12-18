@@ -2,12 +2,20 @@
 # can be specified.
 # create your own (e.g. MyConfig.cmake) and gitignore it.
 
+# PATH TO VST 2 SDK ############################################################
+
 # absolute path to the VST2 SDK, something like /<some_dirs>/vstsdk2.4
 # VST2 target will not be built if not specified
 set(VST2_PATH
   ""
   CACHE STRING "Path to VST2 SDK"
 )
+
+# SIGNING CREDENTIALS ##########################################################
+
+# we could sign from xcode project but we want to allow using other generators :
+# set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "firstname lastname") # (or apple id ?)
+# set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "PFMU8QK6DP")
 
 # the string id of your apple developer id application certificate
 # something like "Developer ID Application: firstname lastname (ABCDE12345)"
@@ -21,6 +29,13 @@ set(APPLE_DEVELOPER_ID_APPLICATION
 set(APPLE_DEVELOPER_ID_INSTALLER
   ""
   CACHE STRING "Apple Developer ID Installer"
+)
+
+# NOTARIZATION #################################################################
+
+set(ENABLE_NOTARIZATION
+  FALSE
+  CACHE STRING "Flag to enable notarization"
 )
 
 # the profile name created with `xcrun notarytool store-credentials
@@ -46,4 +61,3 @@ set(APPLE_TEAM_ID
   CACHE STRING "The code between parentheses after \"Apple Developer ID: Application/Installer (...)\""
 )
 #]]
-
