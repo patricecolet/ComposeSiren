@@ -87,12 +87,14 @@ endforeach()
 
 # install Resources
 
-set(INSTALL_FOLDER "@VendorName@/@BaseTargetName@")
-install(
-  DIRECTORY "@PLUGIN_RESOURCES_DIR@"
-  DESTINATION ${INSTALL_FOLDER}
-  COMPONENT "Resources"
-)
+if(NOT "@PLUGIN_RESOURCES_DIR@" STREQUAL "")
+  set(INSTALL_FOLDER "@VendorName@/@BaseTargetName@")
+  install(
+    DIRECTORY "@CMAKE_SOURCE_DIR@/@PLUGIN_RESOURCES_DIR@"
+    DESTINATION ${INSTALL_FOLDER}
+    COMPONENT "Resources"
+  )
+endif()
 
 ################################################################################
 # configure cpack
@@ -100,7 +102,11 @@ install(
 # this defines the exact list of components we want to package
 # (without this some parts of JUCE get included too)
 set(COMPONENTS_LIST @FORMATS@)
-list(APPEND COMPONENTS_LIST "Resources")
+
+if(NOT "@PLUGIN_RESOURCES_DIR@" STREQUAL "")
+  list(APPEND COMPONENTS_LIST "Resources")
+endif()
+
 set(CPACK_COMPONENTS_ALL ${COMPONENTS_LIST})
 
 set(CPACK_PACKAGE_NAME @BaseTargetName@)
@@ -145,9 +151,12 @@ endif()
 include(CPack)
 
 foreach(FORMAT @FORMATS@)
-  cpack_add_component(${FORMAT} DISPLAY_NAME "${FORMAT} Plugin") # DEPENDS "Resources")
+  cpack_add_component(${FORMAT} DISPLAY_NAME "${FORMAT} Plugin")
 endforeach()
-cpack_add_component("Resources" DISPLAY_NAME "Shared plugin data" REQUIRED)
+
+if(NOT "@PLUGIN_RESOURCES_DIR@" STREQUAL "")
+  cpack_add_component("Resources" DISPLAY_NAME "Shared plugin data" REQUIRED)
+endif()
 
 ################################################################################
 # configure post installer build scripts

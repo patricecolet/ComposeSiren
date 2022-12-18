@@ -24,7 +24,6 @@ foreach(FORMAT ${FORMATS})
 endforeach()
 
 # configure the cmake package subproject
-set(PLUGIN_RESOURCES_DIR "${CMAKE_SOURCE_DIR}/Resources")
 set(PACKAGING_RESOURCES_DIR "${CMAKE_SOURCE_DIR}/Packaging")
 set(PACKAGING_SCRIPTS_DIR "${CMAKE_SOURCE_DIR}/Packaging/Apple")
 set(PACKAGING_PROJECT_SOURCE_DIR "${CMAKE_BINARY_DIR}/Packaging")

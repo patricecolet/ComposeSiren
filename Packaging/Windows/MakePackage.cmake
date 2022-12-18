@@ -34,7 +34,9 @@ foreach(FORMAT ${FORMATS})
   _install_component_from_format(${FORMAT})
 endforeach()
 
-set(INSTALL_FOLDER "Common Files/${VendorName}/${BaseTargetName}/Resources")
+if(NOT "${PLUGIN_RESOURCES_DIR}" STREQUAL "")
+  set(INSTALL_FOLDER "Common Files/${VendorName}/${BaseTargetName}/Resources")
+endif()
 
 install(
   DIRECTORY "${CMAKE_SOURCE_DIR}/Resources/"
@@ -51,7 +53,11 @@ set(PACKAGING_PROJECT_SOURCE_DIR "${CMAKE_BINARY_DIR}/Packaging")
 # this defines the exact list of components we want to package
 # (without this some parts of JUCE get included too)
 set(COMPONENTS_LIST ${FORMATS})
-list(APPEND COMPONENTS_LIST "Resources")
+
+if(NOT "${PLUGIN_RESOURCES_DIR}" STREQUAL "")
+  list(APPEND COMPONENTS_LIST "Resources")
+endif()
+
 set(CPACK_COMPONENTS_ALL ${COMPONENTS_LIST})
 
 set(CPACK_PACKAGE_NAME ${BaseTargetName})
@@ -143,4 +149,7 @@ include(CPack)
 foreach(FORMAT ${FORMATS})
   cpack_add_component(${FORMAT} DISPLAY_NAME "${FORMAT} Plugin")
 endforeach()
-cpack_add_component("Resources" DISPLAY_NAME "Shared plugin data" REQUIRED)
+
+if(NOT "${PLUGIN_RESOURCES_DIR}" STREQUAL "")
+  cpack_add_component("Resources" DISPLAY_NAME "Shared plugin data" REQUIRED)
+endif()

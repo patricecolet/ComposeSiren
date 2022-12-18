@@ -11,6 +11,13 @@ set(VST2_PATH
   CACHE STRING "Path to VST2 SDK"
 )
 
+# Do the plugins have common resources to install ? ############################
+
+set(PLUGIN_RESOURCES_DIR
+  ""
+  CACHE STRING "Top level directory that should be installed as shared plugin resources"
+)
+
 # SIGNING CREDENTIALS ##########################################################
 
 # we could sign from xcode project but we want to allow using other generators :
