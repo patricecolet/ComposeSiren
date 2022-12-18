@@ -701,7 +701,7 @@ Section "-Core installation"
 
   ; Optional registration
   Push "DisplayIcon"
-  Push "$INSTDIR\@CPACK_NSIS_INSTALLED_ICON_NAME@"
+  Push "$INSTDIR\@CPACK_NSIS_PACKAGE_INSTALL_DIRECTORY@\@CPACK_NSIS_INSTALLED_ICON_NAME@"
   Call ConditionalAddToRegistry
   Push "HelpLink"
   Push "@CPACK_NSIS_HELP_LINK@"
