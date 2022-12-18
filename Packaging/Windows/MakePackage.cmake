@@ -47,8 +47,8 @@ install(
 ################################################################################
 # configure cpack
 
-set(PACKAGING_SCRIPTS_DIR "${CMAKE_SOURCE_DIR}/Packaging")
-set(PACKAGING_PROJECT_SOURCE_DIR "${CMAKE_BINARY_DIR}/Packaging")
+set(PACKAGING_RESOURCES_DIR "${CMAKE_SOURCE_DIR}/Packaging")
+set(PACKAGING_SCRIPTS_DIR "${CMAKE_SOURCE_DIR}/Packaging/Windows")
 
 # this defines the exact list of components we want to package
 # (without this some parts of JUCE get included too)
@@ -67,9 +67,9 @@ set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 set(CPACK_PACKAGE_DIRECTORY "${PROJECT_BINARY_DIR}/Packaging/${BaseTargetName}_Installer_artefacts")
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_LIST_DIR}/License.txt")
-set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_LIST_DIR}/ReadMe.txt")
-set(CPACK_RESOURCE_FILE_WELCOME "${CMAKE_CURRENT_LIST_DIR}/Welcome.txt")
+set(CPACK_RESOURCE_FILE_LICENSE "${PACKAGING_RESOURCES_DIR}/License.txt")
+set(CPACK_RESOURCE_FILE_README "${PACKAGING_RESOURCES_DIR}/ReadMe.txt")
+set(CPACK_RESOURCE_FILE_WELCOME "${PACKAGING_RESOURCES_DIR}/Welcome.txt")
 set(CPACK_PACKAGE_RELOCATABLE "true")
 
 ################################################################################
