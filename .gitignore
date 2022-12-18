@@ -1,5 +1,8 @@
+# ignore macos / windows junk files
 .DS_Store
+Thumbs.db
 
+# local vscode settings
 .vscode/
 
 # libsamplerate tests
@@ -12,6 +15,7 @@ Dependencies/libsamplerate/
 Builds/
 # used by cmake
 build/
-# private
+
+# private config (see Config.cmake template)
 MyConfig.cmake
 
