@@ -93,6 +93,7 @@ if(NOT "@PLUGIN_RESOURCES_DIR@" STREQUAL "")
     DIRECTORY "@CMAKE_SOURCE_DIR@/@PLUGIN_RESOURCES_DIR@"
     DESTINATION ${INSTALL_FOLDER}
     COMPONENT "Resources"
+    PATTERN ".DS_Store" EXCLUDE
   )
 endif()
 
@@ -146,19 +147,6 @@ endif()
 # set(CPACK_PRODUCTBUILD_DOMAINS_ROOT TRUE)
 
 ################################################################################
-# include cpack and add components
-
-include(CPack)
-
-foreach(FORMAT @FORMATS@)
-  cpack_add_component(${FORMAT} DISPLAY_NAME "${FORMAT} Plugin")
-endforeach()
-
-if(NOT "@PLUGIN_RESOURCES_DIR@" STREQUAL "")
-  cpack_add_component("Resources" DISPLAY_NAME "Shared plugin data" REQUIRED)
-endif()
-
-################################################################################
 # configure post installer build scripts
 
 # set these for calls to configure_file below :
@@ -195,3 +183,16 @@ configure_file(
   GROUP_READ GROUP_EXECUTE
   WORLD_READ WORLD_EXECUTE
 )
+
+################################################################################
+# include cpack and add components
+
+include(CPack)
+
+foreach(FORMAT @FORMATS@)
+  cpack_add_component(${FORMAT} DISPLAY_NAME "${FORMAT} Plugin")
+endforeach()
+
+if(NOT "@PLUGIN_RESOURCES_DIR@" STREQUAL "")
+  cpack_add_component("Resources" DISPLAY_NAME "Shared plugin data" REQUIRED)
+endif()
