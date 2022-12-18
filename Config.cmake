@@ -15,7 +15,7 @@ set(VST2_PATH
 
 # we could sign from xcode project but we want to allow using other generators :
 # set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "firstname lastname") # (or apple id ?)
-# set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "PFMU8QK6DP")
+# set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "ABCDE12345")
 
 # the string id of your apple developer id application certificate
 # something like "Developer ID Application: firstname lastname (ABCDE12345)"
