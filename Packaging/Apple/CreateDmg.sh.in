@@ -1,6 +1,7 @@
 #!/bin/sh
 
 # required cmake variables :
+# - BaseTargetName
 # - CPACK_PACKAGE_DIRECTORY
 # - CPACK_PACKAGE_FILE_NAME
 # - APPLE_DEVELOPER_ID_APPLICATION
