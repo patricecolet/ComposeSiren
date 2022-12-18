@@ -1,0 +1,33 @@
+-- only BaseTargetName and VendorName variables are needed for configuration
+
+set AU to "/Library/Audio/Plug-Ins/Components/@BaseTargetName@.component"
+set VST to "/Library/Audio/Plug-Ins/VST/@BaseTargetName@.vst"
+set VST3 to "/Library/Audio/Plug-Ins/VST3/@BaseTargetName@.vst3"
+set Standalone to "/Applications/@BaseTargetName@.app"
+set Resources to "/Library/Audio/Plug-Ins/@VendorName@"
+
+set which to choose from list {"All", "Global", "Local"} with title "delete" with prompt "Which files to delete ?"
+
+if (which as string) is equal to "All" or (which as string) is equal to "Global" then
+  set itemsToRemove to {AU, VST, VST3, Standalone}
+  repeat with i in itemsToRemove
+	  set o to do shell script "sudo rm -rf " & quoted form of i with administrator privileges
+  end repeat
+end if
+
+if (which as string) is equal to "All" or (which as string) is equal to "Local" then
+  set itemsToRemove to {"~" & AU, "~" & VST, "~" & VST3, "~" & Standalone}
+  repeat with i in itemsToRemove
+	  set o to do shell script "sudo rm -rf " & quoted form of i with administrator privileges
+  end repeat
+end if
+
+-- delete @BaseTargetName@ resources
+set PluginResources to "" & Resources & "/@BaseTargetName@"
+set o to do shell script "sudo rm -rf " & quoted form of PluginResources with administrator privileges
+
+-- delete Mecanique Vivante folder if empty
+set o to do shell script "sudo rmdir " & quoted form of Resources & " || exit 0" with administrator privileges
+
+set dialogText to "" & which & " @BaseTargetName@ files uninstalled successfully"
+display dialog dialogText buttons {"OK"} default button "OK"

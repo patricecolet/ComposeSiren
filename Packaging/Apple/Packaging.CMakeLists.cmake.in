@@ -1,0 +1,188 @@
+cmake_minimum_required(VERSION @CMAKE_MINIMUM_REQUIRED_VERSION@)
+set(CMAKE_CXX_STANDARD @CMAKE_CXX_STANDARD@)
+set(CMAKE_CXX_STANDARD_REQUIRED)
+set(CMAKE_OSX_ARCHITECTURES "@CMAKE_OSX_ARCHITECTURES@" CACHE INTERNAL "")
+project(@BaseTargetName@_Installer VERSION @CMAKE_PROJECT_VERSION@)
+
+################################################################################
+# utilities
+
+function(_set_apple_install_folder_from_format FORMAT)
+  if(${FORMAT} STREQUAL "Standalone")
+    set(INSTALL_FOLDER "/Applications" PARENT_SCOPE)
+  elseif(${FORMAT} STREQUAL "AU")
+    set(INSTALL_FOLDER "Components" PARENT_SCOPE)
+  else()
+    set(INSTALL_FOLDER ${FORMAT} PARENT_SCOPE)
+  endif()
+endfunction()
+
+function(_install_component_from_build_path_and_format BUILD_PATH FORMAT)
+  _set_apple_install_folder_from_format(${FORMAT})
+
+  if(IS_DIRECTORY "${BUILD_PATH}")
+    install(
+      DIRECTORY "${BUILD_PATH}"
+      DESTINATION "${INSTALL_FOLDER}"
+      COMPONENT ${FORMAT}
+      # without this, forbidden to run the binaries on mac
+      # (forbidden to explicitly set permissions on a directory)
+      USE_SOURCE_PERMISSIONS
+    )
+  else() # is this ever used for apple ?
+    install(
+      FILES "${BUILD_PATH}"
+      DESTINATION "${INSTALL_FOLDER}"
+      COMPONENT ${FORMAT}
+      # without this, forbidden to run the binaries on mac
+      # (forbidden to explicitly set permissions on a directory)
+      # USE_SOURCE_PERMISSIONS
+    )    
+  endif()
+endfunction()
+
+function(_sign_component_from_build_path BUILD_PATH)
+  if(NOT "@APPLE_DEVELOPER_ID_APPLICATION@" STREQUAL "")
+    execute_process(
+      COMMAND codesign
+      -s "@APPLE_DEVELOPER_ID_APPLICATION@"
+      -f "${BUILD_PATH}"
+      --options runtime
+      --timestamp --deep
+    )
+  endif()
+endfunction()
+
+################################################################################
+# install components
+
+foreach(FORMAT @FORMATS@)
+  # if project is multi-config (-G Xcode, Visual Studio or Ninja Multi-Config)
+  if(@MULTI_CONFIG@)
+    foreach(CONFIG @CMAKE_CONFIGURATION_TYPES@)
+
+      file(READ "@CMAKE_CURRENT_BINARY_DIR@/@BaseTargetName@_${FORMAT}_${CONFIG}_path" ARTEFACTS_DIR)
+      if(EXISTS "${ARTEFACTS_DIR}")
+        message("we have a ${CONFIG} build for ${FORMAT} target")
+        if(${CONFIG} STREQUAL ${CMAKE_BUILD_TYPE})
+          message(STATUS ">>>>> installing ${CONFIG} ${FORMAT} target from ${ARTEFACTS_DIR}")
+          _sign_component_from_build_path("${ARTEFACTS_DIR}")
+          _install_component_from_build_path_and_format("${ARTEFACTS_DIR}" ${FORMAT})
+        endif()
+      endif()
+
+    endforeach()
+  # otherwise (e.g using -G Makefile or Ninja)
+  else()
+
+    file(READ "@CMAKE_CURRENT_BINARY_DIR@/@BaseTargetName@_${FORMAT}_path" ARTEFACTS_DIR)
+    if(EXISTS "${ARTEFACTS_DIR}")
+      message("we have a build for ${FORMAT} target !")
+      _sign_component_from_build_path("${ARTEFACTS_DIR}")
+      _install_component_from_build_path_and_format("${ARTEFACTS_DIR}" ${FORMAT})
+    endif()
+
+  endif()
+endforeach()
+
+# install Resources
+
+set(INSTALL_FOLDER "@VendorName@/@BaseTargetName@")
+install(
+  DIRECTORY "@PLUGIN_RESOURCES_DIR@"
+  DESTINATION ${INSTALL_FOLDER}
+  COMPONENT "Resources"
+)
+
+################################################################################
+# configure cpack
+
+# this defines the exact list of components we want to package
+# (without this some parts of JUCE get included too)
+set(COMPONENTS_LIST @FORMATS@)
+list(APPEND COMPONENTS_LIST "Resources")
+set(CPACK_COMPONENTS_ALL ${COMPONENTS_LIST})
+
+set(CPACK_PACKAGE_NAME @BaseTargetName@)
+set(CPACK_PACKAGE_VENDOR @VendorName@)
+set(CPACK_VERBATIM_VARIABLES TRUE)
+set(CPACK_PACKAGE_VERSION_MAJOR @PROJECT_VERSION_MAJOR@)
+set(CPACK_PACKAGE_VERSION_MINOR @PROJECT_VERSION_MINOR@)
+set(CPACK_PACKAGE_VERSION_PATCH @PROJECT_VERSION_PATCH@)
+set(CPACK_PACKAGE_DIRECTORY "${CMAKE_BINARY_DIR}/${PROJECT_NAME}_artefacts")
+set(CPACK_RESOURCE_FILE_LICENSE "@PACKAGING_RESOURCES_DIR@/License.txt")
+set(CPACK_RESOURCE_FILE_README "@PACKAGING_RESOURCES_DIR@/ReadMe.txt")
+set(CPACK_RESOURCE_FILE_WELCOME "@PACKAGING_RESOURCES_DIR@/Welcome.txt")
+set(CPACK_PACKAGE_RELOCATABLE "true")
+
+################################################################################
+# productbuild specific settings
+
+set(CPACK_GENERATOR "productbuild")
+
+set(CPACK_SET_DESTDIR ON) # because we install Standalone in /Applications
+set(CPACK_INSTALL_PREFIX "/Library/Audio/Plug-ins") # used for relative paths
+set(CPACK_PACKAGE_FILE_NAME "@BaseTargetName@-@PROJECT_VERSION@-Darwin-universal")
+
+# signing the installers :
+if (NOT "@APPLE_DEVELOPER_ID_INSTALLER@" STREQUAL "")
+  message("setup signing installers with apple developer id installer:")
+  message("@APPLE_DEVELOPER_ID_INSTALLER@")
+
+  set(CPACK_PRODUCTBUILD_IDENTITY_NAME "@APPLE_DEVELOPER_ID_INSTALLER@")
+  set(CPACK_PKGBUILD_IDENTITY_NAME "@APPLE_DEVELOPER_ID_INSTALLER@")
+endif()
+
+# potentially useful settings (but makes resources path harder to guess) :
+# set(CPACK_PRODUCTBUILD_DOMAINS TRUE)
+# set(CPACK_PRODUCTBUILD_DOMAINS_USER TRUE)
+# set(CPACK_PRODUCTBUILD_DOMAINS_ANYWHERE TRUE)
+# set(CPACK_PRODUCTBUILD_DOMAINS_ROOT TRUE)
+
+################################################################################
+# include cpack and add components
+
+include(CPack)
+
+foreach(FORMAT @FORMATS@)
+  cpack_add_component(${FORMAT} DISPLAY_NAME "${FORMAT} Plugin") # DEPENDS "Resources")
+endforeach()
+cpack_add_component("Resources" DISPLAY_NAME "Shared plugin data" REQUIRED)
+
+################################################################################
+# configure post installer build scripts
+
+# set these for calls to configure_file below :
+set(MAIN_BINARY_DIR "@CMAKE_CURRENT_BINARY_DIR@")
+set(BaseTargetName "@BaseTargetName@")
+set(APPLE_DEVELOPER_ID_APPLICATION "@APPLE_DEVELOPER_ID_APPLICATION@")
+set(APPLE_DEVELOPER_ID_INSTALLER "@APPLE_DEVELOPER_ID_INSTALLER@")
+set(APPLE_NOTARIZATION_KEYCHAIN_PROFILE "@APPLE_NOTARIZATION_KEYCHAIN_PROFILE@")
+set(PACKAGING_SCRIPTS_DIR "@PACKAGING_SCRIPTS_DIR@")
+set(PACKAGING_PROJECT_SOURCE_DIR "@PACKAGING_PROJECT_SOURCE_DIR@")
+
+configure_file(
+  "${PACKAGING_SCRIPTS_DIR}/RemoveAppBundles.cmake.in"
+  "${CMAKE_SOURCE_DIR}/RemoveAppBundles.cmake"
+  @ONLY
+)
+configure_file(
+  "${PACKAGING_SCRIPTS_DIR}/Uninstall.applescript.in"
+  "${CMAKE_SOURCE_DIR}/Uninstall.applescript"
+)
+configure_file(
+  "${PACKAGING_SCRIPTS_DIR}/CreateDmg.sh.in"
+  "${CMAKE_SOURCE_DIR}/CreateDmg.sh"
+  FILE_PERMISSIONS
+  OWNER_READ OWNER_WRITE OWNER_EXECUTE
+  GROUP_READ GROUP_EXECUTE
+  WORLD_READ WORLD_EXECUTE
+)
+configure_file(
+  "${PACKAGING_SCRIPTS_DIR}/NotarizeDmg.sh.in"
+  "${CMAKE_SOURCE_DIR}/NotarizeDmg.sh"
+  FILE_PERMISSIONS
+  OWNER_READ OWNER_WRITE OWNER_EXECUTE
+  GROUP_READ GROUP_EXECUTE
+  WORLD_READ WORLD_EXECUTE
+)

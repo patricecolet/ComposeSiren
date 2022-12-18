@@ -1,0 +1,55 @@
+#!/bin/sh
+
+# required cmake variables :
+# - CPACK_PACKAGE_DIRECTORY
+# - CPACK_PACKAGE_FILE_NAME
+# - APPLE_DEVELOPER_ID_APPLICATION
+# - PACKAGING_PROJECT_SOURCE_DIR
+
+echo "========== start creating dmg ...";
+
+post_build_dir="@CPACK_PACKAGE_DIRECTORY@"
+
+# remove previous packaging artefacts
+rm -rf "$post_build_dir/dmgContent";
+mkdir "$post_build_dir/dmgContent";
+
+# add pkg installer built with cpack + productbuild
+mv \
+  "$post_build_dir/@CPACK_PACKAGE_FILE_NAME@.pkg" \
+  "$post_build_dir/dmgContent";
+
+# create uninstall app bundle from applescript
+osacompile \
+  -o "$post_build_dir/dmgContent/Uninstall@BaseTargetName@.app" \
+  "@PACKAGING_PROJECT_SOURCE_DIR@/Uninstall.applescript";
+
+codesign \
+  -s "@APPLE_DEVELOPER_ID_APPLICATION@" \
+  -f "$post_build_dir/dmgContent/Uninstall@BaseTargetName@.app" \
+  --options runtime \
+  --timestamp --deep;
+
+# create dmg from folder contents
+hdiutil \
+  create "$post_build_dir/tmp.dmg" -ov \
+  -volname "@CPACK_PACKAGE_FILE_NAME@" \
+  -fs HFS+ \
+  -srcfolder "$post_build_dir/dmgContent";
+
+# create a compressed version of the dmg to be notarized
+rm -rf "$post_build_dir/@CPACK_PACKAGE_FILE_NAME@.dmg";
+hdiutil \
+  convert "$post_build_dir/tmp.dmg" \
+  -format UDZO \
+  -o "$post_build_dir/@CPACK_PACKAGE_FILE_NAME@.dmg";
+
+codesign \
+  -s "@APPLE_DEVELOPER_ID_APPLICATION@" \
+  -f "$post_build_dir/@CPACK_PACKAGE_FILE_NAME@.dmg" \
+  --timestamp --deep;
+
+# remove tmp files used to create the dmg
+rm -rf "$post_build_dir/tmp.dmg";
+
+echo "========== done creating dmg"

@@ -1,0 +1,14 @@
+# only BaseTargetName and MAIN_BINARY_DIR variables are needed for configuration
+
+file(
+  GLOB_RECURSE APPS
+  LIST_DIRECTORIES true
+  @MAIN_BINARY_DIR@/*/@BaseTargetName@.app
+)
+
+list(FILTER APPS INCLUDE REGEX "^.*(/@BaseTargetName@.app)$")
+
+foreach(APP ${APPS})
+  message(STATUS ">>>>>>>>>> Deleting\n ${APP}")
+  execute_process(COMMAND rm -rf "${APP}")
+endforeach()

@@ -1,0 +1,3 @@
+message(">>>>>>>>>> CPACK POST BUILD SCRIPT >>>>>>>>>>")
+
+# nothing to do here for now
