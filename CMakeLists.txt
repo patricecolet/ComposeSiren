@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.19.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED)
+set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE INTERNAL "")
+
 project(ComposeSiren VERSION 1.5.0)
 set(BaseTargetName ${PROJECT_NAME})
 set(VendorName "Mecanique Vivante")
-
-set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE INTERNAL "")
 
 add_subdirectory(Dependencies/JUCE)
 
@@ -90,7 +90,7 @@ target_compile_definitions(${BaseTargetName}
 ################################################################################
 # packaging
 
-# if JUCE_COPY_PLUGIN_AFTER_BUILD is set to true, means we will install non
+# if JUCE_COPY_PLUGIN_AFTER_BUILD is set to true, it means we will install non
 # signed binaries locally (e.g. for debugging purpose) and we likely don't want
 # to build an installer right now, so we stop here :
 
