@@ -36,13 +36,12 @@ endforeach()
 
 if(NOT "${PLUGIN_RESOURCES_DIR}" STREQUAL "")
   set(INSTALL_FOLDER "Common Files/${VendorName}/${BaseTargetName}/Resources")
+  install(
+    DIRECTORY "${CMAKE_SOURCE_DIR}/Resources/"
+    DESTINATION ${INSTALL_FOLDER}
+    COMPONENT "Resources"
+  )
 endif()
-
-install(
-  DIRECTORY "${CMAKE_SOURCE_DIR}/Resources/"
-  DESTINATION ${INSTALL_FOLDER}
-  COMPONENT "Resources"
-)
 
 ################################################################################
 # configure cpack
