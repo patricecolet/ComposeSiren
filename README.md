@@ -54,4 +54,4 @@ At the moment the plugin is built :
   * `cpack --config build/CPackConfig.cmake`
 
 The resulting installer (built with `productbuild` on mac and `NSIS` on windows)
-is created in `build/Installers/ComposeSiren_Installer_artefacts`
+is created in `build/Packaging/ComposeSiren_Installer_artefacts`
