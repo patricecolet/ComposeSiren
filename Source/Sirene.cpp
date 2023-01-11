@@ -43,8 +43,7 @@ name(str) {
   memset(&tabAmp, 0, sizeof(tabAmp));
   memset(&tabFreq, 0, sizeof(tabFreq));
   memset(&dureTabs, 0, sizeof(dureTabs));
-  memset(&vector_interval, 0, sizeof(vector_interval));
-  
+
   std::string sireneNameForData(name);
 
   if (name == "S2")
@@ -62,8 +61,7 @@ name(str) {
     dataFilePath,
     "dataAmp" + sireneNameForData,
     "dataFreq" + sireneNameForData,
-    "datadureTabs" + sireneNameForData,
-    "dataVectorInterval" + sireneNameForData
+    "datadureTabs" + sireneNameForData
   );
 
   std::cout << "tabFreq[46][20][3] : " << std::fixed << std::setprecision(7) << tabFreq[46][20][3] << std::endl;
@@ -117,7 +115,7 @@ void Sirene::readDataFromBinaryData(std::string id) {
 }
 //*/
 
-void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmpFile, std::string tabFreqFile, std::string dureTabFile, std::string vectorIntervalFile){
+void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmpFile, std::string tabFreqFile, std::string dureTabFile){
 
   std::ifstream myfile;
 
@@ -148,14 +146,6 @@ void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmp
   }
   else std::cout <<  "Error. Binary file not found.\n";
 
-  // Read vectorIntervalFile
-  myfile.open(dataFilePath + vectorIntervalFile, std::ios::binary);
-  if (myfile.is_open())
-  {
-    myfile.read(reinterpret_cast<char *>(vector_interval), sizeof vector_interval); // todo: check that input.gcount() is the number of bytes expected
-    myfile.close();
-  }
-  else std::cout <<  "Error. Binary file not found.\n";
 }
 
 void Sirene::setMidicent(int note) {
@@ -183,64 +173,51 @@ void Sirene::setnoteFromExt(int note) {
     noteEncour = noteEncour + 1;
 }
 
-int Sirene::computeVectorIntervalIndex(SireneSpeedSlideState ouJeSuis, int note, int baseNoteIndex){
-    int result = 0;
+int Sirene::computeInertiaBias(SireneSpeedSlideState ouJeSuis){
     switch(ouJeSuis){
-        case Montant:         result = note - baseNoteIndex + 294;   break;
-        case Descandant:      result = 391 - (note - baseNoteIndex); break;
-        case QuartDownBefore: result = ((note-baseNoteIndex)*6)+0;   break;
-        case TonUpBefore:     result = ((note-baseNoteIndex+2)*6)+1; break;
-        case DemiUpBefore:    result = ((note-baseNoteIndex+1)*6)+2; break;
-        case QuartUpBefore:   result = ((note-baseNoteIndex)*6)+3;   break;
-        case QuartDownAfter:  result = ((note-baseNoteIndex)*6)+4;   break;
-        case QuartUpAfter:    result = ((note-baseNoteIndex)*6)+5;   break;
+        case Montant:
+        case TonUpBefore:
+        case DemiUpBefore:
+        case QuartUpBefore:
+        case QuartUpAfter:
+            return 1;
+        case Descandant:
+        case QuartDownBefore:
+        case QuartDownAfter:
+            return -1;
         case Boucle:
         case jesuisrest:
-            result = 0;
-            break;
+            return 0;
     }
-
-    return result;
 }
 
 void Sirene::setnote() {
-  //std::cout << "Sirene::setnote()" << std::endl;
   SireneSpeedSlideState ouJeSuis = oujesuis();
   auto appliedFactor = coeffPicolo;
-  auto baseNoteIndex = this->noteMin;
-  int note = static_cast<int>((noteEncour - 50) / 100.);
-  if (note <= noteMin) note = noteMin;
-
-  auto vectorIntervalIndex = computeVectorIntervalIndex(ouJeSuis, note, baseNoteIndex);
-  auto vectorIntervalValue = 100. / vector_interval[vectorIntervalIndex] * appliedFactor;
-
-  auto intertiaFactor = computeInertiaFactor(noteEncour);
+  auto inertiaBias = computeInertiaBias(ouJeSuis);
+  auto inertiaFactor = computeInertiaFactor(noteEncour);
 
   auto inertiaSpeedToTweak = this->inertiaFactorTweak;
-  auto vectorIntervalValueNew = appliedFactor * intertiaFactor * inertiaSpeedToTweak;
-
-  if(vectorIntervalIndex != 0){
+  if(inertiaBias != 0){
+      auto vectorIntervalValueNew = inertiaBias * appliedFactor * inertiaFactor * inertiaSpeedToTweak;
+      noteEncour=noteEncour+vectorIntervalValueNew;
       switch(ouJeSuis){
         case Montant:
         case QuartUpBefore:
         case QuartUpAfter:
-            noteEncour=noteEncour+vectorIntervalValueNew;
             if(noteEncour > noteVoulueAvantSlide)noteEncour=noteVoulueAvantSlide;
-            break;
-        case TonUpBefore:
-        case DemiUpBefore:
-            noteEncour=noteEncour+vectorIntervalValueNew;
             break;
         case Descandant:
         case QuartDownAfter:
         case QuartDownBefore:
-            noteEncour=noteEncour-vectorIntervalValueNew;
             if(noteEncour < noteVoulueAvantSlide)noteEncour=noteVoulueAvantSlide;
-            break;
+              break;
+        case TonUpBefore:
+        case DemiUpBefore:
         case Boucle:
         case jesuisrest:
-            break;
-        }
+              break;
+      }
     }
 
   setMidicent(noteEncour);
