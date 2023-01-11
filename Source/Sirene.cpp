@@ -35,18 +35,6 @@ float dureTabs[NOMBRE_DE_NOTE][3];//0=dureTab en samples // 1=nombreMax de Tab /
 float vector_interval[392];
 */
 
-enum {
-  Montant         = 0,
-  Descandant      = 1,
-  TonUpBefore     = 2,
-  DemiUpBefore    = 3,
-  QuartUpBefore   = 4,
-  Boucle          = 5,
-  QuartDownAfter  = 6,
-  QuartDownBefore = 7,
-  QuartUpAfter    = 8,
-  jesuisrest      = 9,
-};
 
 //Timer myTimer;
 
@@ -80,13 +68,13 @@ name(str) {
 
   std::cout << "tabFreq[46][20][3] : " << std::fixed << std::setprecision(7) << tabFreq[46][20][3] << std::endl;
 
-  if (name=="S1") {noteMidiCentMax=7200; pourcentClapetOff=7; noteMin=24; coeffPicolo=1.;}
-  else if (name=="S2") {noteMidiCentMax=7200; pourcentClapetOff=7; noteMin=24; coeffPicolo=1.;}
-  else if (name=="S3") {noteMidiCentMax=6400; pourcentClapetOff=7; noteMin=24; coeffPicolo=1.;}
-  else if (name=="S4") {noteMidiCentMax=6500; pourcentClapetOff=15; noteMin=24; coeffPicolo=1.;}
-  else if (name=="S5") {noteMidiCentMax=7900; pourcentClapetOff=7; noteMin=36; coeffPicolo=1.;}
-  else if (name=="S6") {noteMidiCentMax=7900; pourcentClapetOff=7; noteMin=36; coeffPicolo=1.;}
-  else if (name=="S7") {noteMidiCentMax=7900; pourcentClapetOff=7; noteMin=36; coeffPicolo=2.;}
+  if (name=="S1")      {noteMidiCentMax=7200; pourcentClapetOff=7;  noteMin=24; coeffPicolo=1.; inertiaFactorTweak = 12;}
+  else if (name=="S2") {noteMidiCentMax=7200; pourcentClapetOff=7;  noteMin=24; coeffPicolo=1.; inertiaFactorTweak = 12;}
+  else if (name=="S3") {noteMidiCentMax=6400; pourcentClapetOff=7;  noteMin=24; coeffPicolo=1.; inertiaFactorTweak = 12;}
+  else if (name=="S4") {noteMidiCentMax=6500; pourcentClapetOff=15; noteMin=24; coeffPicolo=1.; inertiaFactorTweak = 12;}
+  else if (name=="S5") {noteMidiCentMax=7900; pourcentClapetOff=7;  noteMin=36; coeffPicolo=1.; inertiaFactorTweak = 12;}
+  else if (name=="S6") {noteMidiCentMax=7900; pourcentClapetOff=7;  noteMin=36; coeffPicolo=1.; inertiaFactorTweak = 12;}
+  else if (name=="S7") {noteMidiCentMax=7900; pourcentClapetOff=7;  noteMin=36; coeffPicolo=2.; inertiaFactorTweak = 12;}
 
   //pat
   /*
@@ -195,57 +183,72 @@ void Sirene::setnoteFromExt(int note) {
     noteEncour = noteEncour + 1;
 }
 
+int Sirene::computeVectorIntervalIndex(SireneSpeedSlideState ouJeSuis, int note, int baseNoteIndex){
+    int result = 0;
+    switch(ouJeSuis){
+        case Montant:         result = note - baseNoteIndex + 294;   break;
+        case Descandant:      result = 391 - (note - baseNoteIndex); break;
+        case QuartDownBefore: result = ((note-baseNoteIndex)*6)+0;   break;
+        case TonUpBefore:     result = ((note-baseNoteIndex+2)*6)+1; break;
+        case DemiUpBefore:    result = ((note-baseNoteIndex+1)*6)+2; break;
+        case QuartUpBefore:   result = ((note-baseNoteIndex)*6)+3;   break;
+        case QuartDownAfter:  result = ((note-baseNoteIndex)*6)+4;   break;
+        case QuartUpAfter:    result = ((note-baseNoteIndex)*6)+5;   break;
+        case Boucle:
+        case jesuisrest:
+            result = 0;
+            break;
+    }
+
+    return result;
+}
+
 void Sirene::setnote() {
   //std::cout << "Sirene::setnote()" << std::endl;
-  oujesuis();
-
+  SireneSpeedSlideState ouJeSuis = oujesuis();
+  auto appliedFactor = coeffPicolo;
+  auto baseNoteIndex = this->noteMin;
   int note = static_cast<int>((noteEncour - 50) / 100.);
   if (note <= noteMin) note = noteMin;
-  if (ouJeSuis == Montant) {
-    noteEncour = noteEncour + (100. / (vector_interval[note-noteMin+294] * coeffPicolo));
-    if (noteEncour > noteVoulueAvantSlide)
-      noteEncour=noteVoulueAvantSlide;
-  }
-  else if (ouJeSuis == Descandant) {
-    noteEncour = noteEncour - (100. / (vector_interval[391-(note-noteMin)] * coeffPicolo));
-    if (noteEncour < noteVoulueAvantSlide)
-      noteEncour = noteVoulueAvantSlide;
-  }
-  else if (ouJeSuis == TonUpBefore) {
-    noteEncour = noteEncour + (100. / (vector_interval[((note-noteMin+2)*6)+1] * coeffPicolo));
-  }
-  else if (ouJeSuis == DemiUpBefore) {
-    noteEncour = noteEncour + (100. / (vector_interval[((note-noteMin+1)*6)+2] * coeffPicolo));
-  }
-  else if (ouJeSuis == QuartUpBefore) {
-    noteEncour = noteEncour + (100. / (vector_interval[((note-noteMin)*6)+3] * coeffPicolo));
-    if (noteEncour > noteVoulueAvantSlide)
-      noteEncour = noteVoulueAvantSlide;
-  }
-  else if (ouJeSuis == Boucle) {
-  }
-  else if (ouJeSuis == QuartDownAfter) {
-    noteEncour = noteEncour - (100. / (vector_interval[((note-noteMin)*6)+4] * coeffPicolo));
-    if (noteEncour < noteVoulueAvantSlide)
-      noteEncour = noteVoulueAvantSlide;
-  }
-  else if (ouJeSuis == QuartDownBefore) {
-    noteEncour = noteEncour - (100. / (vector_interval[((note-noteMin)*6)] * coeffPicolo));
-    if(noteEncour < noteVoulueAvantSlide)
-      noteEncour = noteVoulueAvantSlide;
-  }
-  else if (ouJeSuis == QuartUpAfter) {
-    noteEncour = noteEncour + (100. / (vector_interval[((note-noteMin)*6)+5] * coeffPicolo));
-    if (noteEncour > noteVoulueAvantSlide)
-      noteEncour = noteVoulueAvantSlide;
-  }
+
+  auto vectorIntervalIndex = computeVectorIntervalIndex(ouJeSuis, note, baseNoteIndex);
+  auto vectorIntervalValue = 100. / vector_interval[vectorIntervalIndex] * appliedFactor;
+
+  auto intertiaFactor = computeInertiaFactor(noteEncour);
+
+  auto inertiaSpeedToTweak = this->inertiaFactorTweak;
+  auto vectorIntervalValueNew = appliedFactor * intertiaFactor * inertiaSpeedToTweak;
+
+  if(vectorIntervalIndex != 0){
+      switch(ouJeSuis){
+        case Montant:
+        case QuartUpBefore:
+        case QuartUpAfter:
+            noteEncour=noteEncour+vectorIntervalValueNew;
+            if(noteEncour > noteVoulueAvantSlide)noteEncour=noteVoulueAvantSlide;
+            break;
+        case TonUpBefore:
+        case DemiUpBefore:
+            noteEncour=noteEncour+vectorIntervalValueNew;
+            break;
+        case Descandant:
+        case QuartDownAfter:
+        case QuartDownBefore:
+            noteEncour=noteEncour-vectorIntervalValueNew;
+            if(noteEncour < noteVoulueAvantSlide)noteEncour=noteVoulueAvantSlide;
+            break;
+        case Boucle:
+        case jesuisrest:
+            break;
+        }
+    }
 
   setMidicent(noteEncour);
 }
 
-void Sirene::oujesuis() {
+SireneSpeedSlideState Sirene::oujesuis() {
   int inter = static_cast<int>(noteVoulueAvantSlide) - noteEncour;
-
+  SireneSpeedSlideState ouJeSuis;
   if (inter == 0)
     ouJeSuis = Boucle;
   else if ((inter - interDepart) > 0 && (inter - interDepart) < 50)
@@ -264,19 +267,7 @@ void Sirene::oujesuis() {
     ouJeSuis = DemiUpBefore;
   else if (inter > 0 && inter < 50)
     ouJeSuis = QuartUpBefore;
-
-  /* benoit
-  switch (ouJeSuis) {
-    case QuartDownBefore: printf("QuartDownBefore\n"); break;
-    case QuartDownAfter: printf("QuartDownAfter\n"); break;
-    case QuartUpAfter: printf("QuartUpAfter\n"); break;
-    case Montant: printf("Montant\n"); break;
-    case Descandant: printf("Descandant\n"); break;
-    case TonUpBefore: printf("TonUpBefore\n"); break;
-    case DemiUpBefore: printf("DemiUpBefore\n"); break;
-    case QuartUpBefore: printf("QuartUpBefore\n"); break;
-    default: break;
-  }*/
+    return ouJeSuis;
 }
 
 void Sirene::changeQualite(int qualt) {

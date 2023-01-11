@@ -34,6 +34,19 @@
 #define NOMBRE_DE_NOTE 80
 #define MAX_TAB 1000
 
+enum SireneSpeedSlideState {
+    Montant         = 0,
+    Descandant      = 1,
+    TonUpBefore     = 2,
+    DemiUpBefore    = 3,
+    QuartUpBefore   = 4,
+    Boucle          = 5,
+    QuartDownAfter  = 6,
+    QuartDownBefore = 7,
+    QuartUpAfter    = 8,
+    jesuisrest      = 9,
+} ;
+
 class Sirene {
 public:
   Sirene(const std::string& str, const std::string& dataFolderPath);
@@ -47,12 +60,12 @@ private:
   int pourcentClapetOff;
   
   int coeffPicolo;
-
+  float inertiaFactorTweak;
 public:
   void setMidicent(int note);
   void setnoteFromExt(int note);
   void setnote();
-  void oujesuis();
+  SireneSpeedSlideState oujesuis();
   void changeQualite(int qualt);
   void set16ou8Bit(bool is);
   void setVelocite(int velo);
@@ -187,6 +200,16 @@ private:
   int noteVoulueAvantSlide = 0; // gauthier: deterministically init noteVoulueAvantSlide to 0
   float noteEncour = 0; // gauthier: deterministically init noteEncour to 0
   int interDepart = 0;  // gauthier: deterministically init interDepart to 0
-  int ouJeSuis = 0; // gauthier: deterministically init ouJeSuis to 0
   bool isCrossfade = false; // gauthier: deterministically init isCrossfade to false
+
+
+    int computeVectorIntervalIndex(SireneSpeedSlideState ouJeSuis, int note, int baseNoteIndex);
+    float computeInertiaFactor(float cents){
+        float octaveRatio = cents / 1200;
+        if(octaveRatio == 0. || octaveRatio < 0.01){ return 1.; }
+        else {
+            return 1. / octaveRatio;
+
+        }
+    }
 };
