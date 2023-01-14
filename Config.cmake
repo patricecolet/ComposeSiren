@@ -14,7 +14,7 @@ set(VST2_PATH
 # Do the plugins have common resources to install ? ############################
 
 set(PLUGIN_RESOURCES_DIR
-  ""
+  "Resources"
   CACHE STRING "Top level directory that should be installed as shared plugin resources"
 )
 
