@@ -63,6 +63,7 @@ public:
     void timerCallback() override;
     MidiIn* myMidiInHandler;
     Synth* mySynth;
+    int sampleCountForMidiInTimer = 0;
 private:
     //==============================================================================
     int* midiMessageIntArray;
