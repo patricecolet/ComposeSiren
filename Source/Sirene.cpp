@@ -35,18 +35,6 @@ float dureTabs[NOMBRE_DE_NOTE][3];//0=dureTab en samples // 1=nombreMax de Tab /
 float vector_interval[392];
 */
 
-enum {
-  Montant         = 0,
-  Descandant      = 1,
-  TonUpBefore     = 2,
-  DemiUpBefore    = 3,
-  QuartUpBefore   = 4,
-  Boucle          = 5,
-  QuartDownAfter  = 6,
-  QuartDownBefore = 7,
-  QuartUpAfter    = 8,
-  jesuisrest      = 9,
-};
 
 //Timer myTimer;
 
@@ -55,8 +43,7 @@ name(str) {
   memset(&tabAmp, 0, sizeof(tabAmp));
   memset(&tabFreq, 0, sizeof(tabFreq));
   memset(&dureTabs, 0, sizeof(dureTabs));
-  memset(&vector_interval, 0, sizeof(vector_interval));
-  
+
   std::string sireneNameForData(name);
 
   if (name == "S2")
@@ -74,19 +61,18 @@ name(str) {
     dataFilePath,
     "dataAmp" + sireneNameForData,
     "dataFreq" + sireneNameForData,
-    "datadureTabs" + sireneNameForData,
-    "dataVectorInterval" + sireneNameForData
+    "datadureTabs" + sireneNameForData
   );
 
   std::cout << "tabFreq[46][20][3] : " << std::fixed << std::setprecision(7) << tabFreq[46][20][3] << std::endl;
 
-  if (name=="S1") {noteMidiCentMax=7200; pourcentClapetOff=7; noteMin=24; coeffPicolo=1.;}
-  else if (name=="S2") {noteMidiCentMax=7200; pourcentClapetOff=7; noteMin=24; coeffPicolo=1.;}
-  else if (name=="S3") {noteMidiCentMax=6400; pourcentClapetOff=7; noteMin=24; coeffPicolo=1.;}
-  else if (name=="S4") {noteMidiCentMax=6500; pourcentClapetOff=15; noteMin=24; coeffPicolo=1.;}
-  else if (name=="S5") {noteMidiCentMax=7900; pourcentClapetOff=7; noteMin=36; coeffPicolo=1.;}
-  else if (name=="S6") {noteMidiCentMax=7900; pourcentClapetOff=7; noteMin=36; coeffPicolo=1.;}
-  else if (name=="S7") {noteMidiCentMax=7900; pourcentClapetOff=7; noteMin=36; coeffPicolo=2.;}
+  if (name=="S1")      {noteMidiCentMax=7200; pourcentClapetOff=7;  noteMin=24; coeffPicolo=1.; inertiaFactorTweak = 12;}
+  else if (name=="S2") {noteMidiCentMax=7200; pourcentClapetOff=7;  noteMin=24; coeffPicolo=1.; inertiaFactorTweak = 12;}
+  else if (name=="S3") {noteMidiCentMax=6400; pourcentClapetOff=7;  noteMin=24; coeffPicolo=1.; inertiaFactorTweak = 12;}
+  else if (name=="S4") {noteMidiCentMax=6500; pourcentClapetOff=15; noteMin=24; coeffPicolo=1.; inertiaFactorTweak = 12;}
+  else if (name=="S5") {noteMidiCentMax=7900; pourcentClapetOff=7;  noteMin=36; coeffPicolo=1.; inertiaFactorTweak = 12;}
+  else if (name=="S6") {noteMidiCentMax=7900; pourcentClapetOff=7;  noteMin=36; coeffPicolo=1.; inertiaFactorTweak = 12;}
+  else if (name=="S7") {noteMidiCentMax=7900; pourcentClapetOff=7;  noteMin=36; coeffPicolo=2.; inertiaFactorTweak = 12;}
 
   //pat
   /*
@@ -129,7 +115,7 @@ void Sirene::readDataFromBinaryData(std::string id) {
 }
 //*/
 
-void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmpFile, std::string tabFreqFile, std::string dureTabFile, std::string vectorIntervalFile){
+void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmpFile, std::string tabFreqFile, std::string dureTabFile){
 
   std::ifstream myfile;
 
@@ -160,14 +146,6 @@ void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmp
   }
   else std::cout <<  "Error. Binary file not found.\n";
 
-  // Read vectorIntervalFile
-  myfile.open(dataFilePath + vectorIntervalFile, std::ios::binary);
-  if (myfile.is_open())
-  {
-    myfile.read(reinterpret_cast<char *>(vector_interval), sizeof vector_interval); // todo: check that input.gcount() is the number of bytes expected
-    myfile.close();
-  }
-  else std::cout <<  "Error. Binary file not found.\n";
 }
 
 void Sirene::setMidicent(int note) {
@@ -195,57 +173,59 @@ void Sirene::setnoteFromExt(int note) {
     noteEncour = noteEncour + 1;
 }
 
-void Sirene::setnote() {
-  //std::cout << "Sirene::setnote()" << std::endl;
-  oujesuis();
+int Sirene::computeInertiaBias(SireneSpeedSlideState ouJeSuis){
+    switch(ouJeSuis){
+        case Montant:
+        case TonUpBefore:
+        case DemiUpBefore:
+        case QuartUpBefore:
+        case QuartUpAfter:
+            return 1;
+        case Descandant:
+        case QuartDownBefore:
+        case QuartDownAfter:
+            return -1;
+        case Boucle:
+        case jesuisrest:
+            return 0;
+    }
+}
 
-  int note = static_cast<int>((noteEncour - 50) / 100.);
-  if (note <= noteMin) note = noteMin;
-  if (ouJeSuis == Montant) {
-    noteEncour = noteEncour + (100. / (vector_interval[note-noteMin+294] * coeffPicolo));
-    if (noteEncour > noteVoulueAvantSlide)
-      noteEncour=noteVoulueAvantSlide;
-  }
-  else if (ouJeSuis == Descandant) {
-    noteEncour = noteEncour - (100. / (vector_interval[391-(note-noteMin)] * coeffPicolo));
-    if (noteEncour < noteVoulueAvantSlide)
-      noteEncour = noteVoulueAvantSlide;
-  }
-  else if (ouJeSuis == TonUpBefore) {
-    noteEncour = noteEncour + (100. / (vector_interval[((note-noteMin+2)*6)+1] * coeffPicolo));
-  }
-  else if (ouJeSuis == DemiUpBefore) {
-    noteEncour = noteEncour + (100. / (vector_interval[((note-noteMin+1)*6)+2] * coeffPicolo));
-  }
-  else if (ouJeSuis == QuartUpBefore) {
-    noteEncour = noteEncour + (100. / (vector_interval[((note-noteMin)*6)+3] * coeffPicolo));
-    if (noteEncour > noteVoulueAvantSlide)
-      noteEncour = noteVoulueAvantSlide;
-  }
-  else if (ouJeSuis == Boucle) {
-  }
-  else if (ouJeSuis == QuartDownAfter) {
-    noteEncour = noteEncour - (100. / (vector_interval[((note-noteMin)*6)+4] * coeffPicolo));
-    if (noteEncour < noteVoulueAvantSlide)
-      noteEncour = noteVoulueAvantSlide;
-  }
-  else if (ouJeSuis == QuartDownBefore) {
-    noteEncour = noteEncour - (100. / (vector_interval[((note-noteMin)*6)] * coeffPicolo));
-    if(noteEncour < noteVoulueAvantSlide)
-      noteEncour = noteVoulueAvantSlide;
-  }
-  else if (ouJeSuis == QuartUpAfter) {
-    noteEncour = noteEncour + (100. / (vector_interval[((note-noteMin)*6)+5] * coeffPicolo));
-    if (noteEncour > noteVoulueAvantSlide)
-      noteEncour = noteVoulueAvantSlide;
-  }
+void Sirene::setnote() {
+  SireneSpeedSlideState ouJeSuis = oujesuis();
+  auto appliedFactor = coeffPicolo;
+  auto inertiaBias = computeInertiaBias(ouJeSuis);
+  auto inertiaFactor = computeInertiaFactor(noteEncour);
+
+  auto inertiaSpeedToTweak = this->inertiaFactorTweak;
+  if(inertiaBias != 0){
+      auto vectorIntervalValueNew = inertiaBias * appliedFactor * inertiaFactor * inertiaSpeedToTweak;
+      noteEncour=noteEncour+vectorIntervalValueNew;
+      switch(ouJeSuis){
+        case Montant:
+        case QuartUpBefore:
+        case QuartUpAfter:
+            if(noteEncour > noteVoulueAvantSlide)noteEncour=noteVoulueAvantSlide;
+            break;
+        case Descandant:
+        case QuartDownAfter:
+        case QuartDownBefore:
+            if(noteEncour < noteVoulueAvantSlide)noteEncour=noteVoulueAvantSlide;
+              break;
+        case TonUpBefore:
+        case DemiUpBefore:
+        case Boucle:
+        case jesuisrest:
+              break;
+      }
+    }
 
   setMidicent(noteEncour);
 }
 
-void Sirene::oujesuis() {
+SireneSpeedSlideState Sirene::oujesuis() {
   int inter = static_cast<int>(noteVoulueAvantSlide) - noteEncour;
-
+  SireneSpeedSlideState ouJeSuis;
   if (inter == 0)
     ouJeSuis = Boucle;
   else if ((inter - interDepart) > 0 && (inter - interDepart) < 50)
@@ -264,19 +244,7 @@ void Sirene::oujesuis() {
     ouJeSuis = DemiUpBefore;
   else if (inter > 0 && inter < 50)
     ouJeSuis = QuartUpBefore;
-
-  /* benoit
-  switch (ouJeSuis) {
-    case QuartDownBefore: printf("QuartDownBefore\n"); break;
-    case QuartDownAfter: printf("QuartDownAfter\n"); break;
-    case QuartUpAfter: printf("QuartUpAfter\n"); break;
-    case Montant: printf("Montant\n"); break;
-    case Descandant: printf("Descandant\n"); break;
-    case TonUpBefore: printf("TonUpBefore\n"); break;
-    case DemiUpBefore: printf("DemiUpBefore\n"); break;
-    case QuartUpBefore: printf("QuartUpBefore\n"); break;
-    default: break;
-  }*/
+    return ouJeSuis;
 }
 
 void Sirene::changeQualite(int qualt) {
