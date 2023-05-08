@@ -164,7 +164,7 @@ void Sirene::setnote() {
 
 SireneSpeedSlideState Sirene::oujesuis() {
   int inter = static_cast<int>(noteVoulueAvantSlide) - noteEncour;
-  SireneSpeedSlideState ouJeSuis;
+  SireneSpeedSlideState ouJeSuis = Boucle;
   if (inter == 0)
     ouJeSuis = Boucle;
   else if ((inter - interDepart) > 0 && (inter - interDepart) < 50)
@@ -183,7 +183,7 @@ SireneSpeedSlideState Sirene::oujesuis() {
     ouJeSuis = DemiUpBefore;
   else if (inter > 0 && inter < 50)
     ouJeSuis = QuartUpBefore;
-    return ouJeSuis;
+  return ouJeSuis;
 }
 
 void Sirene::changeQualite(int qualt) {
