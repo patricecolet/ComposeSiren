@@ -15,10 +15,6 @@
 
 Synth::Synth(){
 
-    //mIntervalFromAudio=512/44100;
-    //ICI TOUT LE TRUC DE OBJECTIVE C
-    //fOnOffReverbe=true;
-    
     // left channel
     PanS1=0.75;
     PanS2=0.25;
@@ -28,21 +24,8 @@ Synth::Synth(){
     PanS6=0.1;
     PanS7=0.45;
     
-    //muteS1=false;
     isWithSynthe=true;
     isWithClic=false;
-    //volumeSynth=1.;
-    //volumeClic=1.;
-    //SizeBufClic1 = sizeof(clic1);
-    //SizeBufClic2 = sizeof(clic2);
-    //ptrClic1=(short*)clic1;
-    //ptrClic2=(short*)clic2;
-    //countWherWeAreClic1=0;
-    //countWherWeAreClic2=0;
-    //jouerclic1=false;
-    //jouerclic2=false;
-    //Volsynthz = 1.;
-    //VolClicz = 1.;
     WideCoeff=1.5;
     
 #if defined (_MSC_VER)
@@ -76,7 +59,6 @@ Synth::~Synth(){
 
 void Synth::setnote(int sireneNumber, int note)
 {
-    //std::cout<< "Set note. sirene : " << sireneNumber << ", note : " << note << std::endl;
     if(isWithSynthe){
         switch (sireneNumber) {
             case 1:s1->setnoteFromExt(note);break;
@@ -172,13 +154,11 @@ void Synth::changeQualite(int qualt){
         s5->changeQualite(qualt);
         s6->changeQualite(qualt);
         s7->changeQualite(qualt);
-
     }
 }
 
 
 void Synth::setVitesse(int chanal, float vitesse){
-    //std::cout<< "Set Vitesse. chanal : " << chanal << ", vitesse : " << vitesse << std::endl;
     if(isWithSynthe){
         int midicent=0;
         switch (chanal) {

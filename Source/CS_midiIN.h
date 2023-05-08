@@ -1,12 +1,3 @@
-/*
-  ==============================================================================
-
-    CS_midiIN.h
-    Created: 6 May 2020 10:48:30am
-    Author:  guyot
-
-  ==============================================================================
-*/
 
 #pragma once
 
@@ -56,8 +47,6 @@ public:
   void timerAudio();
   void sirenium_in(unsigned char *buf);
 
-  //Synth* mySynth;
-
 private:
 
   float ChangevolumegeneralCh[17];
@@ -101,8 +90,6 @@ private:
 
   int countvibra = 0;
   int pitch_bend;
-
-  //Synth* mySynth;
 
   const std::function<void(int,int)> onVelocityChanged;
   

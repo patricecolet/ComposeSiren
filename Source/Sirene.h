@@ -83,7 +83,7 @@ public:
   );
   // to fill tabAmp, tabFreq and dureTabs
 
-  inline float calculwave() {
+  inline float  calculwave() {
     isChangementdenote = false;
     float wavefinal = 0.;
 
@@ -137,14 +137,6 @@ public:
           );
         } else {
           amp[i] = tabAmp[noteInf][countP[noteInf]][i];
-          // tabAmp[NOMBRE_DE_NOTE=80][MAX_TAB=1000][MAX_Partiel=200];
-          /*
-          cout << "noteInf :" << noteInf << endl;
-          cout << "countP[noteInf] :" << countP[noteInf] << endl;
-          cout << "i :" << i << endl;
-          cout << "tabAmp[noteInf][countP[noteInf]][i] :" << tabAmp[noteInf][countP[noteInf]][i] << endl;
-          cout << "amp[i] :" << amp[i] << endl;
-          */
           phaseInf[i] += (tabFreq[noteInf][countP[noteInf]][i] * pitchSchift[noteInf]);
         }
 
@@ -161,7 +153,6 @@ public:
 
     if (is16Bit) wavefinal = waveInf * ampvouluz;
     else wavefinal = anciennewaveInf * ampvouluz;
-    //cout << "noteEncour :" << noteEncour << endl;
     if (noteEncour <= noteMin * 100) wavefinal = 0.;
 
     return wavefinal;

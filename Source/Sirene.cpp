@@ -1,16 +1,6 @@
-/*
-  ==============================================================================
-
-    Sirene.cpp
-    Created: 6 May 2020 10:49:23am
-    Author:  guyot
-
-  ==============================================================================
-*/
 
 #include "Sirene.h"
 #include <JuceHeader.h>
-// #include <BinaryData.h>
 
 #include <iostream>
 
@@ -23,20 +13,6 @@
 #include <iterator>
 #include <algorithm>
 
-/*
-#define MAX_Partiel 200
-#define NOMBRE_DE_NOTE 80
-#define MAX_TAB 1000
-#define pourcentClapetOff 7
-
-float tabAmp[NOMBRE_DE_NOTE][MAX_TAB][MAX_Partiel];
-float tabFreq[NOMBRE_DE_NOTE][MAX_TAB][MAX_Partiel];
-float dureTabs[NOMBRE_DE_NOTE][3];//0=dureTab en samples // 1=nombreMax de Tab // 2=FreqMoyenne
-float vector_interval[392];
-*/
-
-
-//Timer myTimer;
 
 Sirene::Sirene(const std::string& str, const std::string& dataFilePath) :
 name(str) {
@@ -75,45 +51,10 @@ name(str) {
   else if (name=="S7") {noteMidiCentMax=7900; pourcentClapetOff=7;  noteMin=36; coeffPicolo=2.; inertiaFactorTweak = 24;}
 
   //pat
-  /*
-  interDepart = 0;
-  boutonveloONS1 = false;
-  isCrossfade = false;
-  noteVoulueAvantSlide = 0;
-  noteEncour = 0;
-  ouJeSuis = 0;
-  //*/
 }
 
 Sirene::~Sirene() {}
 
-/*
-void Sirene::readDataFromBinaryData(std::string id) {
-  // will be passed by reference to and set by BinaryData::getNamedResource()
-  int ampSize, freqSize, dureTabsSize, vectorIntervalSize;
-  MemoryBlock block;
-
-  const char* ampData =
-    BinaryData::getNamedResource(("dataAmp" + id).c_str(), ampSize);
-  block = MemoryBlock(static_cast<const void*>(ampData), ampSize);
-  block.copyTo(static_cast<void*>(tabAmp), 0, ampSize);
-
-  const char* freqData =
-    BinaryData::getNamedResource(("dataFreq" + id).c_str(), freqSize);
-  block = MemoryBlock(static_cast<const void*>(freqData), freqSize);
-  block.copyTo(static_cast<void*>(tabFreq), 0, freqSize);
-
-  const char* dureTabsData =
-    BinaryData::getNamedResource(("datadureTabs" + id).c_str(), dureTabsSize);
-  block = MemoryBlock(static_cast<const void*>(dureTabsData), dureTabsSize);
-  block.copyTo(static_cast<void*>(dureTabs), 0, dureTabsSize);
-
-  const char* vectorIntervalData =
-    BinaryData::getNamedResource(("dataVectorInterval" + id).c_str(), vectorIntervalSize);
-  block = MemoryBlock(static_cast<const void*>(vectorIntervalData), vectorIntervalSize);
-  block.copyTo(static_cast<void*>(vector_interval), 0, vectorIntervalSize);
-}
-//*/
 
 void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmpFile, std::string tabFreqFile, std::string dureTabFile){
 
@@ -156,11 +97,9 @@ void Sirene::setMidicent(int note) {
   noteSup = noteInf + 1;
   pitchSchift[noteInf] = ((440.0 * pow(2., ((midiCentVoulue/100.) - 69.) / 12.))  /  (440.0 * pow(2., ((noteInf) - 69.) / 12.)))  * DeuxPieSampleRate;
   pitchSchift[noteSup] = ((440.0 * pow(2., ((midiCentVoulue/100.) - 69.) / 12.))  /   (440.0 * pow(2., ((noteSup) - 69.) / 12.)))  * DeuxPieSampleRate;
-  // std::cout << "noteInf:" << noteInf << std::endl;
 }
 
 void Sirene::setnoteFromExt(int note) {
-  //std::cout << "Note from ext: " << note << std::endl;
   noteVoulueAvantSlide = note;
   if (noteVoulueAvantSlide > noteMidiCentMax)
     noteVoulueAvantSlide = noteMidiCentMax;

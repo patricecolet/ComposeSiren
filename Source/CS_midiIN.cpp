@@ -47,20 +47,14 @@ MidiIn::~MidiIn(){
 void MidiIn::timerAudio(){
     if(isWithSynth){
         for (int Ch=1; Ch<9; Ch++) {
-
-            //[self sendVariaCh:Ch];
             sendVariaCh(Ch);
             if (isRampeCh[Ch]) {
-                //[self createRampeCh:Ch];
                 createRampeCh(Ch);
             }
             if (isReleaseCh[Ch]) {
-                //[self createReleaseCh:Ch];
                 createReleaseCh(Ch);
             }
-
             if (isAttacVibrato[Ch] && countTimerAudio==0 ) {
-                //[self incrementeVibrato:Ch];
                 incrementeVibrato(Ch);
             }
         }
@@ -82,55 +76,26 @@ void MidiIn::JouerClic(int value){
     }
 }
 
-/*
-void sirenium_in(unsigned char *buf){
-
-    int note = ((buf[5]-0X30)*1000) + ((buf[6]-0X30)*100) + ((buf[7]-0X30)*10) + (buf[8]-0X30);
-
-        note = ((note) /100 + 47);
-        pitchbendCh[5] = ((buf[7]-0X30)*10) + (buf[8]-0X30)+50;
-        if( pitchbendCh[5] >= 100 )
-        {
-            pitchbendCh[5] = (pitchbendCh[5] - 100);
-            note =note+1;
-        }
-    pitchbendCh[5]=pitchbendCh[5]/100.;
-    int volume = ((buf[9]-0X30)*1000) + ((buf[10]-0X30)*100) + ((buf[11]-0X30)*10) + (buf[12]-0X30);
-    if(note >= 50)[self RealTimeStartNote:5 :note :volume];
-            else [self RealTimeStartNote:5 :0 :0];
-    //[appDelegate.labelNoteSir setStringValue:[NSString stringWithFormat:@"%f",note + pitchbendCh[5]]];
-    //[appDelegate.labelVeloSir setStringValue:[NSString stringWithFormat:@"%i",volume ]];
-}
-*/
-
 
 void MidiIn::handleMIDIMessage2(int Ch, int value1, int value2){
-
     std::cout << "Message MIDI reçu: " << Ch << value1 << value2 << std::endl;
-        if (Ch >= 144 && Ch < 160 ) {
-            if (value2 != 0) {
-                /*if(value2==200) [self RealTimeStartNote:Ch-143	:value1	:0];
-                else [self RealTimeStartNote:Ch-143	:value1	:value2];*/
-                if(value2==200) {RealTimeStartNote(Ch-143, value1, 0);}
-                else {RealTimeStartNote(Ch-143, value1, value2);}
+    if (Ch >= 144 && Ch < 160 ) {
+        if (value2 != 0) {
+            if(value2==200) {RealTimeStartNote(Ch-143, value1, 0);}
+            else {RealTimeStartNote(Ch-143, value1, value2);}
 
-            }else {
-                //[self RealTimeStopNote:Ch-143	:value1	];
-                RealTimeStopNote(Ch-143, value1);
-            }
+        }else {
+            RealTimeStopNote(Ch-143, value1);
         }
-        else if (Ch >= 128 && Ch < 144 ) {
-            //[self RealTimeStopNote:Ch-127	:value1	];
-            RealTimeStopNote(Ch-127, value1);
-        }
-        else if (Ch >= 176 && Ch < 192) {
-            //[self HandleControlChange:Ch-175 :value1 :value2	];
-            HandleControlChange(Ch - 175, value1, value2);
-        }else if (Ch >=224 && Ch <240){
-            //[self HandlePitchWheel:Ch-223 :value1 :value2];
-            HandlePitchWheel(Ch-223, value1, value2);
-        }
-
+    }
+    else if (Ch >= 128 && Ch < 144 ) {
+        RealTimeStopNote(Ch-127, value1);
+    }
+    else if (Ch >= 176 && Ch < 192) {
+        HandleControlChange(Ch - 175, value1, value2);
+    }else if (Ch >=224 && Ch <240){
+        HandlePitchWheel(Ch-223, value1, value2);
+    }
 }
 
 void MidiIn::RealTimeStartNote(int Ch, int value1, int value2){
@@ -147,26 +112,19 @@ void MidiIn::RealTimeStartNote(int Ch, int value1, int value2){
         volumefinalCh[Ch] =(velociteCh[Ch] *(ControlCh[7][Ch]/127.0))*(500./127.) ;
         if(volumefinalCh[Ch] < 0.0)volumefinalCh[Ch]=0.0;
         if(volumefinalCh[Ch] > 500.0)volumefinalCh[Ch]=500.0;
-        //tourmoteurCh[Ch] = [self tabledecorresponcanceMidinote:(noteonfinalCh[Ch]): Ch];
         tourmoteurCh[Ch] = tabledecorresponcanceMidinote(noteonfinalCh[Ch], Ch);
-        //[self sendVariaCh:Ch];
         sendVariaCh(Ch);
-        //[self sendVolCh:(int)(volumefinalCh[Ch]*ChangevolumegeneralCh[Ch]):Ch];
         sendVolCh((int) (volumefinalCh[Ch]*ChangevolumegeneralCh[Ch]), Ch);
     }else if(Ch==10){
-        //if(value1 > 1 && value2 > 1)[self JouerClic:value1];
         if(value1 > 1 && value2 > 1) JouerClic(value1);
     }
-
 }
 
 void MidiIn::RealTimeStopNote(int Ch, int note){
     if (Ch < 8) {
         if(note == noteonCh[Ch])
         {
-            //[self sendVariaCh:Ch];
             sendVariaCh(Ch);
-            //[self sendVolCh:0 :Ch
             sendVolCh(0, Ch);
             velociteCh[Ch] = 0.0;
             volumefinalCh[Ch]=0.0;
@@ -198,10 +156,7 @@ void MidiIn::HandleControlChange(int Ch, int value1, int value2){
                 volumefinalCh[Ch] =(velociteCh[Ch] *(ControlCh[7][Ch]/127.0))*(500./127.) ;
                 if(volumefinalCh[Ch] < 0.0)volumefinalCh[Ch]=0.0;
                 if(volumefinalCh[Ch] > 500.0)volumefinalCh[Ch]=500.0;
-                //[self sendVolCh:(int)(volumefinalCh[Ch]*ChangevolumegeneralCh[Ch]):Ch];
                 sendVolCh((int)(volumefinalCh[Ch]*ChangevolumegeneralCh[Ch]), Ch);
-                //NSLog(@"Volume7:%i",(int)((velociteCh[Ch] *(ControlCh[7][Ch]/127.0))));
-
                 break;
             case 9 :
                 ControlCh[9][Ch] = value2 ;
@@ -230,12 +185,9 @@ void MidiIn::HandleControlChange(int Ch, int value1, int value2){
                 break;
             case 92 :
                 ControlCh[92][Ch]= value2 ;
-                //[self sendTremoloCh:(int)ControlCh[92][Ch]:(int)ControlCh[15][Ch]:Ch];
-
                 break;
             default:
                 break;
-
         }
     }
 }
@@ -243,10 +195,8 @@ void MidiIn::HandleControlChange(int Ch, int value1, int value2){
 void MidiIn::HandlePitchWheel(int Ch, int value1, int value2){
     if (Ch < 8) {
         pitchbendCh[Ch] = ((value2 << 7) | value1);
-        //pitchbendCh[Ch] = (float)(((SInt16)pitchbendCh[Ch]) - 8192) / 8192.;
         pitchbendCh[Ch] = (float)((pitchbendCh[Ch]) - 8192) / 8192.;
         noteonfinalCh[Ch] = (noteonCh[Ch] + pitchbendCh[Ch] )  ;
-        //tourmoteurCh[Ch] = [self tabledecorresponcanceMidinote:(noteonfinalCh[Ch]) :Ch ];
         tourmoteurCh[Ch] = tabledecorresponcanceMidinote(noteonfinalCh[Ch], Ch);
     }
 }
@@ -269,8 +219,6 @@ float MidiIn::tabledecorresponcanceMidinote(float note, int Ch){
 }
 
 void MidiIn::sendVariaCh(int Ch){
-        //std::cout << "sendVariaCh : " << Ch << std::endl;
-        //std::cout << "isWithSynth : " << isWithSynth << std::endl;
 
         float vibrato=0.;
         if ((varvfoCh[Ch] <=628) && (ControlCh[9][Ch]!=0) && (ControlCh[1][Ch]!=0))                // <=valeur 2 * PI (pour le calcul du sinus
@@ -294,7 +242,6 @@ void MidiIn::sendVariaCh(int Ch){
         if (ControlCh[15][Ch]!=0 && ControlCh[92][Ch]!=0 && isReleaseCh[Ch]==0 && isRampeCh[Ch]==0 && !isEnVeilleCh[Ch]) {
             int volume=(int)(volumefinalCh[Ch]*ChangevolumegeneralCh[Ch]);
             tremoloCh[Ch] =volume-(((volume*sin(vartremoloCh[Ch]/100.))/(256./ControlCh[92][Ch]))+(volume/(256./ControlCh[92][Ch])));
-            //[self sendVolCh:volume:Ch];
             sendVolCh(volume, Ch);
         }
         //***************************** Portamento*****************************
@@ -310,8 +257,6 @@ void MidiIn::sendVariaCh(int Ch){
 }
 
 void MidiIn::sendVolCh(int message, int Ch){
-    //std::cout << "sendVolCh : " << message << "-" << Ch << std::endl;
-
     if( (ControlCh[73][Ch] > 0.0) && (message >=2) && (ancienVeloCh[Ch]<=1  )){// ATTAC
         if(isRampeCh[Ch]==1){
             isRampeCh[Ch]=0;
@@ -429,15 +374,12 @@ void MidiIn::incrementeVibrato(int Ch){
     }
 }
 
-
 void MidiIn::definiMuteEthernet(bool ismuted, int Ch){
     if (ismuted) {
         tourmoteurCh[Ch] =0.0;
         noteonfinalCh[Ch]=0.0;
         volumefinalCh[Ch]=0.0;
-        //[self sendVariaCh:Ch];
         sendVariaCh(Ch);
-        //[self sendVolCh:0 :Ch ];
         sendVolCh(0, Ch);
     }
     isMuteEthernetCh[Ch]=ismuted;
