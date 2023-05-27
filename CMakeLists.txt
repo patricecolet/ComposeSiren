@@ -10,12 +10,7 @@ execute_process(
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-# Get the current date
-execute_process(
-        COMMAND date +%Y-%m-%d # sur zindoz: date /t ??
-        OUTPUT_VARIABLE CURRENT_DATE
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+string(TIMESTAMP CURRENT_DATE "%Y-%m-%d")
 set(PROJECT_DESCRIPTION "ComposeSiren du ${CURRENT_DATE} sur commit n ${GIT_HASH}")
 
 project(ComposeSiren VERSION 1.5.0 DESCRIPTION ${PROJECT_DESCRIPTION})
