@@ -43,6 +43,13 @@ You'll find [here][3] more info on how to use the plugins with Ableton Live.
 
 ### Building with CMake
 
+##### git tips
+
+* first clone the repository with the `--recursive` option to fetch JUCE
+  submodule, or run `git submodule update --init` after cloning.
+* if at some point the `Dependencies/JUCE` submodule is altered by some IDE, you
+  can reset it using `git submodule deinit -f .` then `git submodule update --init`
+
 At the moment the plugin is built :
 
 * on Mac OS 11.6.4 using Ninja (Xcode works too)
