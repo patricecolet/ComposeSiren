@@ -2,8 +2,18 @@ cmake_minimum_required(VERSION 3.19.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED)
 set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE INTERNAL "")
+# Get the git hash
+execute_process(
+        COMMAND git rev-parse --short HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 
-project(ComposeSiren VERSION 1.5.0)
+string(TIMESTAMP CURRENT_DATE "%Y-%m-%d")
+set(PROJECT_DESCRIPTION "ComposeSiren du ${CURRENT_DATE} sur commit n ${GIT_HASH}")
+
+project(ComposeSiren VERSION 1.5.0 DESCRIPTION ${PROJECT_DESCRIPTION})
 set(BaseTargetName ${PROJECT_NAME})
 set(VendorName "Mecanique Vivante")
 

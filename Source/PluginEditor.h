@@ -25,6 +25,7 @@ public:
 
 private:
     juce::Label labelPluginTitle;
+    juce::Label labelPluginSubTitle;
     juce::Image imgLogo;
 };
 

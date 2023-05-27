@@ -8,38 +8,56 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-
-
+#include "config.h"
+#include <iostream>
+#include <sstream>
 
 //==============================================================================
 // Component on the top of the main window
 headComponent::headComponent()
 {
-    addAndMakeVisible (labelPluginTitle);
+  addAndMakeVisible (labelPluginTitle);
+  addAndMakeVisible (labelPluginSubTitle);
+
+  labelPluginTitle.setColour (juce::Label::textColourId, juce::Colours::black);
+
+  std::stringstream versionText;
+  versionText
+      << "v"
+      << PROJECT_VERSION_MAJOR << "."
+      << PROJECT_VERSION_MINOR << "."
+      << PROJECT_VERSION_PATCH
+      ;
+
+  auto concatenatedString = versionText.str();
+
+  auto label = "COMPOSE SIREN " + concatenatedString;
+  labelPluginTitle.setText(label, juce::dontSendNotification);
+  labelPluginTitle.setFont (juce::Font (24.0f, juce::Font::italic));
+  labelPluginTitle.setJustificationType (juce::Justification::centred);
+  labelPluginSubTitle.setText(PROJECT_DESCRIPTION, juce::dontSendNotification);
+  labelPluginSubTitle.setFont (juce::Font (12.0f, juce::Font::italic));
+  labelPluginSubTitle.setJustificationType (juce::Justification::left);
+  imgLogo = juce::ImageFileFormat::loadFrom(BinaryData::Picto_Siren_40x37_png, BinaryData::Picto_Siren_40x37_pngSize);
+
 }
 
 void headComponent::paint (juce::Graphics& g)
 {
     //g.fillAll (juce::Colour (155, 153, 100)); // background color to see the component
-
-    labelPluginTitle.setColour (juce::Label::textColourId, juce::Colours::black);
-    labelPluginTitle.setText("COMPOSE SIREN", juce::dontSendNotification);
-
-    labelPluginTitle.setFont (juce::Font (24.0f, juce::Font::italic));
-    labelPluginTitle.setJustificationType (juce::Justification::centred);
-    
-    
-    imgLogo = juce::ImageFileFormat::loadFrom(BinaryData::Picto_Siren_40x37_png, BinaryData::Picto_Siren_40x37_pngSize);
     //g.drawImageAt(imgLogo, labelPluginTitle.getX() + labelPluginTitle.getWidth(), 0);
-    g.drawImageAt(imgLogo, getWidth()/2 + 90, 5);
 
-    
+
+  g.drawImageAt(imgLogo, getWidth()/2 + 90, 5);
 }
 
 
 void headComponent::resized()
 {
-    labelPluginTitle.setBounds (getLocalBounds());
+  auto area = getLocalBounds();
+  labelPluginTitle.setBounds(area.removeFromTop(30));
+  labelPluginSubTitle.setBounds(area.removeFromTop(20));
+
 }
 //==============================================================================
 
