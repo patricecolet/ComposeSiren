@@ -43,6 +43,11 @@ You'll find [here][3] more info on how to use the plugins with Ableton Live.
 
 ### Building with CMake
 
+#### dependencies
+
+linux:
+* `sudo apt-get install libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libfreetype-dev`
+
 ##### git tips
 
 * first clone the repository with the `--recursive` option to fetch JUCE
@@ -59,6 +64,10 @@ At the moment the plugin is built :
   * `cmake -B build -G "Visual Studio 17 2022" -C Config.cmake`
   * `cmake --build build --config Release`
   * `cpack --config build/CPackConfig.cmake`
-
+* on Linux
+  * `cmake -B builds/linux -G "Unix Makefiles"`
+  * `cmake --build builds/linux --config Release`
+  * no instruction for installer for now
+  
 The resulting installer (built with `productbuild` on mac and `NSIS` on windows)
 is created in `build/Packaging/ComposeSiren_Installer_artefacts`

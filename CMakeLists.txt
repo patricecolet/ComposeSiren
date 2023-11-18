@@ -91,6 +91,16 @@ target_link_libraries(${BaseTargetName}
     juce::juce_recommended_lto_flags
 )
 
+if(LINUX)
+  # to fix linker error looking for curl symbols
+  target_compile_definitions("${BaseTargetName}" PRIVATE JUCE_USE_CURL=0)
+
+  # to fix
+  # relocation R_X86_64_PC32 against symbol `_ZN10BinaryData18knobbackground_svgE' can not be used when making a shared object; recompile with -fPIC
+  # https://forum.juce.com/t/linux-cmake-and-fpic/54149/2
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
+
 target_compile_definitions(${BaseTargetName} 
   PUBLIC 
     JUCE_VST3_CAN_REPLACE_VST2=0
