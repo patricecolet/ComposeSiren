@@ -45,8 +45,26 @@ You'll find [here][3] more info on how to use the plugins with Ableton Live.
 
 #### dependencies
 
-linux:
-* `sudo apt-get install libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libfreetype-dev`
+##### linux
+
+`sudo apt-get install libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libfreetype-dev`
+
+##### Raspberry Pi
+
+```sh
+sudo apt install cmake libxrandr-dev libxinerama-dev libxcursor-dev libfreetype6-dev libasound2-dev
+```
+
+Resource path is hardcoded to point to `/home/sirenateur/Documents/src/mecaviv/ComposeSiren/Resources/`, so please checkout the repository in `/home/sirenateur/Documents/src/mecaviv/`:
+
+```shell
+cd ~/Documents
+mkdir src
+cd src
+mkdir mecaviv
+cd mecaviv
+git clone https://github.com/mecaviv/ComposeSiren.git
+```
 
 ##### git tips
 
@@ -64,10 +82,10 @@ At the moment the plugin is built :
   * `cmake -B build -G "Visual Studio 17 2022" -C Config.cmake`
   * `cmake --build build --config Release`
   * `cpack --config build/CPackConfig.cmake`
-* on Linux
+* on Linux or Raspberry
   * `cmake -B builds/linux -G "Unix Makefiles"`
   * `cmake --build builds/linux --config Release`
   * no instruction for installer for now
-  
+
 The resulting installer (built with `productbuild` on mac and `NSIS` on windows)
 is created in `build/Packaging/ComposeSiren_Installer_artefacts`

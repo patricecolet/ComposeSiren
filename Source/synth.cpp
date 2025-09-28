@@ -30,6 +30,8 @@ Synth::Synth(){
     
 #if defined (_MSC_VER)
     std::string dataFilePath = "C:\\Program Files\\Common Files\\Mecanique Vivante\\ComposeSiren\\Resources\\";
+#elif defined(__linux__)
+    std::string dataFilePath = "/home/sirenateur/Documents/src/mecaviv/ComposeSiren/Resources/";
 #else
 #if CMS_BUILD_WITH_PROJUCER
     std::string dataFilePath = juce::File::getSpecialLocation(juce::File::currentApplicationFile).getChildFile ("Contents/Resources/").getFullPathName().toStdString() + '/';
