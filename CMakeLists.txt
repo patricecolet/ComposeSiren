@@ -68,6 +68,16 @@ juce_generate_juce_header(${BaseTargetName})
 target_compile_features ("${BaseTargetName}" PRIVATE cxx_std_20)
 target_compile_definitions("${BaseTargetName}" PRIVATE CMS_BUILD_WITH_CMAKE=1)
 
+if(LINUX)
+  # to fix linker error looking for curl symbols
+  target_compile_definitions("${BaseTargetName}" PRIVATE JUCE_USE_CURL=0)
+
+  # to fix
+  # relocation R_X86_64_PC32 against symbol `_ZN10BinaryData18knobbackground_svgE' can not be used when making a shared object; recompile with -fPIC
+  # https://forum.juce.com/t/linux-cmake-and-fpic/54149/2
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
+
 add_subdirectory(Assets)
 add_subdirectory(Source)
 
@@ -90,16 +100,6 @@ target_link_libraries(${BaseTargetName}
     juce::juce_recommended_config_flags
     juce::juce_recommended_lto_flags
 )
-
-if(LINUX)
-  # to fix linker error looking for curl symbols
-  target_compile_definitions("${BaseTargetName}" PRIVATE JUCE_USE_CURL=0)
-
-  # to fix
-  # relocation R_X86_64_PC32 against symbol `_ZN10BinaryData18knobbackground_svgE' can not be used when making a shared object; recompile with -fPIC
-  # https://forum.juce.com/t/linux-cmake-and-fpic/54149/2
-  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-endif()
 
 target_compile_definitions(${BaseTargetName} 
   PUBLIC 
