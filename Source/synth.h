@@ -49,6 +49,10 @@ public:
     void setisCrossfade(int is);
     void timer512();
     
+    // Nouvelle méthode pour mettre à jour le sample rate de toutes les sirènes
+    void setSampleRate(double newSampleRate);
+
+    
     float getPan(int sireneNumber, int channel);
 
 

@@ -46,6 +46,9 @@ public:
 
   void timerAudio();
   void sirenium_in(unsigned char *buf);
+  
+  // Nouvelle méthode pour mettre à jour le sample rate
+  void setSampleRate(double newSampleRate);
 
 private:
 
@@ -67,7 +70,10 @@ private:
   float vitesseCh[17] = {0};
   float tremoloCh[17] = {0};
   int veloFinal[17];
-  float incrementationVibrato=(512./44100.)/0.025;
+  
+  // Variables pour le sample rate dynamique
+  double sampleRate;
+  float incrementationVibrato;
 
   bool isWithSoundON;
   int VolumeDuClic = 100;
@@ -92,6 +98,5 @@ private:
   int pitch_bend;
 
   const std::function<void(int,int)> onVelocityChanged;
-  
   const std::function<void(int, int)> onEngineSpeedChanged;
 };

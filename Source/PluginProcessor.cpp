@@ -11,6 +11,12 @@
 
 #include <functional>
 
+// Constante pour atténuer S7 (piccolo) qui est trop fort
+static const float S7_ATTENUATION = 0.3f;
+
+// Variable globale pour accéder au processor depuis Sirene
+SirenePlugAudioProcessor* g_processor = nullptr;
+
 //==============================================================================
 SirenePlugAudioProcessor::SirenePlugAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -24,8 +30,10 @@ SirenePlugAudioProcessor::SirenePlugAudioProcessor()
                        )
 #endif
 {
+    g_processor = this; // Assigner l'instance courante
     startTimer(1);
     this->mySynth = new Synth();
+    
     auto onVelocityChanged =
         [this](int ch, int val)
         {
@@ -111,7 +119,14 @@ void SirenePlugAudioProcessor::changeProgramName (int index, const juce::String&
 //==============================================================================
 void SirenePlugAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-
+    // Propager le sample rate aux composants qui en ont besoin
+    if (mySynth != nullptr) {
+        mySynth->setSampleRate(sampleRate);
+    }
+    
+    if (myMidiInHandler != nullptr) {
+        myMidiInHandler->setSampleRate(sampleRate);
+    }
 }
 
 void SirenePlugAudioProcessor::releaseResources()
@@ -146,6 +161,8 @@ bool SirenePlugAudioProcessor::isBusesLayoutSupported (const BusesLayout& layout
 
 void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
+    // Supprimer les messages de debug trop fréquents qui causent des plantages
+    
     buffer.clear();
 
     // process midi message
@@ -194,7 +211,7 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             sampleS4 * mySynth->getPan(4,0) +
             sampleS5 * mySynth->getPan(5,0) +
             sampleS6 * mySynth->getPan(6,0) +
-            sampleS7 * mySynth->getPan(7,0);
+            sampleS7 * mySynth->getPan(7,0) * S7_ATTENUATION;
 
         channelRight[sample] =
             sampleS1 * mySynth->getPan(1,1) +
@@ -203,7 +220,7 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             sampleS4 * mySynth->getPan(4,1) +
             sampleS5 * mySynth->getPan(5,1) +
             sampleS6 * mySynth->getPan(6,1) +
-            sampleS7 * mySynth->getPan(7,1);
+            sampleS7 * mySynth->getPan(7,1) * S7_ATTENUATION;
 
         if(channelLeft[sample] != 0) {
             ;

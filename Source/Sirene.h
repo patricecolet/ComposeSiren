@@ -29,7 +29,8 @@
 #include <math.h>
 #endif
 
-#define DeuxPieSampleRate (2.* M_PI / 44100)
+// Remplacer la macro hardcodée par une variable dynamique
+// #define DeuxPieSampleRate (2.* M_PI / 44100)
 #define MAX_Partiel 200
 #define NOMBRE_DE_NOTE 80
 #define MAX_TAB 1000
@@ -49,18 +50,23 @@ enum SireneSpeedSlideState {
 
 class Sirene {
 public:
-  Sirene(const std::string& str, const std::string& dataFolderPath);
+      Sirene(const std::string& str, const std::string& dataFolderPath);
   ~Sirene();
 
 private:
   // Pat added ------------------
-  std::string name;
-  int noteMidiCentMax;
-  int noteMin;
-  int pourcentClapetOff;
-  
-  int coeffPicolo;
-  float inertiaFactorTweak;
+std::string name;
+int noteMidiCentMax;
+int noteMin;
+int pourcentClapetOff;
+
+int coeffPicolo;
+float inertiaFactorTweak;
+
+// Variables pour le sample rate dynamique
+double sampleRate;
+double deuxPieSampleRate;
+
 public:
   void setMidicent(int note);
   void setnoteFromExt(int note);
@@ -69,6 +75,9 @@ public:
   void changeQualite(int qualt);
   void set16ou8Bit(bool is);
   void setVelocite(int velo);
+  
+  // Nouvelle méthode pour mettre à jour le sample rate
+  void setSampleRate(double newSampleRate);
 
   void setisCrossFade(int is);
 
@@ -79,11 +88,13 @@ public:
     std::string dataFilePath,
     std::string tabAmpFile,
     std::string tabFreqFile,
-    std::string dureTabFile
+    std::string dureTabFile,
+    std::string vectorIntervalFile
   );
   // to fill tabAmp, tabFreq and dureTabs
 
   inline float  calculwave() {
+    
     isChangementdenote = false;
     float wavefinal = 0.;
 
@@ -107,7 +118,10 @@ public:
       countKSup = 0;
     }
     countKSup++;
+         if (noteInf == 36) {
+         // Note debugging kept for reference
 
+     }
     if (ampvouluz < ampvoulu) ampvouluz += vitesseClape;
     if (ampvouluz > ampvoulu) ampvouluz -= vitesseClape;
 
@@ -119,13 +133,9 @@ public:
       if (is16Bit || isChangementdenote || count8bit) {
         if (isCrossfade) {
           phaseInf[i] += (
-            tabFreq[noteInf][countP[noteInf]][i] *
-            pitchSchift[noteInf] *
-            eloignementfreq / 100.
+            (tabFreq[noteInf][countP[noteInf]][i] * pitchSchift[noteInf] * eloignementfreq / 100.)
           ) + (
-            tabFreq[noteSup][countP[noteSup]][i] *
-            pitchSchift[noteSup] *
-            (100 - eloignementfreq) / 100.
+            (tabFreq[noteSup][countP[noteSup]][i] * pitchSchift[noteSup] * (100 - eloignementfreq) / 100.)
           );
 
           amp[i] = (
@@ -137,7 +147,7 @@ public:
           );
         } else {
           amp[i] = tabAmp[noteInf][countP[noteInf]][i];
-          phaseInf[i] += (tabFreq[noteInf][countP[noteInf]][i] * pitchSchift[noteInf]);
+          phaseInf[i] += tabFreq[noteInf][countP[noteInf]][i] * pitchSchift[noteInf];
         }
 
         ampz[i] = 0.001 * amp[i] + 0.999 * ampz[i] ;
@@ -147,7 +157,7 @@ public:
           phaseInf[i] = 0.;
 
       } else {
-        phaseInf[i] += (tabFreq[noteInf][countP[noteInf]][i] * pitchSchift[noteInf]);
+        phaseInf[i] += tabFreq[noteInf][countP[noteInf]][i] * pitchSchift[noteInf];
       }
     }
 
@@ -162,6 +172,7 @@ private:
   float tabAmp[NOMBRE_DE_NOTE][MAX_TAB][MAX_Partiel];
   float tabFreq[NOMBRE_DE_NOTE][MAX_TAB][MAX_Partiel];
   float dureTabs[NOMBRE_DE_NOTE][3]; // 0=dureTab en samples // 1=nombreMax de Tab // 2=FreqMoyenne
+  float vectorInterval[392]; // Données pour l'inertie des sirènes
 
   bool count8bit = true;
   double vitesseClape = 0.0002;

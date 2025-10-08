@@ -31,11 +31,8 @@ Synth::Synth(){
 #if defined (_MSC_VER)
     std::string dataFilePath = "C:\\Program Files\\Common Files\\Mecanique Vivante\\ComposeSiren\\Resources\\";
 #else
-#if CMS_BUILD_WITH_PROJUCER
-    std::string dataFilePath = juce::File::getSpecialLocation(juce::File::currentApplicationFile).getChildFile ("Contents/Resources/").getFullPathName().toStdString() + '/';
-#elif CMS_BUILD_WITH_CMAKE
+    // Utiliser le chemin externe pour les ressources FFT partagées
     std::string dataFilePath = "/Library/Audio/Plug-ins/Mecanique Vivante/ComposeSiren/Resources/";
-#endif
 #endif
     s1 = new Sirene("S1", dataFilePath);
     s2 = new Sirene("S2", dataFilePath);
@@ -54,6 +51,17 @@ Synth::~Synth(){
     delete (s5);
     delete (s6);
     delete (s7);
+}
+
+void Synth::setSampleRate(double newSampleRate) {
+    // Propager le sample rate à toutes les sirènes
+    s1->setSampleRate(newSampleRate);
+    s2->setSampleRate(newSampleRate);
+    s3->setSampleRate(newSampleRate);
+    s4->setSampleRate(newSampleRate);
+    s5->setSampleRate(newSampleRate);
+    s6->setSampleRate(newSampleRate);
+    s7->setSampleRate(newSampleRate);
 }
 
 
@@ -204,3 +212,5 @@ void Synth::setVitesse(int chanal, float vitesse){
         }
     }
 }
+
+

@@ -21,6 +21,10 @@ MidiIn::MidiIn(const std::function<void(int,int)> onVelocityChanged,
     , onEngineSpeedChanged(onEnginePitchChanged)
 
 {
+    // Initialiser le sample rate par défaut à 44.1kHz
+    sampleRate = 44100.0;
+    incrementationVibrato = (512.0 / sampleRate) / 0.025;
+    
     for (int i =0; i<17; i++)
     {
         ChangevolumegeneralCh[i]=1.0;
@@ -42,6 +46,10 @@ MidiIn::MidiIn(const std::function<void(int,int)> onVelocityChanged,
 MidiIn::~MidiIn(){
 }
 
+void MidiIn::setSampleRate(double newSampleRate) {
+    sampleRate = newSampleRate;
+    incrementationVibrato = (512.0 / sampleRate) / 0.025;
+}
 
 
 void MidiIn::timerAudio(){
@@ -78,7 +86,7 @@ void MidiIn::JouerClic(int value){
 
 
 void MidiIn::handleMIDIMessage2(int Ch, int value1, int value2){
-    std::cout << "Message MIDI reçu: " << Ch << value1 << value2 << std::endl;
+    // Supprimer le debug trop fréquent
     if (Ch >= 144 && Ch < 160 ) {
         if (value2 != 0) {
             if(value2==200) {RealTimeStartNote(Ch-143, value1, 0);}
@@ -99,7 +107,7 @@ void MidiIn::handleMIDIMessage2(int Ch, int value1, int value2){
 }
 
 void MidiIn::RealTimeStartNote(int Ch, int value1, int value2){
-    std::cout << "RealTimeStartNote: " << Ch << "-" << value1 << "-" << value2 << std::endl;
+    // Supprimer le debug trop fréquent
     if (Ch >=1 && Ch <8) {
         if(Ch ==1)countvibra = 0;
         if((ControlCh[1][Ch] != 0 && ControlCh[9][Ch] != 0 && ControlCh[11][Ch] != 0 && value2>0 && velociteCh[Ch]==0) ||(ControlCh[1][Ch] != 0 && ControlCh[9][Ch] != 0 && ControlCh[11][Ch] != 0 && value2>0 && value1 !=noteonCh[Ch] ) ){
@@ -225,6 +233,8 @@ void MidiIn::sendVariaCh(int Ch){
         {                                                       // et frequence de modulation diffÈrent de 0
             varvfoCh[Ch]=varvfoCh[Ch]+ incrementationVibrato*ControlCh[9][Ch];  // valeur frÈquence = f*10  12,7Hz = 127 pÈriode = 1/frÈq
             vibrato=(((tourmoteurCh[Ch]*constescursion*Control1FinalCh[Ch] )/12700.)*sin(varvfoCh[Ch]/100.));
+            
+
         }
         else
         {
@@ -395,7 +405,7 @@ void MidiIn::STOnVariateurCh(int Ch){
 
 void MidiIn::resetSireneCh(int Ch){
 
-    std::cout << "Reset: "<< Ch << std::endl;
+    // Supprimer le debug trop fréquent
 
     noteonfinalCh[Ch]=0.0;
     ///////////////////////////////////////////////////****** Ferme les volets
@@ -447,3 +457,5 @@ void MidiIn::resetSireneCh(int Ch){
     ancienVeloCh[Ch]=-1;
     AncienVolFinalCh[Ch]=-1;
 }
+
+
