@@ -11,4 +11,10 @@ target_sources(${BaseTargetName}
     # Sirene.h
     synth.cpp
     # synth.h
+    allpass.cpp
+    # allpass.h
+    comb.cpp
+    # comb.h
+    mareverbe.cpp
+    # mareverbe.h
 )

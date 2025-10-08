@@ -458,4 +458,31 @@ void MidiIn::resetSireneCh(int Ch){
     AncienVolFinalCh[Ch]=-1;
 }
 
+float MidiIn::getVolumeFinal(int channel) {
+    if (channel < 1 || channel > 16) return 0.0f;
+    // Retourner ControlCh[7] (0-127) converti en 0.0-1.0
+    return ControlCh[7][channel] / 127.0f;
+}
+
+void MidiIn::setVolumeFinal(int channel, float volume) {
+    if (channel < 1 || channel > 16) return;
+    // Convertir 0.0-1.0 en 0-127 et mettre à jour ControlCh[7]
+    ControlCh[7][channel] = volume * 127.0f;
+    if(ControlCh[7][channel] < 0.0f) ControlCh[7][channel] = 0.0f;
+    if(ControlCh[7][channel] > 127.0f) ControlCh[7][channel] = 127.0f;
+    
+    // Recalculer volumefinalCh avec la formule originale
+    volumefinalCh[channel] = (velociteCh[channel] * (ControlCh[7][channel]/127.0)) * (500./127.);
+    if(volumefinalCh[channel] < 0.0) volumefinalCh[channel] = 0.0;
+    if(volumefinalCh[channel] > 500.0) volumefinalCh[channel] = 500.0;
+    
+    // Appliquer le nouveau volume à la sirène
+    sendVolCh((int)(volumefinalCh[channel] * ChangevolumegeneralCh[channel]), channel);
+}
+
+bool MidiIn::isNoteOn(int channel) {
+    if (channel < 1 || channel > 16) return false;
+    return velociteCh[channel] > 0;
+}
+
 

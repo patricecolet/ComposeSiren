@@ -11,6 +11,8 @@
 #pragma once
 
 #include "Sirene.h"
+#include "mareverbe.h"
+#include <JuceHeader.h>
 
 
 
@@ -52,6 +54,18 @@ public:
     // Nouvelle méthode pour mettre à jour le sample rate de toutes les sirènes
     void setSampleRate(double newSampleRate);
 
+    // Méthodes pour le mixeur
+    void setMasterVolume(int sireneNumber, float volume); // Volume indépendant CC70
+    float getMasterVolume(int sireneNumber);
+    void setReverbEnabled(bool enabled);
+    bool isReverbEnabled();
+    void setReverbHighpass(float freq); // 20Hz-2000Hz
+    float getReverbHighpass();
+    void setReverbLowpass(float freq); // 2kHz-20kHz
+    float getReverbLowpass();
+    
+    // Appliquer la reverb avec filtres sur un buffer
+    void processReverbWithFilters(float* left, float* right, int numSamples);
     
     float getPan(int sireneNumber, int channel);
 
@@ -63,7 +77,10 @@ public:
     Sirene* s5;
     Sirene* s6;
     Sirene* s7;
-
+    
+    // Reverb - publique pour accès direct depuis UI et Processor
+    mareverbe* reverb;
+    
 
 
 private:
@@ -76,6 +93,28 @@ private:
     float PanS5;//0.1;
     float PanS6;//0.9;
     float PanS7;//0.65;
+    
+    // Volumes indépendants (master volume) par sirène - CC70
+    float masterVolumeS1;
+    float masterVolumeS2;
+    float masterVolumeS3;
+    float masterVolumeS4;
+    float masterVolumeS5;
+    float masterVolumeS6;
+    float masterVolumeS7;
+    
+    // Reverb
+    bool reverbEnabled;
+    float reverbHighpassFreq; // 20-2000 Hz
+    float reverbLowpassFreq;  // 2000-20000 Hz
+    
+    // Filtres pour la reverb (stéréo) - pointeurs pour éviter les problèmes de copie
+    std::unique_ptr<juce::IIRFilter> reverbHighpassL;
+    std::unique_ptr<juce::IIRFilter> reverbHighpassR;
+    std::unique_ptr<juce::IIRFilter> reverbLowpassL;
+    std::unique_ptr<juce::IIRFilter> reverbLowpassR;
+    double currentSampleRate;
+    
     //float Volsynthz;
     //AudioComponentDescription cd1;
     //AudioComponentDescription cdmix;

@@ -49,6 +49,11 @@ public:
   
   // Nouvelle méthode pour mettre à jour le sample rate
   void setSampleRate(double newSampleRate);
+  
+  // Méthodes pour accéder au volume et état Note On/Off pour l'interface
+  float getVolumeFinal(int channel); // Retourne 0.0-1.0
+  void setVolumeFinal(int channel, float volume); // 0.0-1.0
+  bool isNoteOn(int channel); // true si une note est active
 
 private:
 

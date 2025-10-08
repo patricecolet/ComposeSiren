@@ -54,6 +54,92 @@ private:
 
 //==============================================================================
 
+//==============================================================================
+// Strip de mixage individuelle pour une sirène
+class MixerStripComponent : public juce::Component, 
+                           public juce::Slider::Listener,
+                           private juce::Timer
+{
+public:
+    MixerStripComponent(SirenePlugAudioProcessor& p, int sireneNum);
+    ~MixerStripComponent();
+
+    void paint (juce::Graphics&) override;
+    void resized() override;
+    void sliderValueChanged(juce::Slider* slider) override;
+
+private:
+    SirenePlugAudioProcessor& audioProcessor;
+    int sireneNumber;
+    
+    juce::Label nameLabel;
+    juce::Slider panKnob;
+    juce::Label panLabel;
+    juce::Label masterVolumeLabel; // Pour le master volume CC70
+    juce::Slider masterVolumeSlider; // Volume indépendant CC70
+    
+    // LED Note On/Off
+    bool ledState = false;
+    
+    void timerCallback();
+};
+
+//==============================================================================
+// Section de reverb
+class ReverbComponent : public juce::Component,
+                       public juce::Slider::Listener,
+                       public juce::Button::Listener
+{
+public:
+    ReverbComponent(SirenePlugAudioProcessor& p);
+    ~ReverbComponent();
+
+    void paint (juce::Graphics&) override;
+    void resized() override;
+    void sliderValueChanged(juce::Slider* slider) override;
+    void buttonClicked(juce::Button* button) override;
+
+private:
+    SirenePlugAudioProcessor& audioProcessor;
+    
+    juce::ToggleButton enableButton;
+    juce::Slider roomSizeSlider;
+    juce::Slider wetSlider;
+    juce::Slider dampSlider;
+    juce::Slider widthSlider;
+    juce::Slider highpassSlider;
+    juce::Slider lowpassSlider;
+    
+    juce::Label titleLabel;
+    juce::Label roomSizeLabel;
+    juce::Label wetLabel;
+    juce::Label dampLabel;
+    juce::Label widthLabel;
+    juce::Label highpassLabel;
+    juce::Label lowpassLabel;
+    juce::Label ccInfoLabel; // Pour afficher les CC sur canal 16
+};
+
+//==============================================================================
+// Composant mixeur complet
+class MixerComponent : public juce::Component
+{
+public:
+    MixerComponent(SirenePlugAudioProcessor& p);
+    ~MixerComponent();
+
+    void paint (juce::Graphics&) override;
+    void resized() override;
+
+private:
+    SirenePlugAudioProcessor& audioProcessor;
+    
+    std::unique_ptr<MixerStripComponent> strips[7];
+    std::unique_ptr<ReverbComponent> reverb;
+};
+
+//==============================================================================
+
 
 class SirenePlugAudioProcessorEditor  : public juce::AudioProcessorEditor//, public juce::Button::Listener
 
@@ -76,6 +162,7 @@ private:
     
     headComponent head;
     MainCommandsComponent mainCommands;
+    MixerComponent mixer;
     
     /*
     void buttonClicked (juce::Button* button) override
