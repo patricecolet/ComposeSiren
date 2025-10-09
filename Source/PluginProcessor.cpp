@@ -292,7 +292,7 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         // TODO: Investiguer pourquoi le niveau audio est ~1000x trop faible sur Linux
         // Fix temporaire : gain de compensation sur Linux uniquement
         #if defined(__linux__) || defined(__unix__)
-        const float LINUX_OUTPUT_GAIN = 100.0f;
+        const float LINUX_OUTPUT_GAIN = 50.0f;
         channelLeft[sample] *= LINUX_OUTPUT_GAIN;
         channelRight[sample] *= LINUX_OUTPUT_GAIN;
         #endif
