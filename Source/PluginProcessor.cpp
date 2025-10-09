@@ -289,7 +289,7 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         sampleS7 *= mySynth->getMasterVolume(7);
 
         // Mixer avec panoramique
-        float mixLeft =
+        channelLeft[sample] =
             sampleS1 * mySynth->getPan(1,0) +
             sampleS2 * mySynth->getPan(2,0) +
             sampleS3 * mySynth->getPan(3,0) +
@@ -298,7 +298,7 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             sampleS6 * mySynth->getPan(6,0) +
             sampleS7 * mySynth->getPan(7,0) * S7_ATTENUATION;
 
-        float mixRight =
+        channelRight[sample] =
             sampleS1 * mySynth->getPan(1,1) +
             sampleS2 * mySynth->getPan(2,1) +
             sampleS3 * mySynth->getPan(3,1) +
@@ -307,10 +307,13 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             sampleS6 * mySynth->getPan(6,1) +
             sampleS7 * mySynth->getPan(7,1) * S7_ATTENUATION;
         
-        // Gain de sortie temporaire pour debug (x1000)
-        const float OUTPUT_GAIN = 1000.0f;
-        channelLeft[sample] = mixLeft * OUTPUT_GAIN;
-        channelRight[sample] = mixRight * OUTPUT_GAIN;
+        // TODO: Investiguer pourquoi le niveau audio est ~1000x trop faible sur Linux
+        // Fix temporaire : gain de compensation sur Linux uniquement
+        #if defined(__linux__) || defined(__unix__)
+        const float LINUX_OUTPUT_GAIN = 100.0f;
+        channelLeft[sample] *= LINUX_OUTPUT_GAIN;
+        channelRight[sample] *= LINUX_OUTPUT_GAIN;
+        #endif
 
         if(channelLeft[sample] != 0) {
             ;
