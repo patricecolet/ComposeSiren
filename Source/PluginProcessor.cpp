@@ -479,6 +479,12 @@ int* SirenePlugAudioProcessor::getIntFromMidiMessage(const void * data, int size
 
 void SirenePlugAudioProcessor::timerCallback()
 {
+    static int timerCallCount = 0;
+    if (timerCallCount == 0) {
+        DBG("=== Timer is running (1Hz) ===");
+    }
+    timerCallCount = (timerCallCount + 1) % 1000; // Log toutes les 1000 fois (1 seconde)
+    
     mySynth->s1->setnote();
     mySynth->s2->setnote();
     mySynth->s3->setnote();

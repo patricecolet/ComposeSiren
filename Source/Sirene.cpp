@@ -80,21 +80,19 @@ void Sirene::setSampleRate(double newSampleRate) {
 void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmpFile, std::string tabFreqFile, std::string dureTabFile, std::string vectorIntervalFile){
 
   std::ifstream myfile;
-  
-  DBG("=== Loading Sirene: " << name << " ===");
-  DBG("Base path: " << dataFilePath);
+  bool allLoaded = true;
 
   // Read tabAmpFile
   std::string fullPath = dataFilePath + tabAmpFile;
   myfile.open(fullPath, std::ios::binary);
   if (myfile.is_open())
   {
-    myfile.read(reinterpret_cast<char *>(tabAmp), sizeof tabAmp); // todo: check that input.gcount() is the number of bytes expected
-    DBG("✓ Loaded " << tabAmpFile << " (" << (int)myfile.gcount() << " bytes)");
+    myfile.read(reinterpret_cast<char *>(tabAmp), sizeof tabAmp);
     myfile.close();
   }
   else { 
     DBG("✗ FAILED to load " << fullPath);
+    allLoaded = false;
   }
 
   // Read dataFreqFile
@@ -102,12 +100,12 @@ void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmp
   myfile.open(fullPath, std::ios::binary);
   if (myfile.is_open())
   {
-    myfile.read(reinterpret_cast<char *>(tabFreq), sizeof tabFreq); // todo: check that input.gcount() is the number of bytes expected
-    DBG("✓ Loaded " << tabFreqFile << " (" << (int)myfile.gcount() << " bytes)");
+    myfile.read(reinterpret_cast<char *>(tabFreq), sizeof tabFreq);
     myfile.close();
   }
   else { 
     DBG("✗ FAILED to load " << fullPath);
+    allLoaded = false;
   }
 
   // Read dureTabFile
@@ -115,12 +113,12 @@ void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmp
   myfile.open(fullPath, std::ios::binary);
   if (myfile.is_open())
   {
-    myfile.read(reinterpret_cast<char *>(dureTabs), sizeof dureTabs); // todo: check that input.gcount() is the number of bytes expected
-    DBG("✓ Loaded " << dureTabFile << " (" << (int)myfile.gcount() << " bytes)");
+    myfile.read(reinterpret_cast<char *>(dureTabs), sizeof dureTabs);
     myfile.close();
   }
   else { 
     DBG("✗ FAILED to load " << fullPath);
+    allLoaded = false;
   }
 
   // Read vectorIntervalFile
@@ -128,12 +126,19 @@ void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmp
   myfile.open(fullPath, std::ios::binary);
   if (myfile.is_open())
   {
-    myfile.read(reinterpret_cast<char *>(vectorInterval), sizeof vectorInterval); // todo: check that input.gcount() is the number of bytes expected
-    DBG("✓ Loaded " << vectorIntervalFile << " (" << (int)myfile.gcount() << " bytes)");
+    myfile.read(reinterpret_cast<char *>(vectorInterval), sizeof vectorInterval);
     myfile.close();
   }
   else { 
     DBG("✗ FAILED to load " << fullPath);
+    allLoaded = false;
+  }
+  
+  // Log du résultat global
+  if (allLoaded) {
+    DBG("✓ All resources loaded for " << name);
+  } else {
+    DBG("✗ Some resources failed to load for " << name);
   }
 
 }
