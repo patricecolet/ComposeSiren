@@ -108,8 +108,6 @@ void MidiIn::handleMIDIMessage2(int Ch, int value1, int value2){
 
 void MidiIn::RealTimeStartNote(int Ch, int value1, int value2){
     if (Ch >=1 && Ch <8) {
-        DBG("=== Note ON === Ch:" << Ch << " Note:" << value1 << " Vel:" << value2);
-        
         if(Ch ==1)countvibra = 0;
         if((ControlCh[1][Ch] != 0 && ControlCh[9][Ch] != 0 && ControlCh[11][Ch] != 0 && value2>0 && velociteCh[Ch]==0) ||(ControlCh[1][Ch] != 0 && ControlCh[9][Ch] != 0 && ControlCh[11][Ch] != 0 && value2>0 && value1 !=noteonCh[Ch] ) ){
             Control1FinalCh[Ch]=0;
@@ -122,9 +120,6 @@ void MidiIn::RealTimeStartNote(int Ch, int value1, int value2){
         if(volumefinalCh[Ch] < 0.0)volumefinalCh[Ch]=0.0;
         if(volumefinalCh[Ch] > 500.0)volumefinalCh[Ch]=500.0;
         tourmoteurCh[Ch] = tabledecorresponcanceMidinote(noteonfinalCh[Ch], Ch);
-        
-        DBG("    tourmoteur=" << tourmoteurCh[Ch] << " volumefinal=" << volumefinalCh[Ch]);
-        
         sendVariaCh(Ch);
         sendVolCh((int) (volumefinalCh[Ch]*ChangevolumegeneralCh[Ch]), Ch);
     }else if(Ch==10){
@@ -312,8 +307,6 @@ void MidiIn::sendVolCh(int message, int Ch){
             }
             else vitesseClapetCh[Ch]=veloFinal[Ch]=message;
 
-            DBG("    sendVolCh: calling onVelocityChanged(Ch=" << Ch << ", velo=" << veloFinal[Ch] << ") isWithSynth=" << (isWithSynth ? "true" : "false"));
-            
             if(isWithSynth && Ch !=8){
                 onVelocityChanged(Ch, veloFinal[Ch]);
             }

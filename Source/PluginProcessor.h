@@ -64,7 +64,6 @@ public:
     MidiIn* myMidiInHandler;
     Synth* mySynth;
     int sampleCountForMidiInTimer = 0;
-    int debugLogCounter = 0;
 private:
     //==============================================================================
     int* midiMessageIntArray;
