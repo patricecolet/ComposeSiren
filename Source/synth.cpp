@@ -56,12 +56,37 @@ Synth::Synth(){
     isWithClic=false;
     WideCoeff=1.5;
     
-#if defined (_MSC_VER)
-    std::string dataFilePath = "C:\\Program Files\\Common Files\\Mecanique Vivante\\ComposeSiren\\Resources\\";
+    // Déterminer le chemin des ressources selon le contexte
+    std::string dataFilePath;
+    
+#ifdef JucePlugin_Build_Standalone
+    // Pour le standalone, chercher les ressources dans le bundle de l'app
+    juce::File resourcesDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+                                .getParentDirectory()
+                                .getChildFile("../Resources");
+    if (!resourcesDir.exists()) {
+        // Fallback: chercher dans le dossier du projet (pour développement)
+        resourcesDir = juce::File::getSpecialLocation(juce::File::currentApplicationFile)
+                        .getParentDirectory()
+                        .getParentDirectory()
+                        .getParentDirectory()
+                        .getChildFile("Resources");
+    }
+    dataFilePath = resourcesDir.getFullPathName().toStdString() + "/";
 #else
-    // Utiliser le chemin externe pour les ressources FFT partagées
-    std::string dataFilePath = "/Library/Audio/Plug-ins/Mecanique Vivante/ComposeSiren/Resources/";
+    // Pour les plugins (AU, VST, etc.), utiliser le chemin d'installation
+    #if defined (_MSC_VER)
+        // Windows
+        dataFilePath = "C:\\Program Files\\Common Files\\Mecanique Vivante\\ComposeSiren\\Resources\\";
+    #elif defined (__APPLE__)
+        // macOS
+        dataFilePath = "/Library/Audio/Plug-ins/Mecanique Vivante/ComposeSiren/Resources/";
+    #else
+        // Linux
+        dataFilePath = "/usr/share/ComposeSiren/Resources/";
+    #endif
 #endif
+    
     s1 = new Sirene("S1", dataFilePath);
     s2 = new Sirene("S2", dataFilePath);
     s3 = new Sirene("S3", dataFilePath);
