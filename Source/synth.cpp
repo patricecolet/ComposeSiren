@@ -82,8 +82,8 @@ Synth::Synth(){
     
     // Log du chemin des ressources
     DBG("=== ComposeSiren Resources Path ===");
-    DBG("Resources directory: " + resourcesDir.getFullPathName());
-    DBG("Directory exists: " + juce::String(resourcesDir.exists() ? "YES" : "NO"));
+    DBG("Resources directory: " << resourcesDir.getFullPathName());
+    DBG("Directory exists: " << (resourcesDir.exists() ? "YES" : "NO"));
 #else
     // Pour les plugins (AU, VST, etc.), utiliser le chemin d'installation
     #if defined (_MSC_VER)

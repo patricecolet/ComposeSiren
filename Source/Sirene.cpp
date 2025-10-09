@@ -81,8 +81,8 @@ void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmp
 
   std::ifstream myfile;
   
-  DBG("=== Loading Sirene: " + name + " ===");
-  DBG("Base path: " + juce::String(dataFilePath));
+  DBG("=== Loading Sirene: " << name << " ===");
+  DBG("Base path: " << dataFilePath);
 
   // Read tabAmpFile
   std::string fullPath = dataFilePath + tabAmpFile;
@@ -90,11 +90,11 @@ void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmp
   if (myfile.is_open())
   {
     myfile.read(reinterpret_cast<char *>(tabAmp), sizeof tabAmp); // todo: check that input.gcount() is the number of bytes expected
-    DBG("✓ Loaded " + juce::String(tabAmpFile) + " (" + juce::String((int)myfile.gcount()) + " bytes)");
+    DBG("✓ Loaded " << tabAmpFile << " (" << (int)myfile.gcount() << " bytes)");
     myfile.close();
   }
   else { 
-    DBG("✗ FAILED to load " + juce::String(fullPath));
+    DBG("✗ FAILED to load " << fullPath);
   }
 
   // Read dataFreqFile
@@ -103,11 +103,11 @@ void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmp
   if (myfile.is_open())
   {
     myfile.read(reinterpret_cast<char *>(tabFreq), sizeof tabFreq); // todo: check that input.gcount() is the number of bytes expected
-    DBG("✓ Loaded " + juce::String(tabFreqFile) + " (" + juce::String((int)myfile.gcount()) + " bytes)");
+    DBG("✓ Loaded " << tabFreqFile << " (" << (int)myfile.gcount() << " bytes)");
     myfile.close();
   }
   else { 
-    DBG("✗ FAILED to load " + juce::String(fullPath));
+    DBG("✗ FAILED to load " << fullPath);
   }
 
   // Read dureTabFile
@@ -116,11 +116,11 @@ void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmp
   if (myfile.is_open())
   {
     myfile.read(reinterpret_cast<char *>(dureTabs), sizeof dureTabs); // todo: check that input.gcount() is the number of bytes expected
-    DBG("✓ Loaded " + juce::String(dureTabFile) + " (" + juce::String((int)myfile.gcount()) + " bytes)");
+    DBG("✓ Loaded " << dureTabFile << " (" << (int)myfile.gcount() << " bytes)");
     myfile.close();
   }
   else { 
-    DBG("✗ FAILED to load " + juce::String(fullPath));
+    DBG("✗ FAILED to load " << fullPath);
   }
 
   // Read vectorIntervalFile
@@ -129,11 +129,11 @@ void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmp
   if (myfile.is_open())
   {
     myfile.read(reinterpret_cast<char *>(vectorInterval), sizeof vectorInterval); // todo: check that input.gcount() is the number of bytes expected
-    DBG("✓ Loaded " + juce::String(vectorIntervalFile) + " (" + juce::String((int)myfile.gcount()) + " bytes)");
+    DBG("✓ Loaded " << vectorIntervalFile << " (" << (int)myfile.gcount() << " bytes)");
     myfile.close();
   }
   else { 
-    DBG("✗ FAILED to load " + juce::String(fullPath));
+    DBG("✗ FAILED to load " << fullPath);
   }
 
 }
