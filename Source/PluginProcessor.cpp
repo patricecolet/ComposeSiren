@@ -289,7 +289,7 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         sampleS7 *= mySynth->getMasterVolume(7);
 
         // Mixer avec panoramique
-        channelLeft[sample] =
+        float mixLeft =
             sampleS1 * mySynth->getPan(1,0) +
             sampleS2 * mySynth->getPan(2,0) +
             sampleS3 * mySynth->getPan(3,0) +
@@ -298,7 +298,7 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             sampleS6 * mySynth->getPan(6,0) +
             sampleS7 * mySynth->getPan(7,0) * S7_ATTENUATION;
 
-        channelRight[sample] =
+        float mixRight =
             sampleS1 * mySynth->getPan(1,1) +
             sampleS2 * mySynth->getPan(2,1) +
             sampleS3 * mySynth->getPan(3,1) +
@@ -306,6 +306,11 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             sampleS5 * mySynth->getPan(5,1) +
             sampleS6 * mySynth->getPan(6,1) +
             sampleS7 * mySynth->getPan(7,1) * S7_ATTENUATION;
+        
+        // Gain de sortie temporaire pour debug (x1000)
+        const float OUTPUT_GAIN = 1000.0f;
+        channelLeft[sample] = mixLeft * OUTPUT_GAIN;
+        channelRight[sample] = mixRight * OUTPUT_GAIN;
 
         if(channelLeft[sample] != 0) {
             ;
