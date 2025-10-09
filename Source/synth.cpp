@@ -72,6 +72,12 @@ Synth::Synth(){
                         .getParentDirectory()
                         .getChildFile("Resources");
     }
+    #if !defined(__APPLE__) && !defined(_MSC_VER)
+    // Fallback Linux : chercher dans le chemin système
+    if (!resourcesDir.exists()) {
+        resourcesDir = juce::File("/usr/share/ComposeSiren/Resources");
+    }
+    #endif
     dataFilePath = resourcesDir.getFullPathName().toStdString() + "/";
 #else
     // Pour les plugins (AU, VST, etc.), utiliser le chemin d'installation
