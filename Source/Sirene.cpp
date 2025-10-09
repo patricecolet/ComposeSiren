@@ -137,8 +137,10 @@ void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmp
   // Log du résultat global et vérification des données
   if (allLoaded) {
     DBG("✓ All resources loaded for " << name);
-    // Vérifier quelques valeurs pour détecter un problème d'endianness
-    DBG("  Data check: tabAmp[0][0][0]=" << tabAmp[0][0][0] << " tabFreq[0][0][0]=" << tabFreq[0][0][0] << " dureTabs[0][0]=" << dureTabs[0][0]);
+    // Vérifier plusieurs valeurs pour validation
+    DBG("  Data: Amp[5][5][5]=" << tabAmp[5][5][5] << " Freq[5][5][5]=" << tabFreq[5][5][5]);
+    DBG("  Data: dureTabs[10][0]=" << dureTabs[10][0] << " dureTabs[10][1]=" << dureTabs[10][1]);
+    DBG("  Data: vectorInterval[50]=" << vectorInterval[50] << " vectorInterval[100]=" << vectorInterval[100]);
   } else {
     DBG("✗ Some resources failed to load for " << name);
   }
