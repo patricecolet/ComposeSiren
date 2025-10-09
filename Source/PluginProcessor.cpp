@@ -268,8 +268,14 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         
         // Debug log toutes les secondes
         if (debugLogCounter == 0 && (sampleS1 != 0 || sampleS2 != 0 || sampleS3 != 0 || sampleS4 != 0 || sampleS5 != 0 || sampleS6 != 0 || sampleS7 != 0)) {
-            DBG("=== Audio Debug (S1 only) ===");
-            DBG("S1 raw: " << sampleS1 << " | Master vol: " << mySynth->getMasterVolume(1) << " | CC7: " << myMidiInHandler->getVolumeFinal(1));
+            DBG("=== Audio Debug (ALL) ===");
+            if (sampleS1 != 0) DBG("S1: " << sampleS1 << " | MasterVol: " << mySynth->getMasterVolume(1) << " | CC7: " << myMidiInHandler->getVolumeFinal(1));
+            if (sampleS2 != 0) DBG("S2: " << sampleS2 << " | MasterVol: " << mySynth->getMasterVolume(2) << " | CC7: " << myMidiInHandler->getVolumeFinal(2));
+            if (sampleS3 != 0) DBG("S3: " << sampleS3 << " | MasterVol: " << mySynth->getMasterVolume(3) << " | CC7: " << myMidiInHandler->getVolumeFinal(3));
+            if (sampleS4 != 0) DBG("S4: " << sampleS4 << " | MasterVol: " << mySynth->getMasterVolume(4) << " | CC7: " << myMidiInHandler->getVolumeFinal(4));
+            if (sampleS5 != 0) DBG("S5: " << sampleS5 << " | MasterVol: " << mySynth->getMasterVolume(5) << " | CC7: " << myMidiInHandler->getVolumeFinal(5));
+            if (sampleS6 != 0) DBG("S6: " << sampleS6 << " | MasterVol: " << mySynth->getMasterVolume(6) << " | CC7: " << myMidiInHandler->getVolumeFinal(6));
+            if (sampleS7 != 0) DBG("S7: " << sampleS7 << " | MasterVol: " << mySynth->getMasterVolume(7) << " | CC7: " << myMidiInHandler->getVolumeFinal(7));
         }
         debugLogCounter = (debugLogCounter + 1) % 44100; // Log toutes les ~1 secondes à 44.1kHz
         
