@@ -37,6 +37,7 @@ SirenePlugAudioProcessor::SirenePlugAudioProcessor()
     auto onVelocityChanged =
         [this](int ch, int val)
         {
+            DBG("=== onVelocityChanged === Ch:" << ch << " Val:" << val);
 	        mySynth->setVelocite(ch, val);
         };
 
