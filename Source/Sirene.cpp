@@ -80,42 +80,61 @@ void Sirene::setSampleRate(double newSampleRate) {
 void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmpFile, std::string tabFreqFile, std::string dureTabFile, std::string vectorIntervalFile){
 
   std::ifstream myfile;
+  
+  DBG("=== Loading Sirene: " + name + " ===");
+  DBG("Base path: " + juce::String(dataFilePath));
 
   // Read tabAmpFile
-  myfile.open(dataFilePath + tabAmpFile, std::ios::binary);
+  std::string fullPath = dataFilePath + tabAmpFile;
+  myfile.open(fullPath, std::ios::binary);
   if (myfile.is_open())
   {
     myfile.read(reinterpret_cast<char *>(tabAmp), sizeof tabAmp); // todo: check that input.gcount() is the number of bytes expected
+    DBG("✓ Loaded " + juce::String(tabAmpFile) + " (" + juce::String((int)myfile.gcount()) + " bytes)");
     myfile.close();
   }
-     else { /* Binary file not found */ }
+  else { 
+    DBG("✗ FAILED to load " + juce::String(fullPath));
+  }
 
   // Read dataFreqFile
-  myfile.open(dataFilePath + tabFreqFile, std::ios::binary);
+  fullPath = dataFilePath + tabFreqFile;
+  myfile.open(fullPath, std::ios::binary);
   if (myfile.is_open())
   {
     myfile.read(reinterpret_cast<char *>(tabFreq), sizeof tabFreq); // todo: check that input.gcount() is the number of bytes expected
+    DBG("✓ Loaded " + juce::String(tabFreqFile) + " (" + juce::String((int)myfile.gcount()) + " bytes)");
     myfile.close();
   }
-  else { /* Binary file not found */ }
+  else { 
+    DBG("✗ FAILED to load " + juce::String(fullPath));
+  }
 
   // Read dureTabFile
-  myfile.open(dataFilePath + dureTabFile, std::ios::binary);
+  fullPath = dataFilePath + dureTabFile;
+  myfile.open(fullPath, std::ios::binary);
   if (myfile.is_open())
   {
     myfile.read(reinterpret_cast<char *>(dureTabs), sizeof dureTabs); // todo: check that input.gcount() is the number of bytes expected
+    DBG("✓ Loaded " + juce::String(dureTabFile) + " (" + juce::String((int)myfile.gcount()) + " bytes)");
     myfile.close();
   }
-  else { /* Binary file not found */ }
+  else { 
+    DBG("✗ FAILED to load " + juce::String(fullPath));
+  }
 
   // Read vectorIntervalFile
-  myfile.open(dataFilePath + vectorIntervalFile, std::ios::binary);
+  fullPath = dataFilePath + vectorIntervalFile;
+  myfile.open(fullPath, std::ios::binary);
   if (myfile.is_open())
   {
     myfile.read(reinterpret_cast<char *>(vectorInterval), sizeof vectorInterval); // todo: check that input.gcount() is the number of bytes expected
+    DBG("✓ Loaded " + juce::String(vectorIntervalFile) + " (" + juce::String((int)myfile.gcount()) + " bytes)");
     myfile.close();
   }
-  else { /* Binary file not found */ }
+  else { 
+    DBG("✗ FAILED to load " + juce::String(fullPath));
+  }
 
 }
 
