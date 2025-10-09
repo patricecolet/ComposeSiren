@@ -145,6 +145,9 @@ void MidiIn::HandleControlChange(int Ch, int value1, int value2){
     if (Ch < 9) {
         switch (value1)
         {
+            case 121: // Reset All Controllers (standard MIDI)
+                resetSireneCh(Ch);
+                break;
             case 1 :
                 ControlCh[1][Ch] = value2 ;
                 if(ControlCh[11][Ch]==0)Control1FinalCh[Ch] =ControlCh[1][Ch];

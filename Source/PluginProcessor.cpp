@@ -188,8 +188,17 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
                     mySynth->setMasterVolume(channel, volume);
                 }
             }
-            else if (channel == 16) { // Canal 16 : contrôles reverb globale
+            else if (channel == 16) { // Canal 16 : contrôles reverb globale et reset
                 switch (ccNumber) {
+                    case 121: // Reset All Controllers - Reset toutes les sirènes
+                        myMidiInHandler->resetSireneCh(1);
+                        myMidiInHandler->resetSireneCh(2);
+                        myMidiInHandler->resetSireneCh(3);
+                        myMidiInHandler->resetSireneCh(4);
+                        myMidiInHandler->resetSireneCh(5);
+                        myMidiInHandler->resetSireneCh(6);
+                        myMidiInHandler->resetSireneCh(7);
+                        break;
                     case 64: // Enable reverb
                         mySynth->setReverbEnabled(ccValue >= 64);
                         break;
