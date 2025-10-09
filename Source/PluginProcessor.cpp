@@ -119,6 +119,10 @@ void SirenePlugAudioProcessor::changeProgramName (int index, const juce::String&
 //==============================================================================
 void SirenePlugAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+    DBG("=== prepareToPlay ===");
+    DBG("Sample rate: " << sampleRate);
+    DBG("Samples per block: " << samplesPerBlock);
+    
     // Propager le sample rate aux composants qui en ont besoin
     if (mySynth != nullptr) {
         mySynth->setSampleRate(sampleRate);
@@ -260,6 +264,13 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         sampleS5 = mySynth->s5->calculwave();
         sampleS6 = mySynth->s6->calculwave();
         sampleS7 = mySynth->s7->calculwave();
+        
+        // Debug log toutes les secondes
+        if (debugLogCounter == 0 && (sampleS1 != 0 || sampleS2 != 0 || sampleS3 != 0 || sampleS4 != 0 || sampleS5 != 0 || sampleS6 != 0 || sampleS7 != 0)) {
+            DBG("=== Audio Debug (S1 only) ===");
+            DBG("S1 raw: " << sampleS1 << " | Master vol: " << mySynth->getMasterVolume(1) << " | CC7: " << myMidiInHandler->getVolumeFinal(1));
+        }
+        debugLogCounter = (debugLogCounter + 1) % 44100; // Log toutes les ~1 secondes à 44.1kHz
         
         // Appliquer le master volume (CC70) - multiplicatif avec le volume original
         sampleS1 *= mySynth->getMasterVolume(1);
