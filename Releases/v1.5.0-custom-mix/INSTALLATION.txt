@@ -1,0 +1,89 @@
+ComposeSiren v1.5.0 - Mixer + Reverb Edition
+=============================================
+
+CONTENU DU PACKAGE
+------------------
+- ComposeSiren.app         : Application standalone
+- ComposeSiren.component   : Plugin Audio Unit (macOS)
+
+NOTE: Le plugin VST3 n'est pas inclus dans cette version à cause d'un bug 
+de compilation avec macOS 15 et JUCE. Il sera disponible quand JUCE 
+publiera un correctif.
+
+
+INSTALLATION
+------------
+
+1. APPLICATION STANDALONE
+   Copiez ComposeSiren.app dans votre dossier Applications :
+   
+   /Applications/ComposeSiren.app
+
+2. PLUGIN AUDIO UNIT
+   Copiez ComposeSiren.component dans le dossier Audio Units :
+   
+   ~/Library/Audio/Plug-Ins/Components/ComposeSiren.component
+   
+   ou pour une installation système (tous les utilisateurs) :
+   
+   /Library/Audio/Plug-Ins/Components/ComposeSiren.component
+
+
+UTILISATION
+-----------
+
+### Interface graphique
+
+L'interface comprend :
+- 7 canaux mixer (S1-S7) avec Volume, Pan, Reset et indicateur MIDI
+- Section Reverb (Canal 16) avec Room Size, Damping, Dry/Wet, Width
+
+### Contrôle MIDI
+
+CANAUX 1-7 (Sirènes S1-S7) :
+  CC7   : Volume individuel
+  CC10  : Pan (0=gauche, 64=centre, 127=droite)
+  CC70  : Master Volume indépendant
+  CC121 : Reset du canal
+
+CANAL 16 (Reverb globale) :
+  CC64  : Enable (≥64 = ON)
+  CC65  : Room Size
+  CC66  : Dry/Wet
+  CC67  : Damping
+  CC68  : Width
+  CC121 : Reset TOUTES les sirènes
+
+
+COMPATIBILITÉ
+-------------
+- macOS 11.6.4 ou supérieur
+- Architecture : Universal (Intel + Apple Silicon)
+- Testé avec Ableton Live
+
+
+SUPPORT
+-------
+https://github.com/patriceguyot/ComposeSiren
+Branche : custom-mix
+
+
+VERSION HISTORY
+---------------
+v1.5.0 (2025-10-10)
+- Mixer 7 canaux avec contrôles Volume + Pan individuels
+- Reverb globale intégrée
+- Interface graphique moderne
+- Contrôle MIDI complet via CC
+- Reset MIDI via CC121
+- Indicateurs d'activité MIDI temps réel
+- Sauvegarde d'état complète
+
+
+LICENCE
+-------
+Voir LICENSE dans le dépôt GitHub
+
+
+© 2025 Mécanique Vivante
+

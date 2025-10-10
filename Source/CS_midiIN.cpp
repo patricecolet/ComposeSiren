@@ -21,6 +21,10 @@ MidiIn::MidiIn(const std::function<void(int,int)> onVelocityChanged,
     , onEngineSpeedChanged(onEnginePitchChanged)
 
 {
+    // Initialiser le sample rate par défaut à 44.1kHz
+    sampleRate = 44100.0;
+    incrementationVibrato = (512.0 / sampleRate) / 0.025;
+    
     for (int i =0; i<17; i++)
     {
         ChangevolumegeneralCh[i]=1.0;
@@ -42,6 +46,10 @@ MidiIn::MidiIn(const std::function<void(int,int)> onVelocityChanged,
 MidiIn::~MidiIn(){
 }
 
+void MidiIn::setSampleRate(double newSampleRate) {
+    sampleRate = newSampleRate;
+    incrementationVibrato = (512.0 / sampleRate) / 0.025;
+}
 
 
 void MidiIn::timerAudio(){
@@ -78,7 +86,7 @@ void MidiIn::JouerClic(int value){
 
 
 void MidiIn::handleMIDIMessage2(int Ch, int value1, int value2){
-    std::cout << "Message MIDI reçu: " << Ch << value1 << value2 << std::endl;
+    // Supprimer le debug trop fréquent
     if (Ch >= 144 && Ch < 160 ) {
         if (value2 != 0) {
             if(value2==200) {RealTimeStartNote(Ch-143, value1, 0);}
@@ -99,7 +107,6 @@ void MidiIn::handleMIDIMessage2(int Ch, int value1, int value2){
 }
 
 void MidiIn::RealTimeStartNote(int Ch, int value1, int value2){
-    std::cout << "RealTimeStartNote: " << Ch << "-" << value1 << "-" << value2 << std::endl;
     if (Ch >=1 && Ch <8) {
         if(Ch ==1)countvibra = 0;
         if((ControlCh[1][Ch] != 0 && ControlCh[9][Ch] != 0 && ControlCh[11][Ch] != 0 && value2>0 && velociteCh[Ch]==0) ||(ControlCh[1][Ch] != 0 && ControlCh[9][Ch] != 0 && ControlCh[11][Ch] != 0 && value2>0 && value1 !=noteonCh[Ch] ) ){
@@ -138,6 +145,9 @@ void MidiIn::HandleControlChange(int Ch, int value1, int value2){
     if (Ch < 9) {
         switch (value1)
         {
+            case 121: // Reset All Controllers (standard MIDI)
+                resetSireneCh(Ch);
+                break;
             case 1 :
                 ControlCh[1][Ch] = value2 ;
                 if(ControlCh[11][Ch]==0)Control1FinalCh[Ch] =ControlCh[1][Ch];
@@ -225,6 +235,8 @@ void MidiIn::sendVariaCh(int Ch){
         {                                                       // et frequence de modulation diffÈrent de 0
             varvfoCh[Ch]=varvfoCh[Ch]+ incrementationVibrato*ControlCh[9][Ch];  // valeur frÈquence = f*10  12,7Hz = 127 pÈriode = 1/frÈq
             vibrato=(((tourmoteurCh[Ch]*constescursion*Control1FinalCh[Ch] )/12700.)*sin(varvfoCh[Ch]/100.));
+            
+
         }
         else
         {
@@ -395,7 +407,7 @@ void MidiIn::STOnVariateurCh(int Ch){
 
 void MidiIn::resetSireneCh(int Ch){
 
-    std::cout << "Reset: "<< Ch << std::endl;
+    // Supprimer le debug trop fréquent
 
     noteonfinalCh[Ch]=0.0;
     ///////////////////////////////////////////////////****** Ferme les volets
@@ -447,3 +459,32 @@ void MidiIn::resetSireneCh(int Ch){
     ancienVeloCh[Ch]=-1;
     AncienVolFinalCh[Ch]=-1;
 }
+
+float MidiIn::getVolumeFinal(int channel) {
+    if (channel < 1 || channel > 16) return 0.0f;
+    // Retourner ControlCh[7] (0-127) converti en 0.0-1.0
+    return ControlCh[7][channel] / 127.0f;
+}
+
+void MidiIn::setVolumeFinal(int channel, float volume) {
+    if (channel < 1 || channel > 16) return;
+    // Convertir 0.0-1.0 en 0-127 et mettre à jour ControlCh[7]
+    ControlCh[7][channel] = volume * 127.0f;
+    if(ControlCh[7][channel] < 0.0f) ControlCh[7][channel] = 0.0f;
+    if(ControlCh[7][channel] > 127.0f) ControlCh[7][channel] = 127.0f;
+    
+    // Recalculer volumefinalCh avec la formule originale
+    volumefinalCh[channel] = (velociteCh[channel] * (ControlCh[7][channel]/127.0)) * (500./127.);
+    if(volumefinalCh[channel] < 0.0) volumefinalCh[channel] = 0.0;
+    if(volumefinalCh[channel] > 500.0) volumefinalCh[channel] = 500.0;
+    
+    // Appliquer le nouveau volume à la sirène
+    sendVolCh((int)(volumefinalCh[channel] * ChangevolumegeneralCh[channel]), channel);
+}
+
+bool MidiIn::isNoteOn(int channel) {
+    if (channel < 1 || channel > 16) return false;
+    return velociteCh[channel] > 0;
+}
+
+

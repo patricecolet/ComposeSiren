@@ -7,7 +7,8 @@
               displaySplashScreen="1" version="1.5.0" pluginManufacturerCode="McVv"
               pluginCode="MvCs" aaxIdentifier="com.mecaviv.ComposeSiren" cppLanguageStandard="latest"
               pluginName="ComposeSiren" pluginDesc="ComposeSiren" pluginManufacturer="Mecanique Vivante"
-              defines="CMS_BUILD_WITH_PROJUCER=1" headerPath="/usr/local/share/juce/include">
+              defines="CMS_BUILD_WITH_PROJUCER=1" headerPath="/usr/local/share/juce/include"
+              smallIcon="ozpZKk" bigIcon="ozpZKk">
   <MAINGROUP id="UbOsgL" name="ComposeSiren">
     <GROUP id="{180CB63E-E4B9-595B-08AD-75743DC296F2}" name="Assets">
       <FILE id="ozpZKk" name="Picto_Siren_40x37.png" compile="0" resource="1"
@@ -64,6 +65,12 @@
       <FILE id="FlWeMC" name="Sirene.h" compile="0" resource="0" file="Source/Sirene.h"/>
       <FILE id="NJ7hP8" name="synth.cpp" compile="1" resource="0" file="Source/synth.cpp"/>
       <FILE id="e3Vu9C" name="Sirene.cpp" compile="1" resource="0" file="Source/Sirene.cpp"/>
+      <FILE id="AP1234" name="allpass.h" compile="0" resource="0" file="Source/allpass.h"/>
+      <FILE id="AP5678" name="allpass.cpp" compile="1" resource="0" file="Source/allpass.cpp"/>
+      <FILE id="CB1234" name="comb.h" compile="0" resource="0" file="Source/comb.h"/>
+      <FILE id="CB5678" name="comb.cpp" compile="1" resource="0" file="Source/comb.cpp"/>
+      <FILE id="RV1234" name="mareverbe.h" compile="0" resource="0" file="Source/mareverbe.h"/>
+      <FILE id="RV5678" name="mareverbe.cpp" compile="1" resource="0" file="Source/mareverbe.cpp"/>
       <FILE id="O9Z234" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="NkG4hy" name="PluginProcessor.h" compile="0" resource="0"
