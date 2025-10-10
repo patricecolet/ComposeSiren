@@ -1,8 +1,10 @@
 # ComposeSiren v1.5.0 - Release Notes
 
+![ComposeSiren Icon](https://github.com/patricecolet/ComposeSiren/releases/download/v1.5.0/Icon_1024.png)
+
 **Branche** : `custom-mix`  
 **Date** : 10 octobre 2025  
-**Commit** : `078635d`
+**Commit** : `c80dca1`
 
 ## 🎛️ Nouveautés principales
 
@@ -25,6 +27,7 @@
 - Sliders de reverb **horizontaux** pour une meilleure ergonomie
 - Boutons de pan **plus grands** pour une manipulation précise
 - Label simplifié pour la section reverb : **"Canal 16"**
+- **Icône de l'app** : Picto Siren haute résolution
 
 ### Contrôle MIDI complet
 - **Canaux 1-7** : Contrôle individuel des sirènes
@@ -48,8 +51,14 @@
 ## 📦 Contenu du package
 
 ### macOS (47 MB)
-- **ComposeSiren.app** : Application standalone
-- **ComposeSiren.component** : Plugin Audio Unit
+- **ComposeSiren-v1.5.0-custom-mix-macOS.dmg** : Package complet
+  - ComposeSiren.app : Application standalone
+  - ComposeSiren.component : Plugin Audio Unit
+  - INSTALLATION.txt : Instructions d'installation
+
+### Icônes haute résolution
+- **ComposeSiren.icns** (518 KB) : Format macOS natif multi-résolutions
+- **Icon_1024.png** (8.9 MB) : Version PNG 1024x1024 pour développeurs
 
 ### ⚠️ Limitations connues
 - **VST3 non disponible** : Le plugin VST3 ne compile pas à cause d'un bug JUCE avec macOS 15
@@ -84,16 +93,14 @@ Voir `INSTALLATION.txt` dans le DMG pour plus de détails.
 
 ## 📝 Historique des commits
 
+- `c80dca1` : Add automation scripts for app icon integration
+- `9b90bf7` : Add high-resolution app icon based on Picto_Siren
+- `878311c` : Add release notes for v1.5.0
 - `078635d` : Add v1.5.0 macOS release package (Standalone + AU)
 - `bb86d72` : Document mixer/reverb features and MIDI CC mapping (v1.5.0)
 - `500010f` : Add MIDI reset via CC121 (per channel or global on ch16)
 - `c7bc15d` : Reduce Linux output gain to x50
-- `d0e4c55` : Make pan knobs larger, master volume slider blue, all reverb horizontal sliders
-- `f9db6bb` : Change background to dark grey
-- `4ac9fe5` : Update header: COMPOSE SIREN v1.5.0, branch name, simplified reverb label
-- `e7a53df` : Remove CC7 display, make pan knobs more visible, change reverb knobs to sliders
-- `5bd8c9a` : Add MIDI Note On/Off indicators for sirens
-- `b4f2e8c` : Keep existing CC7 volume control, bind UI to it, add note indicators
+- Plus d'une dizaine de commits pour l'interface, mixer et reverb...
 
 ## 🐛 Bugs corrigés
 
