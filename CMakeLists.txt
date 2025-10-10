@@ -122,4 +122,6 @@ if(APPLE) # we generate a cmake subproject to build the installer
   include(Packaging/Apple/MakePackage.cmake)
 elseif(WIN32) # we just proceed the regular way
   include(Packaging/Windows/MakePackage.cmake)
+elseif(LINUX) # Debian package for Raspberry Pi and other Linux systems
+  include(Packaging/Linux/MakePackage.cmake)
 endif()
