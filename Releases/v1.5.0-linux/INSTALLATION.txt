@@ -1,0 +1,81 @@
+ComposeSiren v1.5.0 - Linux/Raspberry Pi ARM64
+==============================================
+
+INSTALLATION
+------------
+
+1. Download the .deb package:
+   ComposeSiren_1.5.0_arm64.deb
+
+2. Install the package:
+   $ sudo dpkg -i ComposeSiren_1.5.0_arm64.deb
+
+3. Install dependencies (if not already installed):
+   $ sudo apt-get install -f
+   
+   Or manually:
+   $ sudo apt-get install libx11-6 libxrandr2 libxinerama1 libxcursor1 \
+     libfreetype6 libasound2
+
+4. Launch ComposeSiren:
+   $ ComposeSiren
+   
+   Or from applications menu: Sound & Video → ComposeSiren
+
+
+WHAT'S INSTALLED
+----------------
+
+- Standalone application: /usr/bin/ComposeSiren
+- Audio sample data: /usr/share/ComposeSiren/Resources/
+
+
+MIDI SETUP
+----------
+
+ComposeSiren supports ALSA MIDI. To connect with other applications:
+
+1. Launch ComposeSiren
+2. List MIDI ports:
+   $ aconnect -l
+3. Connect (example, adjust port numbers):
+   $ aconnect 128:0 129:0
+
+For use with PureData, launch pd with ALSA MIDI:
+   $ pd -alsamidi -mididev 1
+
+
+FEATURES
+--------
+
+- 7 independent sirens (S1-S7) with individual volume and pan
+- Reverb effect with 6 parameters
+- MIDI CC control for real-time parameter changes
+- MIDI reset via CC121
+- Compatible with JACK and ALSA audio systems
+
+
+UNINSTALLATION
+--------------
+
+$ sudo dpkg -r composesiren
+
+
+TROUBLESHOOTING
+---------------
+
+If you encounter audio issues:
+- Check ALSA mixer: $ alsamixer
+- Verify audio device settings in ComposeSiren preferences
+
+For X11 display issues when using SSH:
+- Connect with X11 forwarding: $ ssh -Y user@raspberry
+- Or use VNC for remote access
+
+
+SUPPORT
+-------
+
+Project: https://github.com/patricecolet/ComposeSiren
+Website: https://www.mecanique-vivante.com
+
