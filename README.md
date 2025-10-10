@@ -72,6 +72,16 @@ Tous les paramètres du mixer et de la reverb sont sauvegardés automatiquement 
 - État ON/OFF de la reverb
 
 
+### Installation v1.5.0
+
+**Téléchargement :**
+- macOS : `Releases/ComposeSiren-v1.5.0-custom-mix-macOS.dmg` (47 MB)
+  - Inclus : Standalone + Audio Unit
+  - Note : VST3 non disponible (bug JUCE avec macOS 15, en attente d'un fix)
+
+**Instructions d'installation** : Voir `INSTALLATION.txt` dans le DMG
+
+
 ### Version history:
 
 - 1.5.0 - **Mixer + Reverb intégré** (branche custom-mix)
@@ -109,11 +119,14 @@ linux:
 * if at some point the `Dependencies/JUCE` submodule is altered by some IDE, you
   can reset it using `git submodule deinit -f .` then `git submodule update --init`
 
+⚠️ **Note importante** : Le build CMake échoue actuellement sur macOS 15 à cause d'APIs obsolètes dans JUCE (`CGWindowListCreateImage`, `CVDisplayLink*`). En attendant un correctif JUCE, utilisez **Xcode** pour compiler :
+
 At the moment the plugin is built :
 
-* on Mac OS 11.6.4 using Ninja (Xcode works too)
-  * `cmake -B build -G Ninja -C Config.cmake -DCMAKE_BUILD_TYPE=Release` to setup the build system
-  * `cmake --build build --config Release` to build the plugins and generate the installer
+* on Mac OS 11.6.4+ using **Xcode** (CMake ne fonctionne pas avec macOS 15)
+  * Ouvrir `Builds/MacOSX/ComposeSiren.xcodeproj`
+  * Compiler les targets : `ComposeSiren - Standalone Plugin` et `ComposeSiren - AU`
+  * Note : VST3 échoue aussi à cause du même bug JUCE
 * on Windows 10 using Visual Studio (couldn't get Ninja to work on windows yet)
   * `cmake -B build -G "Visual Studio 17 2022" -C Config.cmake`
   * `cmake --build build --config Release`
