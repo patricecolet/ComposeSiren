@@ -7,7 +7,8 @@
               displaySplashScreen="1" version="1.5.0" pluginManufacturerCode="McVv"
               pluginCode="MvCs" aaxIdentifier="com.mecaviv.ComposeSiren" cppLanguageStandard="latest"
               pluginName="ComposeSiren" pluginDesc="ComposeSiren" pluginManufacturer="Mecanique Vivante"
-              defines="CMS_BUILD_WITH_PROJUCER=1" headerPath="/usr/local/share/juce/include">
+              defines="CMS_BUILD_WITH_PROJUCER=1" headerPath="/usr/local/share/juce/include"
+              smallIcon="ozpZKk" bigIcon="ozpZKk">
   <MAINGROUP id="UbOsgL" name="ComposeSiren">
     <GROUP id="{180CB63E-E4B9-595B-08AD-75743DC296F2}" name="Assets">
       <FILE id="ozpZKk" name="Picto_Siren_40x37.png" compile="0" resource="1"

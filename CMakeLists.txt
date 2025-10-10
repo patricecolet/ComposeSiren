@@ -39,8 +39,8 @@ juce_add_plugin(${BaseTargetName}
   PRODUCT_NAME "${BaseTargetName}"
   COMPANY_NAME "${VendorName}"
   VERSION ${CMAKE_PROJECT_VERSION}
-  ICON_BIG "${CMAKE_SOURCE_DIR}/Assets/Icon.png"
-  ICON_SMALL "${CMAKE_SOURCE_DIR}/Assets/Icon.png"
+  ICON_BIG "${CMAKE_SOURCE_DIR}/Assets/Icon_1024.png"
+  ICON_SMALL "${CMAKE_SOURCE_DIR}/Assets/Icon_1024.png"
   FORMATS ${FORMATS}
   # A four-character manufacturer id with at least one upper-case character
   PLUGIN_MANUFACTURER_CODE McVv
