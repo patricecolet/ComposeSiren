@@ -131,10 +131,47 @@ At the moment the plugin is built :
   * `cmake -B build -G "Visual Studio 17 2022" -C Config.cmake`
   * `cmake --build build --config Release`
   * `cpack --config build/CPackConfig.cmake`
-* on Linux
+* on Linux (including Raspberry Pi ARM64)
   * `cmake -B builds/linux -G "Unix Makefiles"`
   * `cmake --build builds/linux --config Release`
-  * no instruction for installer for now
+  * `cd builds/linux && cpack -G DEB` to create Debian package
+  * The .deb package is created in `builds/linux/Packaging/ComposeSiren_Installer_artefacts/`
+  * Install with: `sudo dpkg -i ComposeSiren_*.deb`
   
-The resulting installer (built with `productbuild` on mac and `NSIS` on windows)
+The resulting installer (built with `productbuild` on mac, `NSIS` on windows, and `DEB` on Linux)
 is created in `build/Packaging/ComposeSiren_Installer_artefacts`
+
+### Linux Installation Notes
+
+The Linux builds install:
+- Standalone binary: `/usr/bin/ComposeSiren`
+- Resources (audio data): `/usr/share/ComposeSiren/Resources/`
+
+For Raspberry Pi or other ARM systems, ensure you have the dependencies installed:
+```bash
+sudo apt-get install libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libfreetype-dev libasound2-dev
+```
+
+### Publishing Releases on GitHub
+
+To create and publish a new release with the Debian package:
+
+1. **Create and push a version tag:**
+   ```bash
+   git tag -a v1.5.0 -m "Release version 1.5.0"
+   git push origin v1.5.0
+   ```
+
+2. **Create a GitHub Release:**
+   - Go to the repository on GitHub
+   - Click "Releases" → "Create a new release"
+   - Select the tag you just created (v1.5.0)
+   - Add release notes
+   - Attach the .deb package from `builds/linux/Packaging/ComposeSiren_Installer_artefacts/ComposeSiren_1.5.0_arm64.deb`
+   - Publish the release
+
+Users can then download and install with:
+```bash
+wget https://github.com/patricecolet/ComposeSiren/releases/download/v1.5.0/ComposeSiren_1.5.0_arm64.deb
+sudo dpkg -i ComposeSiren_1.5.0_arm64.deb
+```

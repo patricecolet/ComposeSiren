@@ -60,24 +60,53 @@ Synth::Synth(){
     std::string dataFilePath;
     
 #ifdef JucePlugin_Build_Standalone
-    // Pour le standalone, chercher les ressources dans le bundle de l'app
-    juce::File resourcesDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
-                                .getParentDirectory()
-                                .getChildFile("../Resources");
-    if (!resourcesDir.exists()) {
-        // Fallback: chercher dans le dossier du projet (pour développement)
-        resourcesDir = juce::File::getSpecialLocation(juce::File::currentApplicationFile)
-                        .getParentDirectory()
-                        .getParentDirectory()
-                        .getParentDirectory()
-                        .getChildFile("Resources");
-    }
-    #if !defined(__APPLE__) && !defined(_MSC_VER)
-    // Fallback Linux : chercher dans le chemin système
-    if (!resourcesDir.exists()) {
+    // Pour le standalone, chercher les ressources dans plusieurs emplacements
+    juce::File resourcesDir;
+    
+    #if defined(__APPLE__)
+        // macOS: chercher dans le bundle de l'app
+        resourcesDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+                                    .getParentDirectory()
+                                    .getChildFile("../Resources");
+        if (!resourcesDir.exists()) {
+            // Fallback pour développement
+            resourcesDir = juce::File::getSpecialLocation(juce::File::currentApplicationFile)
+                            .getParentDirectory()
+                            .getParentDirectory()
+                            .getParentDirectory()
+                            .getChildFile("Resources");
+        }
+    #elif defined(_MSC_VER)
+        // Windows: chercher à côté de l'exécutable
+        resourcesDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+                                    .getParentDirectory()
+                                    .getChildFile("Resources");
+    #else
+        // Linux: chercher dans plusieurs emplacements possibles
         resourcesDir = juce::File("/usr/share/ComposeSiren/Resources");
-    }
+        
+        if (!resourcesDir.exists()) {
+            // Fallback: chemin macOS (pour compatibilité/symlink)
+            resourcesDir = juce::File("/Library/Audio/Plug-ins/Mecanique Vivante/ComposeSiren/Resources");
+        }
+        
+        if (!resourcesDir.exists()) {
+            // Fallback: à côté de l'exécutable (développement)
+            resourcesDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+                                        .getParentDirectory()
+                                        .getChildFile("Resources");
+        }
+        
+        if (!resourcesDir.exists()) {
+            // Fallback: dossier du projet (développement)
+            auto projectDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+                                        .getParentDirectory()
+                                        .getParentDirectory()
+                                        .getParentDirectory();
+            resourcesDir = projectDir.getChildFile("Resources");
+        }
     #endif
+    
     dataFilePath = resourcesDir.getFullPathName().toStdString() + "/";
 #else
     // Pour les plugins (AU, VST, etc.), utiliser le chemin d'installation
