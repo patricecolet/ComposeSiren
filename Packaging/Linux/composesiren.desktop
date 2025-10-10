@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=ComposeSiren
+GenericName=Siren Synthesizer
+Comment=Synthesizer for the Mécanique Vivante Siren Orchestra
+Exec=/usr/bin/ComposeSiren
+Icon=composesiren
+Terminal=false
+Categories=AudioVideo;Audio;Midi;Synthesizer;
+Keywords=audio;sound;midi;synthesizer;siren;
+StartupNotify=true
+

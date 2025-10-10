@@ -21,6 +21,21 @@ install(
   FILES_MATCHING PATTERN "data*"
 )
 
+# Install .desktop file for application menu
+install(
+  FILES "${CMAKE_CURRENT_LIST_DIR}/composesiren.desktop"
+  DESTINATION "share/applications"
+  COMPONENT Standalone
+)
+
+# Install icon for application menu (using the 40x37 picto as it's smaller)
+install(
+  FILES "${CMAKE_SOURCE_DIR}/Assets/Picto_Siren_40x37.png"
+  DESTINATION "share/pixmaps"
+  RENAME "composesiren.png"
+  COMPONENT Standalone
+)
+
 ################################################################################
 # Configure CPack for Debian
 
