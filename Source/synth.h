@@ -57,6 +57,8 @@ public:
     // Méthodes pour le mixeur
     void setMasterVolume(int sireneNumber, float volume); // Volume indépendant CC70
     float getMasterVolume(int sireneNumber);
+    void setGlobalGain(int ccValue); // Gain global via CC7 canal 16 (formule [dbtorms~] PD: 10^((cc-100)/20))
+    float getGlobalGain(); // Retourne le gain actuel
     void setReverbEnabled(bool enabled);
     bool isReverbEnabled();
     void setReverbHighpass(float freq); // 20Hz-2000Hz
@@ -102,6 +104,9 @@ private:
     float masterVolumeS5;
     float masterVolumeS6;
     float masterVolumeS7;
+    
+    // Gain global - CC7 canal 16
+    float globalGain;
     
     // Reverb
     bool reverbEnabled;

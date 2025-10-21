@@ -63,18 +63,19 @@ Stereo reverb with controls:
 | 70  | Master Volume | 0-127 | Master volume independent of CC7 |
 | 121 | Reset         | any   | Reset all channel parameters |
 
-#### Channel 16 (Global Reverb)
+#### Channel 16 (Global Gain + Reverb)
 
-| CC  | Parameter | Range | Description |
-|-----|-----------|-------|-------------|
-| 64  | Enable    | 0-127 | Enable/disable reverb (≥64 = ON) |
-| 65  | Room Size | 0-127 | Reverb size |
-| 66  | Dry/Wet   | 0-127 | Balance dry/effect (0=100% dry, 127=100% wet) |
-| 67  | Damping   | 0-127 | High-frequency damping |
-| 68  | Highpass  | 0-127 | Highpass filter (20Hz - 2kHz) |
-| 69  | Lowpass   | 0-127 | Lowpass filter (2kHz - 20kHz) |
-| 70  | Width     | 0-127 | Stereo width (0=mono, 127=wide stereo) |
-| 121 | Reset All | any   | Reset ALL sirens (channels 1-7) |
+| CC  | Parameter     | Range | Description |
+|-----|---------------|-------|-------------|
+| 7   | Global Gain   | 0-127 | Output gain (100=0dB/×1.0, formula: 10^((cc-100)/20)) |
+| 64  | Enable        | 0-127 | Enable/disable reverb (≥64 = ON) |
+| 65  | Room Size     | 0-127 | Reverb size |
+| 66  | Dry/Wet       | 0-127 | Balance dry/effect (0=100% dry, 127=100% wet) |
+| 67  | Damping       | 0-127 | High-frequency damping |
+| 68  | Highpass      | 0-127 | Highpass filter (20Hz - 2kHz) |
+| 69  | Lowpass       | 0-127 | Lowpass filter (2kHz - 20kHz) |
+| 70  | Width         | 0-127 | Stereo width (0=mono, 127=wide stereo) |
+| 121 | Reset All     | any   | Reset ALL sirens (channels 1-7) |
 
 ### 💾 State Saving
 

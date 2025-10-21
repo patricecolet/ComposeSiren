@@ -49,6 +49,7 @@ FEATURES
 --------
 
 - 7 independent sirens (S1-S7) with individual volume and pan
+- Global gain control (CC7 on channel 16, dB→RMS formula)
 - Reverb effect with 6 parameters
 - MIDI CC control for real-time parameter changes
 - MIDI reset via CC121

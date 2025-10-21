@@ -190,6 +190,9 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             }
             else if (channel == 16) { // Canal 16 : contrôles reverb globale et reset
                 switch (ccNumber) {
+                    case 7: // CC7 = Gain global (dB→RMS, CC 100 = 1.0)
+                        mySynth->setGlobalGain(ccValue);
+                        break;
                     case 121: // Reset All Controllers - Reset toutes les sirènes
                         myMidiInHandler->resetSireneCh(1);
                         myMidiInHandler->resetSireneCh(2);
@@ -298,13 +301,9 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             sampleS6 * mySynth->getPan(6,1) +
             sampleS7 * mySynth->getPan(7,1) * S7_ATTENUATION;
         
-        // TODO: Investiguer pourquoi le niveau audio est ~1000x trop faible sur Linux
-        // Fix temporaire : gain de compensation sur Linux uniquement
-        #if defined(__linux__) || defined(__unix__)
-        const float LINUX_OUTPUT_GAIN = 50.0f;
-        channelLeft[sample] *= LINUX_OUTPUT_GAIN;
-        channelRight[sample] *= LINUX_OUTPUT_GAIN;
-        #endif
+        // Appliquer le gain global (contrôlé par CC7 canal 16)
+        channelLeft[sample] *= mySynth->getGlobalGain();
+        channelRight[sample] *= mySynth->getGlobalGain();
 
         if(channelLeft[sample] != 0) {
             ;
@@ -355,6 +354,9 @@ void SirenePlugAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     {
         state.setProperty("master_volume_s" + juce::String(i), mySynth->getMasterVolume(i), nullptr);
     }
+    
+    // Sauvegarder le gain global
+    state.setProperty("global_gain", mySynth->getGlobalGain(), nullptr);
     
     // Sauvegarder les paramètres de reverb
     state.setProperty("reverb_enabled", mySynth->isReverbEnabled(), nullptr);
@@ -409,6 +411,17 @@ void SirenePlugAudioProcessor::setStateInformation (const void* data, int sizeIn
                     float masterVol = state.getProperty("master_volume_s" + juce::String(i));
                     mySynth->setMasterVolume(i, masterVol);
                 }
+            }
+            
+            // Restaurer le gain global
+            if (state.hasProperty("global_gain"))
+            {
+                float globalGain = state.getProperty("global_gain");
+                // Convertir le gain sauvegardé en CC value et l'appliquer
+                // Formule inverse de dbtorms: ccValue = 20 * log10(gain) + 100
+                float dB = 20.0f * std::log10(globalGain);
+                int ccValue = static_cast<int>(dB + 100.0f);
+                mySynth->setGlobalGain(ccValue);
             }
             
             // Restaurer les paramètres de reverb

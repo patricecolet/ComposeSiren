@@ -134,9 +134,37 @@ Canal 5, CC121 = 127 →  Reset complet de la Sirène S5
 
 ---
 
-## 🌀 Canal 16 (Reverb globale)
+## 🌀 Canal 16 (Gain global + Reverb globale)
 
-Le canal 16 contrôle la reverb stéréo globale appliquée à toutes les sirènes.
+Le canal 16 contrôle le gain global de sortie et la reverb stéréo globale appliquée à toutes les sirènes.
+
+### CC7 - Gain Global (dB→RMS)
+
+**Implémentation** : `PluginProcessor.cpp` ligne 193-195, formule : `synth.cpp` ligne 423-437
+
+```
+Plage : 0-127
+  100 = Gain nominal (0 dB, ×1.0)
+  0   = -100 dB (quasi-silence, ×0.00001)
+  120 = +20 dB (×10.0)
+  127 = +27 dB (×22.4)
+```
+
+**Formule** : Identique à `[dbtorms~]` de PureData :
+```cpp
+gain = pow(10, (ccValue - 100) / 20)
+```
+
+**Exemples** :
+```
+Canal 16, CC7 = 80  →  -20 dB (division par 10)
+Canal 16, CC7 = 100 →  0 dB (nominal, ×1.0)
+Canal 16, CC7 = 120 →  +20 dB (×10.0)
+```
+
+**💡 Utilisation** : Contrôle le volume général de sortie du plugin avec une courbe logarithmique (dB). Permet d'atténuer ou de booster le signal final avant la sortie audio.
+
+---
 
 ### CC64 - Enable Reverb (On/Off)
 
@@ -374,6 +402,9 @@ Canal 5, CC10 = 96
 ### Scénario 2 : Reverb de cathédrale
 
 ```
+# Gain global nominal
+Canal 16, CC7 = 100
+
 # Activer reverb
 Canal 16, CC64 = 127
 
@@ -408,7 +439,20 @@ Canal 16, CC69 = 80    # LPF moyen
 Canal 16, CC70 = 50    # Stéréo modéré
 ```
 
-### Scénario 4 : Reset d'urgence
+### Scénario 4 : Boost de volume global
+
+```
+# Augmenter le volume global de +10 dB
+Canal 16, CC7 = 110
+
+# Ou boost massif +20 dB (×10)
+Canal 16, CC7 = 120
+
+# Réduire de -10 dB
+Canal 16, CC7 = 90
+```
+
+### Scénario 5 : Reset d'urgence
 
 ```
 # Reset toutes les sirènes
@@ -447,5 +491,5 @@ Tous les changements MIDI sont reflétés instantanément dans l'interface graph
 ---
 
 **Dernière mise à jour** : 21 Octobre 2025  
-**Version** : 1.5.0 (Custom Mix)
+**Version** : 1.5.1 (Gain global dB→RMS)
 

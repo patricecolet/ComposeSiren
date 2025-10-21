@@ -34,6 +34,9 @@ Synth::Synth(){
     masterVolumeS6 = 1.0f;
     masterVolumeS7 = 1.0f;
     
+    // Gain global initialisé à 1.0 (correspond à CC=100)
+    globalGain = 1.0f;
+    
     // Initialiser la reverb
     reverb = new mareverbe();
     reverbEnabled = false;
@@ -415,6 +418,26 @@ void Synth::setVitesse(int chanal, float vitesse){
                 break;
         }
     }
+}
+
+void Synth::setGlobalGain(int ccValue){
+    // Conversion dB→RMS comme [dbtorms~] de PureData
+    // Formule: gain = 10^((ccValue - 100) / 20)
+    // CC 100 = 0 dB = gain 1.0 (nominal)
+    // CC 0 = -100 dB = gain 0.00001
+    // CC 120 = +20 dB = gain 10.0
+    // CC 127 = +27 dB = gain ~22.4
+    
+    if(ccValue < 0) ccValue = 0;
+    if(ccValue > 127) ccValue = 127;
+    
+    // Formule de PureData: exp((log(10) * 0.05) * (f - 100))
+    // Ce qui équivaut à: 10^((f - 100) / 20)
+    globalGain = std::pow(10.0f, (ccValue - 100.0f) / 20.0f);
+}
+
+float Synth::getGlobalGain(){
+    return globalGain;
 }
 
 

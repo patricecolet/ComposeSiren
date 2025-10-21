@@ -35,12 +35,15 @@
   - CC10 : Pan
   - CC70 : Master Volume indépendant
   - CC121 : Reset du canal
-- **Canal 16** : Contrôle de la reverb globale
+- **Canal 16** : Gain global + Reverb globale
+  - CC7 : **Gain Global** (formule dB→RMS comme `[dbtorms~]` PureData) ✨ NOUVEAU
   - CC64 : Enable (≥64 = ON)
   - CC65 : Room Size
   - CC66 : Dry/Wet
   - CC67 : Damping
-  - CC68 : Width
+  - CC68 : Highpass Filter
+  - CC69 : Lowpass Filter
+  - CC70 : Width
   - CC121 : **Reset TOUTES les sirènes** 🔄
 
 ### Sauvegarde d'état
