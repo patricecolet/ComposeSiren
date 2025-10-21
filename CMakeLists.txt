@@ -17,6 +17,15 @@ project(ComposeSiren VERSION 1.5.0 DESCRIPTION ${PROJECT_DESCRIPTION})
 set(BaseTargetName ${PROJECT_NAME})
 set(VendorName "Mecanique Vivante")
 
+# Inclure la configuration locale pour la signature et notarisation (si elle existe)
+if(EXISTS "${CMAKE_SOURCE_DIR}/LocalConfig.cmake")
+  include("${CMAKE_SOURCE_DIR}/LocalConfig.cmake")
+  message(STATUS "✓ Configuration locale chargée : signature et notarisation activées")
+else()
+  message(WARNING "LocalConfig.cmake non trouvé : le build ne sera pas signé ni notarisé")
+  message(WARNING "Voir SIGNATURE_ET_NOTARISATION.md pour plus d'informations")
+endif()
+
 add_subdirectory(Dependencies/JUCE)
 
 set(FORMATS "VST3" "Standalone")
@@ -122,6 +131,6 @@ if(APPLE) # we generate a cmake subproject to build the installer
   include(Packaging/Apple/MakePackage.cmake)
 elseif(WIN32) # we just proceed the regular way
   include(Packaging/Windows/MakePackage.cmake)
-elseif(LINUX) # Debian package for Raspberry Pi and other Linux systems
+elseif(UNIX AND NOT APPLE) # Linux packaging
   include(Packaging/Linux/MakePackage.cmake)
 endif()

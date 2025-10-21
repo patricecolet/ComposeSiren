@@ -255,3 +255,4 @@ float mareverbe::getmode()
 		return 0;
 }
 
+

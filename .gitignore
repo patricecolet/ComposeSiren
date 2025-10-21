@@ -23,3 +23,6 @@ Source/config.h
 # private config (see Config.cmake template)
 MyConfig.cmake
 
+# Configuration locale de signature et notarisation (voir SIGNATURE_ET_NOTARISATION.md)
+LocalConfig.cmake
+
