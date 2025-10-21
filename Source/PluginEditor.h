@@ -88,7 +88,8 @@ private:
 // Section de reverb
 class ReverbComponent : public juce::Component,
                        public juce::Slider::Listener,
-                       public juce::Button::Listener
+                       public juce::Button::Listener,
+                       private juce::Timer
 {
 public:
     ReverbComponent(SirenePlugAudioProcessor& p);
@@ -100,6 +101,7 @@ public:
     void buttonClicked(juce::Button* button) override;
 
 private:
+    void timerCallback() override;
     SirenePlugAudioProcessor& audioProcessor;
     
     juce::ToggleButton enableButton;

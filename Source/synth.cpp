@@ -201,18 +201,17 @@ void Synth::setVelocite(int sireneNumber, int velo){
 
 
 void Synth::setPan(int sireneNumber, float value){
-    if(isWithSynthe){
-        switch (sireneNumber) {
-            case 1:PanS1=value;  break;
-            case 2:PanS2=value;  break;
-            case 3:PanS3=value;  break;
-            case 4:PanS4=value;  break;
-            case 5:PanS5=value;  break;
-            case 6:PanS6=value;  break;
-            case 7:PanS7=value;  break;
-            default:
-                break;
-        }
+    // Retirer la protection isWithSynthe pour permettre le changement de Pan via MIDI
+    switch (sireneNumber) {
+        case 1:PanS1=value;  break;
+        case 2:PanS2=value;  break;
+        case 3:PanS3=value;  break;
+        case 4:PanS4=value;  break;
+        case 5:PanS5=value;  break;
+        case 6:PanS6=value;  break;
+        case 7:PanS7=value;  break;
+        default:
+            break;
     }
 }
 
@@ -220,15 +219,15 @@ float Synth::getPan(int sireneNumber, int channel)
 {
     // Return the panoramic value according to the sirene number and the channel (left : 0, right :1)
     if(channel){
-        // right channel
+        // right channel - Correction formule: 0.5 - Pan au lieu de 1 - Pan + 0.5
         switch (sireneNumber) {
-            case 1: return 1-PanS1 + 0.5;  break;
-            case 2: return 1-PanS2+ 0.5;  break;
-            case 3: return 1-PanS3+ 0.5;  break;
-            case 4: return 1-PanS4+ 0.5;  break;
-            case 5: return 1-PanS5+ 0.5;  break;
-            case 6: return 1-PanS6+ 0.5;  break;
-            case 7: return 1-PanS7+ 0.5;  break;
+            case 1: return 0.5 - PanS1;  break;
+            case 2: return 0.5 - PanS2;  break;
+            case 3: return 0.5 - PanS3;  break;
+            case 4: return 0.5 - PanS4;  break;
+            case 5: return 0.5 - PanS5;  break;
+            case 6: return 0.5 - PanS6;  break;
+            case 7: return 0.5 - PanS7;  break;
             default:  return 0.5;
         }
     }

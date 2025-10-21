@@ -194,6 +194,15 @@ void MixerStripComponent::timerCallback()
     {
         masterVolumeSlider.setValue(currentMasterVolume, juce::dontSendNotification);
     }
+    
+    // Mettre à jour le Pan si changé par MIDI
+    // getPan retourne 0.5-1.5, on veut -0.5 à +0.5 pour le slider
+    float currentPanLeft = audioProcessor.mySynth->getPan(sireneNumber, 0);
+    float panValue = currentPanLeft - 0.5f; // Convertir 0.5-1.5 en -0.5 à +0.5
+    if (std::abs(panKnob.getValue() - panValue) > 0.01)
+    {
+        panKnob.setValue(panValue, juce::dontSendNotification);
+    }
 }
 
 void MixerStripComponent::paint(juce::Graphics& g)
@@ -395,10 +404,68 @@ ReverbComponent::ReverbComponent(SirenePlugAudioProcessor& p)
     ccInfoLabel.setColour(juce::Label::textColourId, juce::Colours::yellow);
     ccInfoLabel.setFont(juce::Font(14.0f, juce::Font::bold));
     addAndMakeVisible(ccInfoLabel);
+    
+    // Démarrer le timer pour synchroniser l'UI avec les changements MIDI
+    startTimer(50); // 50ms = 20 Hz
 }
 
 ReverbComponent::~ReverbComponent()
 {
+    stopTimer();
+}
+
+void ReverbComponent::timerCallback()
+{
+    // Synchroniser l'état Enable
+    bool currentEnabled = audioProcessor.mySynth->isReverbEnabled();
+    if (enableButton.getToggleState() != currentEnabled)
+    {
+        enableButton.setToggleState(currentEnabled, juce::dontSendNotification);
+    }
+    
+    // Synchroniser Room Size (CC65)
+    float currentRoomSize = audioProcessor.mySynth->reverb->getroomsize();
+    if (std::abs(roomSizeSlider.getValue() - currentRoomSize) > 0.01)
+    {
+        roomSizeSlider.setValue(currentRoomSize, juce::dontSendNotification);
+    }
+    
+    // Synchroniser Dry/Wet (CC66)
+    float currentWet = audioProcessor.mySynth->reverb->getwet();
+    float currentDry = audioProcessor.mySynth->reverb->getdry();
+    float dryWetValue = currentWet / (currentWet + currentDry + 0.001f);
+    if (std::abs(wetSlider.getValue() - dryWetValue) > 0.01)
+    {
+        wetSlider.setValue(dryWetValue, juce::dontSendNotification);
+    }
+    
+    // Synchroniser Damp (CC67)
+    float currentDamp = audioProcessor.mySynth->reverb->getdamp();
+    if (std::abs(dampSlider.getValue() - currentDamp) > 0.01)
+    {
+        dampSlider.setValue(currentDamp, juce::dontSendNotification);
+    }
+    
+    // Synchroniser Width (CC70)
+    float currentWidth = audioProcessor.mySynth->reverb->getwidth();
+    if (std::abs(widthSlider.getValue() - currentWidth) > 0.01)
+    {
+        widthSlider.setValue(currentWidth, juce::dontSendNotification);
+    }
+    
+    // Synchroniser Highpass (CC68)
+    float currentHighpass = audioProcessor.mySynth->getReverbHighpass();
+    if (std::abs(highpassSlider.getValue() - currentHighpass) > 1.0)
+    {
+        highpassSlider.setValue(currentHighpass, juce::dontSendNotification);
+    }
+    
+    // Synchroniser Lowpass (CC69)
+    float currentLowpass = audioProcessor.mySynth->getReverbLowpass();
+    if (std::abs(lowpassSlider.getValue() - currentLowpass) > 1.0)
+    {
+        lowpassSlider.setValue(currentLowpass, juce::dontSendNotification);
+    }
 }
 
 void ReverbComponent::paint(juce::Graphics& g)
