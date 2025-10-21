@@ -1,140 +1,224 @@
 # ComposeSiren
 
-ComposeSiren is an audio plugin that synthesize sounds of sirens made by [Mécanique Vivante][1].
+Audio plugin that synthesizes sounds of sirens made by [Mécanique Vivante][1].
 
-The plugin allows to handle the seven-piece Siren Orchestra:
-- two altos (called S1 and S2),
-- a bass (called S3),
-- a tenor (called S4),
-- two sopranos (called S5 and S6),
-- and a piccolo (called S7).
+<p align="center">
+  <img src="Assets/Icon_1024.png" alt="ComposeSiren Icon" width="200"/>
+</p>
 
-It is currently available on two formats: VST3 and Audio Unit.
+## 🎵 About
 
+ComposeSiren handles the seven-piece Siren Orchestra:
+- **S1, S2**: Two altos
+- **S3**: Bass
+- **S4**: Tenor  
+- **S5, S6**: Two sopranos
+- **S7**: Piccolo
 
-### Development
+**Formats**: VST3, Audio Unit, Standalone  
+**Tested on**: macOS, Linux (Raspberry Pi), Windows
 
-ComposeSiren is developed on top of the **JUCE** frameworks. You can find more infos about it there: http://www.juce.com.
+---
 
-ComposeSiren is built on macOS as a 64-bit VST3 and Audio Unit formats, and currently tested on [Ableton Live][4].
+## 📥 Download
 
+**Latest Release: v1.5.0 (Custom Mix)**
 
-### Using the plugin
+| Platform | Download | Notes |
+|----------|----------|-------|
+| **macOS** | [ComposeSiren-v1.5.0-macOS.dmg](Releases/ComposeSiren-v1.5.0-custom-mix-macOS.dmg) | Standalone + Audio Unit (47 MB) |
+| **Linux (ARM64)** | [composesiren_1.5.0_arm64.deb](Releases/v1.5.0-linux/) | Debian package for Raspberry Pi |
+| **Windows** | Build from source | See [Building](#-building-from-source) section |
 
-The vst3 plugin file is called **ComposeSiren.vst3**, and the Audio Unit plugin file called **ComposeSiren.component**.
-You can download the vst3 plugin as well as the Audio Unit plugin directly from the **Releases** menu (to the right of the list of files).
-You'll find [here][3] more info on how to use the plugins with Ableton Live.
+📝 [Release Notes v1.5.0](Releases/RELEASE_NOTES_v1.5.0.md)
 
+---
 
-### Mixer & Reverb (v1.5.0)
+## ✨ Features (v1.5.0)
 
-#### Interface graphique
+### 🎚️ Mixer (7 channels)
 
-L'interface comprend :
-- **7 canaux mixer** (S1-S7) avec pour chacun :
-  - Slider de **Volume** (bleu pour Master, gris pour les autres)
-  - Bouton rotatif de **Pan** (panoramique L/R)
-  - Bouton **Reset** (réinitialise tous les paramètres du canal)
-  - Indicateur **MIDI Note On** (vert = note active)
-- **Section Reverb** (Canal 16) :
-  - **Room Size** : Taille de la réverbération
-  - **Damping** : Amortissement des hautes fréquences
-  - **Dry/Wet** : Balance signal sec/effet
-  - **Width** : Largeur stéréo de la reverb
+Each siren (S1-S7) has:
+- **Volume** slider (blue for Master, grey for others)
+- **Pan** knob (L/R panoramic)
+- **Reset** button (reset all channel parameters)
+- **MIDI Note On** indicator (green when active)
 
-#### Contrôle MIDI
+### 🌀 Reverb (Global)
 
-##### Canaux 1-7 (Sirènes S1-S7)
+Stereo reverb with controls:
+- **Room Size**: Reverb size
+- **Damping**: High-frequency damping
+- **Dry/Wet**: Balance between dry signal and effect
+- **Width**: Stereo width
 
-| CC  | Paramètre | Plage | Description |
+### 🎹 MIDI Control
+
+#### Channels 1-7 (Sirens S1-S7)
+
+| CC  | Parameter     | Range | Description |
+|-----|---------------|-------|-------------|
+| 7   | Volume        | 0-127 | Individual siren volume |
+| 10  | Pan           | 0-127 | Panoramic (0=left, 64=center, 127=right) |
+| 70  | Master Volume | 0-127 | Master volume independent of CC7 |
+| 121 | Reset         | any   | Reset all channel parameters |
+
+#### Channel 16 (Global Reverb)
+
+| CC  | Parameter | Range | Description |
 |-----|-----------|-------|-------------|
-| 7   | Volume    | 0-127 | Volume individuel de la sirène |
-| 10  | Pan       | 0-127 | Panoramique (0=gauche, 64=centre, 127=droite) |
-| 70  | Master Volume | 0-127 | Volume master indépendant du CC7 |
-| 121 | Reset     | -     | Réinitialise tous les paramètres du canal |
+| 64  | Enable    | 0-127 | Enable/disable reverb (≥64 = ON) |
+| 65  | Room Size | 0-127 | Reverb size |
+| 66  | Dry/Wet   | 0-127 | Balance dry/effect (0=100% dry, 127=100% wet) |
+| 67  | Damping   | 0-127 | High-frequency damping |
+| 68  | Highpass  | 0-127 | Highpass filter (20Hz - 2kHz) |
+| 69  | Lowpass   | 0-127 | Lowpass filter (2kHz - 20kHz) |
+| 70  | Width     | 0-127 | Stereo width (0=mono, 127=wide stereo) |
+| 121 | Reset All | any   | Reset ALL sirens (channels 1-7) |
 
-##### Canal 16 (Reverb globale)
+### 💾 State Saving
 
-| CC  | Paramètre | Plage | Description |
-|-----|-----------|-------|-------------|
-| 64  | Enable    | 0-127 | Active/désactive la reverb (≥64 = ON) |
-| 65  | Room Size | 0-127 | Taille de la réverbération |
-| 66  | Dry/Wet   | 0-127 | Balance signal sec/effet |
-| 67  | Damping   | 0-127 | Amortissement des hautes fréquences |
-| 68  | Width     | 0-127 | Largeur stéréo (0=mono, 127=stéréo large) |
-| 121 | Reset All | -     | Réinitialise TOUTES les sirènes (canaux 1-7) |
+All mixer and reverb parameters are automatically saved in your DAW preset/project.
 
-#### Sauvegarde d'état
+---
 
-Tous les paramètres du mixer et de la reverb sont sauvegardés automatiquement dans l'état du plugin (DAW preset/project). Cela inclut :
-- Volumes et pans de chaque canal
-- Tous les paramètres de la reverb
-- État ON/OFF de la reverb
+## 🔧 Building from Source
 
+### Prerequisites
 
-### Installation v1.5.0
+**All platforms:**
+```bash
+git clone --recursive https://github.com/patricecolet/ComposeSiren.git
+cd ComposeSiren
+```
 
-**Téléchargement :**
-- macOS : `Releases/ComposeSiren-v1.5.0-custom-mix-macOS.dmg` (47 MB)
-  - Inclus : Standalone + Audio Unit
-  - Note : VST3 non disponible (bug JUCE avec macOS 15, en attente d'un fix)
+**Linux dependencies:**
+```bash
+sudo apt-get install -y \
+    cmake build-essential \
+    libx11-dev libxrandr-dev libxinerama-dev \
+    libxcursor-dev libfreetype-dev libasound2-dev \
+    libgl1-mesa-dev libglu1-mesa-dev
+```
 
-**Instructions d'installation** : Voir `INSTALLATION.txt` dans le DMG
+### macOS (Xcode - Recommended)
 
+⚠️ **Note**: CMake build currently fails on macOS 15 due to deprecated JUCE APIs. Use Xcode instead:
 
-### Version history:
+```bash
+# Open Xcode project
+open Builds/MacOSX/ComposeSiren.xcodeproj
 
-- 1.5.0 - **Mixer + Reverb intégré** (branche custom-mix)
-  - Mixer 7 canaux avec contrôles Volume + Pan individuels
-  - Reverb globale avec Room Size, Damping, Dry/Wet et Width
-  - Interface graphique moderne (fond gris foncé, sliders horizontaux)
-  - Contrôle MIDI complet via CC (canaux 1-7 pour sirènes, canal 16 pour reverb)
-  - Reset MIDI via CC121 (par canal ou global)
-  - Indicateurs d'activité MIDI Note On/Off temps réel
-  - Sauvegarde de l'état (tous les paramètres mixer + reverb)
-- 1.3.0 - Change default panning and volume
-- 1.2.0 - Audio Unit format added
-- 1.1.0 - Improved GUI
-- 1.0.0 - First version of the vst3 plugin
+# Build targets:
+# - ComposeSiren - Standalone Plugin
+# - ComposeSiren - AU
+# (VST3 currently fails on macOS 15 - waiting for JUCE fix)
+```
 
+📖 **For signed/notarized builds**: See [docs/CODESIGNING.md](docs/CODESIGNING.md)
+
+### Linux / Raspberry Pi
+
+```bash
+# Quick method: automated script
+bash scripts/deploy-raspberry.sh
+
+# Or manual method:
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release -j2
+cd build && cpack
+sudo dpkg -i Packaging/ComposeSiren_Installer_artefacts/composesiren_*.deb
+```
+
+📖 **Detailed guide**: See [docs/RASPBERRY_PI.md](docs/RASPBERRY_PI.md)
+
+### Windows
+
+```bash
+# Configure with Visual Studio
+cmake -B build -G "Visual Studio 17 2022" -C Config.cmake
+
+# Build
+cmake --build build --config Release
+
+# Create installer
+cpack --config build/CPackConfig.cmake
+```
+
+---
+
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [RASPBERRY_PI.md](docs/RASPBERRY_PI.md) | Complete guide for Raspberry Pi compilation and deployment |
+| [CODESIGNING.md](docs/CODESIGNING.md) | macOS code signing and notarization (for distribution) |
+| [MIDI_CONTROL.md](docs/MIDI_CONTROL.md) | Complete MIDI CC mapping reference with examples |
+| [DEVELOPMENT.md](docs/DEVELOPMENT.md) | Architecture, sample rate handling, internal algorithms |
+
+---
+
+## 🐛 Known Issues
+
+- **macOS 15**: CMake build fails due to deprecated JUCE APIs (`CGWindowListCreateImage`, `CVDisplayLink*`). Use Xcode instead.
+- **VST3 on macOS 15**: Also fails due to same JUCE bug. Use AU or Standalone.
+- Waiting for JUCE upstream fix.
+
+---
+
+## 📜 Version History
+
+- **1.5.0** (Oct 2025) - Mixer + Reverb integration
+  - 7-channel mixer with Volume + Pan controls
+  - Global stereo reverb
+  - Modern UI (dark grey background, horizontal sliders)
+  - Complete MIDI CC control (channels 1-7 for sirens, channel 16 for reverb)
+  - MIDI reset via CC121
+  - Real-time MIDI Note On/Off indicators
+  - State saving (all mixer + reverb parameters)
+  - Dynamic sample rate handling (44.1kHz, 48kHz, 96kHz, etc.)
+
+- **1.3.0** - Default panning and volume adjustments
+- **1.2.0** - Audio Unit format added
+- **1.1.0** - Improved GUI
+- **1.0.0** - First VST3 version
+
+---
+
+## 🤝 Contributing
+
+ComposeSiren is developed with the [JUCE framework](http://www.juce.com).
+
+### Git Tips
+
+```bash
+# Clone with JUCE submodule
+git clone --recursive https://github.com/patricecolet/ComposeSiren.git
+
+# Or if already cloned without --recursive:
+git submodule update --init --recursive
+
+# If JUCE submodule gets corrupted:
+git submodule deinit -f .
+git submodule update --init
+```
+
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for detailed development guidelines.
+
+---
+
+## 📄 License
+
+See [Packaging/License.txt](Packaging/License.txt)
+
+---
+
+## 🔗 Links
+
+- [Mécanique Vivante - The Musical Siren][1]
+- [JUCE Framework](http://www.juce.com)
+- [Ableton Live Plugin Guide][3]
 
 [1]: https://www.mecanique-vivante.com/en/the-song-of-the-sirens/the-musical-siren
-[2]: https://minhaskamal.github.io/DownGit/#/home?url=https://github.com/patriceguyot/ComposeSiren/tree/master/Builds/MacOSX/ComposeSiren.vst3
 [3]: https://help.ableton.com/hc/en-us/sections/202295165-Plug-Ins
 [4]: https://www.ableton.com/en/live/
-[5]: https://minhaskamal.github.io/DownGit/#/home?url=https://github.com/patriceguyot/ComposeSiren/tree/master/Builds/MacOSX/ComposeSiren.component
-
-
-### Building with CMake
-
-#### dependencies
-
-linux:
-* `sudo apt-get install libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libfreetype-dev`
-
-##### git tips
-
-* first clone the repository with the `--recursive` option to fetch JUCE
-  submodule, or run `git submodule update --init` after cloning.
-* if at some point the `Dependencies/JUCE` submodule is altered by some IDE, you
-  can reset it using `git submodule deinit -f .` then `git submodule update --init`
-
-⚠️ **Note importante** : Le build CMake échoue actuellement sur macOS 15 à cause d'APIs obsolètes dans JUCE (`CGWindowListCreateImage`, `CVDisplayLink*`). En attendant un correctif JUCE, utilisez **Xcode** pour compiler :
-
-At the moment the plugin is built :
-
-* on Mac OS 11.6.4+ using **Xcode** (CMake ne fonctionne pas avec macOS 15)
-  * Ouvrir `Builds/MacOSX/ComposeSiren.xcodeproj`
-  * Compiler les targets : `ComposeSiren - Standalone Plugin` et `ComposeSiren - AU`
-  * Note : VST3 échoue aussi à cause du même bug JUCE
-* on Windows 10 using Visual Studio (couldn't get Ninja to work on windows yet)
-  * `cmake -B build -G "Visual Studio 17 2022" -C Config.cmake`
-  * `cmake --build build --config Release`
-  * `cpack --config build/CPackConfig.cmake`
-* on Linux
-  * `cmake -B builds/linux -G "Unix Makefiles"`
-  * `cmake --build builds/linux --config Release`
-  * no instruction for installer for now
-  
-The resulting installer (built with `productbuild` on mac and `NSIS` on windows)
-is created in `build/Packaging/ComposeSiren_Installer_artefacts`

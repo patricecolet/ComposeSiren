@@ -18,6 +18,7 @@ Dependencies/libsamplerate/
 # used by cmake
 build/
 builds/
+build-*/
 Source/config.h
 
 # private config (see Config.cmake template)

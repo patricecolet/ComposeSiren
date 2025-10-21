@@ -1,0 +1,52 @@
+# Configuration de signature et notarisation pour macOS
+# 
+# IMPORTANT : 
+# 1. Copiez ce fichier en LocalConfig.cmake
+# 2. Remplissez les valeurs ci-dessous avec vos certificats
+# 3. LocalConfig.cmake est ignoré par git (ne sera pas commité)
+#
+# Voir SIGNATURE_ET_NOTARISATION.md pour les instructions détaillées
+
+# ============================================================================
+# SIGNATURE DU CODE
+# ============================================================================
+
+# Certificat pour signer les applications (.app)
+# Trouvez le nom exact avec : security find-identity -v -p codesigning
+# Exemple : "Developer ID Application: Votre Nom (XXXXXXXXXX)"
+set(APPLE_DEVELOPER_ID_APPLICATION "Developer ID Application: VOTRE_NOM (XXXXXXXXXX)")
+
+# Certificat pour signer les installers (.pkg)
+# Exemple : "Developer ID Installer: Votre Nom (XXXXXXXXXX)"
+set(APPLE_DEVELOPER_ID_INSTALLER "Developer ID Installer: VOTRE_NOM (XXXXXXXXXX)")
+
+# ============================================================================
+# NOTARISATION
+# ============================================================================
+
+# Nom du profil keychain créé avec xcrun notarytool store-credentials
+# Par défaut : "notarytool-profile"
+set(APPLE_NOTARIZATION_KEYCHAIN_PROFILE "notarytool-profile")
+
+# Activer la notarisation (ON ou OFF)
+# La notarisation prend 5-30 minutes supplémentaires lors du build
+set(ENABLE_NOTARIZATION ON)
+
+# ============================================================================
+# NOTES
+# ============================================================================
+#
+# Sans ces configurations, le DMG sera créé mais :
+# - Ne sera pas signé
+# - Ne sera pas notarisé
+# - macOS Gatekeeper bloquera l'installation
+# - Les utilisateurs devront contourner manuellement la sécurité
+#
+# Avec ces configurations, le DMG sera :
+# - Signé avec vos certificats Developer ID
+# - Notarisé par Apple (validé automatiquement)
+# - Installable sans avertissement sur tous les Mac
+#
+
+
+

@@ -70,7 +70,9 @@ set(CPACK_PACKAGE_DIRECTORY "${PROJECT_BINARY_DIR}/Packaging/${BaseTargetName}_I
 
 # Debian-specific settings
 set(CPACK_GENERATOR "DEB")
-set(CPACK_DEBIAN_PACKAGE_NAME "${BaseTargetName}")
+# Normaliser le nom du package en minuscules pour Debian (convention)
+string(TOLOWER "${BaseTargetName}" DEBIAN_PACKAGE_NAME)
+set(CPACK_DEBIAN_PACKAGE_NAME "${DEBIAN_PACKAGE_NAME}")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Mecanique Vivante <contact@mecanique-vivante.com>")
 set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "ComposeSiren audio synthesizer
  ComposeSiren is an audio plugin that synthesizes sounds of sirens
@@ -86,6 +88,11 @@ execute_process(
   COMMAND dpkg --print-architecture
   OUTPUT_VARIABLE CPACK_DEBIAN_PACKAGE_ARCHITECTURE
   OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Runtime dependencies (required for JUCE applications)
+set(CPACK_DEBIAN_PACKAGE_DEPENDS 
+  "libasound2, libfreetype6, libx11-6, libxrandr2, libxinerama1, libxcursor1, libgl1, libglu1-mesa"
 )
 
 # Suggested dependencies (not required, but recommended)
