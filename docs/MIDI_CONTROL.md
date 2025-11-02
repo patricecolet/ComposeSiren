@@ -327,6 +327,55 @@ Canal 16, CC70 = 127 →  Stéréo très large
 
 ---
 
+### CC72 - Limiter Enable/Disable (Activation du limiteur)
+
+**Implémentation** : `PluginProcessor.cpp` ligne 236-238
+
+```
+Plage : 0-127
+  0-63  = Limiter OFF
+  64-127 = Limiter ON
+```
+
+**Exemple** :
+```
+Canal 16, CC72 = 0   →  Désactiver le limiter
+Canal 16, CC72 = 127 →  Activer le limiter
+```
+
+**💡 Utilisation** : Le limiter empêche la saturation numérique en réduisant automatiquement les pics au-dessus du seuil. Recommandé quand le gain global (CC7) est élevé.
+
+---
+
+### CC73 - Limiter Threshold (Seuil du limiteur)
+
+**Implémentation** : `PluginProcessor.cpp` ligne 239-245
+
+```
+Plage : 0-127
+  0   = 0.30 (environ -12 dB, limitation agressive)
+  64  = 0.625 (environ -4 dB)
+  127 = 0.95 (environ -0.5 dB, limitation douce)
+```
+
+**Formule** : `threshold = 0.3 + (CC73 / 127.0) × 0.65`
+
+**Exemple** :
+```
+Canal 16, CC73 = 0   →  Threshold -12dB (limite beaucoup)
+Canal 16, CC73 = 80  →  Threshold -3dB (limite moyennement)
+Canal 16, CC73 = 127 →  Threshold -0.5dB (limite peu, juste la protection)
+```
+
+**💡 Astuce** : 
+- Threshold élevé (127) = Protection anti-saturation uniquement
+- Threshold moyen (64) = Compression légère + protection
+- Threshold bas (0-30) = Compression forte (son plus compact)
+
+**⚙️ Technique** : Le limiter utilise un attack instantané et un release rapide (0.9995) pour une réponse transparente.
+
+---
+
 ### CC121 - Reset ALL Sirens (Reset global)
 
 **Implémentation** : `PluginProcessor.cpp` ligne 193-201
@@ -439,20 +488,36 @@ Canal 16, CC69 = 80    # LPF moyen
 Canal 16, CC70 = 50    # Stéréo modéré
 ```
 
-### Scénario 4 : Boost de volume global
+### Scénario 4 : Boost de volume global avec limiter
 
 ```
+# Activer le limiter d'abord (pour éviter la saturation)
+Canal 16, CC72 = 127  # Enable limiter
+Canal 16, CC73 = 100  # Threshold à -1dB (protection douce)
+
 # Augmenter le volume global de +10 dB
 Canal 16, CC7 = 110
 
-# Ou boost massif +20 dB (×10)
+# Ou boost massif +20 dB (×10) - le limiter protège
 Canal 16, CC7 = 120
 
-# Réduire de -10 dB
+# Pour réduire de -10 dB (pas besoin de limiter)
 Canal 16, CC7 = 90
+Canal 16, CC72 = 0    # Désactiver le limiter
 ```
 
-### Scénario 5 : Reset d'urgence
+### Scénario 5 : Limiter agressif (compression forte)
+
+```
+# Pour un son très compressé et compact
+Canal 16, CC72 = 127  # Enable limiter
+Canal 16, CC73 = 20   # Threshold bas (-10dB)
+Canal 16, CC7 = 115   # Gain élevé pour pousser dans le limiter
+
+# Résultat : Son très dense et puissant
+```
+
+### Scénario 6 : Reset d'urgence
 
 ```
 # Reset toutes les sirènes
@@ -490,6 +555,6 @@ Tous les changements MIDI sont reflétés instantanément dans l'interface graph
 
 ---
 
-**Dernière mise à jour** : 21 Octobre 2025  
-**Version** : 1.5.1 (Gain global dB→RMS)
+**Dernière mise à jour** : 2 Novembre 2025  
+**Version** : 1.5.2 (Limiter professionnel)
 

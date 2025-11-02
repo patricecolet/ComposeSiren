@@ -233,6 +233,16 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
                     case 70: // Width
                         mySynth->reverb->setwidth(ccValue / 127.0f);
                         break;
+                    case 72: // Limiter Enable/Disable
+                        mySynth->setLimiterEnabled(ccValue >= 64);
+                        break;
+                    case 73: // Limiter Threshold
+                        {
+                            // CC 0-127 → 0.3-0.95 (environ -12dB à -0.5dB)
+                            float threshold = 0.3f + (ccValue / 127.0f) * 0.65f;
+                            mySynth->setLimiterThreshold(threshold);
+                        }
+                        break;
                 }
             }
         }
@@ -315,6 +325,9 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         auto* left = buffer.getWritePointer(0);
         auto* right = buffer.getWritePointer(1);
         mySynth->processReverbWithFilters(left, right, buffer.getNumSamples());
+        
+        // Appliquer le limiter en dernier (pour éviter toute saturation)
+        mySynth->applyLimiter(left, right, buffer.getNumSamples());
     }
 }
 
@@ -366,6 +379,10 @@ void SirenePlugAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty("reverb_width", mySynth->reverb->getwidth(), nullptr);
     state.setProperty("reverb_highpass", mySynth->getReverbHighpass(), nullptr);
     state.setProperty("reverb_lowpass", mySynth->getReverbLowpass(), nullptr);
+    
+    // Sauvegarder les paramètres du limiter
+    state.setProperty("limiter_enabled", mySynth->isLimiterEnabled(), nullptr);
+    state.setProperty("limiter_threshold", mySynth->getLimiterThreshold(), nullptr);
     
     // Convertir en XML et sauvegarder
     auto xml = state.createXml();
@@ -465,6 +482,19 @@ void SirenePlugAudioProcessor::setStateInformation (const void* data, int sizeIn
             {
                 float lpf = state.getProperty("reverb_lowpass");
                 mySynth->setReverbLowpass(lpf);
+            }
+            
+            // Restaurer les paramètres du limiter
+            if (state.hasProperty("limiter_enabled"))
+            {
+                bool enabled = state.getProperty("limiter_enabled");
+                mySynth->setLimiterEnabled(enabled);
+            }
+            
+            if (state.hasProperty("limiter_threshold"))
+            {
+                float threshold = state.getProperty("limiter_threshold");
+                mySynth->setLimiterThreshold(threshold);
             }
         }
     }

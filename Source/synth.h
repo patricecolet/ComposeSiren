@@ -59,6 +59,14 @@ public:
     float getMasterVolume(int sireneNumber);
     void setGlobalGain(int ccValue); // Gain global via CC7 canal 16 (formule [dbtorms~] PD: 10^((cc-100)/20))
     float getGlobalGain(); // Retourne le gain actuel
+    
+    // Contrôle du limiter
+    void setLimiterEnabled(bool enabled);
+    bool isLimiterEnabled();
+    void setLimiterThreshold(float threshold);
+    float getLimiterThreshold();
+    void applyLimiter(float* left, float* right, int numSamples);
+    
     void setReverbEnabled(bool enabled);
     bool isReverbEnabled();
     void setReverbHighpass(float freq); // 20Hz-2000Hz
@@ -107,6 +115,12 @@ private:
     
     // Gain global - CC7 canal 16
     float globalGain;
+    
+    // Limiter professionnel
+    bool limiterEnabled;
+    float limiterThreshold;      // 0.3-0.95 (environ -12dB à -0.5dB)
+    float limiterRelease;        // Coefficient de release (0.9995)
+    float limiterGainReduction;  // Réduction actuelle pour smooth release
     
     // Reverb
     bool reverbEnabled;

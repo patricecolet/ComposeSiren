@@ -37,6 +37,12 @@ Synth::Synth(){
     // Gain global initialisé à 1.0 (correspond à CC=100)
     globalGain = 1.0f;
     
+    // Initialiser le limiter (désactivé par défaut)
+    limiterEnabled = false;
+    limiterThreshold = 0.95f;      // -0.5 dB par défaut
+    limiterRelease = 0.9995f;      // Release rapide
+    limiterGainReduction = 1.0f;   // Pas de réduction au départ
+    
     // Initialiser la reverb
     reverb = new mareverbe();
     reverbEnabled = false;
@@ -438,6 +444,46 @@ void Synth::setGlobalGain(int ccValue){
 
 float Synth::getGlobalGain(){
     return globalGain;
+}
+
+void Synth::setLimiterEnabled(bool enabled) {
+    limiterEnabled = enabled;
+}
+
+bool Synth::isLimiterEnabled() {
+    return limiterEnabled;
+}
+
+void Synth::setLimiterThreshold(float threshold) {
+    if (threshold < 0.3f) threshold = 0.3f;
+    if (threshold > 0.95f) threshold = 0.95f;
+    limiterThreshold = threshold;
+}
+
+float Synth::getLimiterThreshold() {
+    return limiterThreshold;
+}
+
+void Synth::applyLimiter(float* left, float* right, int numSamples) {
+    if (!limiterEnabled) return;
+    
+    for (int i = 0; i < numSamples; i++) {
+        float peak = std::max(std::abs(left[i]), std::abs(right[i]));
+        
+        float targetGain = 1.0f;
+        if (peak > limiterThreshold) {
+            targetGain = limiterThreshold / peak;
+        }
+        
+        if (targetGain < limiterGainReduction) {
+            limiterGainReduction = targetGain;  // Attack instantané
+        } else {
+            limiterGainReduction = limiterGainReduction * limiterRelease + targetGain * (1.0f - limiterRelease);
+        }
+        
+        left[i] *= limiterGainReduction;
+        right[i] *= limiterGainReduction;
+    }
 }
 
 
