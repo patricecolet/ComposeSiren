@@ -753,8 +753,8 @@ void SirenePlugAudioProcessorEditor::resized()
 
     // void Component::setBounds  (int x, int y, int width, int height) - top left
     head.setBounds(0, 0, getWidth(), 50);
-    mainCommands.setBounds (10, 55, 100, 40);
-    mixer.setBounds(10, 100, getWidth() - 20, 290);
+    mainCommands.setBounds (10, 55, getWidth() - 20, 45);  // Largeur adaptative et hauteur augmentée
+    mixer.setBounds(10, 105, getWidth() - 20, 290);  // Décalé de 5px vers le bas
 
 }
 
