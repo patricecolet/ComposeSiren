@@ -359,10 +359,10 @@ void Synth::processReverbWithFilters(float* left, float* right, int numSamples){
     }
     
     // 2. Appliquer la reverb sur le wet (avec dry=0 pour éviter le double dry)
-    float originalDry = reverb->dry;
+    float originalDry = reverb->getdry();  // Utiliser le getter pour cohérence
     reverb->setdry(0.0f); // Temporairement mettre dry à 0
     reverb->processreplace(wetLeft.data(), wetRight.data(), wetLeft.data(), wetRight.data(), numSamples, 1);
-    reverb->dry = originalDry; // Restaurer
+    reverb->setdry(originalDry); // Utiliser le setter pour restaurer correctement
     
     // 3. Appliquer le lowpass sur le wet après la reverb
     for (int i = 0; i < numSamples; i++)

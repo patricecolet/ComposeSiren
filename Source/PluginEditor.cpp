@@ -536,12 +536,11 @@ void ReverbComponent::timerCallback()
     }
     
     // Synchroniser Dry/Wet (CC66)
+    // On synchronise directement avec wet (qui varie de 0 à 1)
     float currentWet = audioProcessor.mySynth->reverb->getwet();
-    float currentDry = audioProcessor.mySynth->reverb->getdry();
-    float dryWetValue = currentWet / (currentWet + currentDry + 0.001f);
-    if (std::abs(wetSlider.getValue() - dryWetValue) > 0.01)
+    if (std::abs(wetSlider.getValue() - currentWet) > 0.02)  // Seuil augmenté pour éviter l'oscillation
     {
-        wetSlider.setValue(dryWetValue, juce::dontSendNotification);
+        wetSlider.setValue(currentWet, juce::dontSendNotification);
     }
     
     // Synchroniser Damp (CC67)
