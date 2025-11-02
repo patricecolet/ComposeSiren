@@ -7,8 +7,9 @@ Guide complet des contrôleurs MIDI supportés par ComposeSiren.
 ## 📋 Table des matières
 
 - [Vue d'ensemble](#vue-densemble)
+- [Interface utilisateur](#interface-utilisateur)
 - [Canaux 1-7 (Sirènes individuelles)](#canaux-1-7-sirènes-individuelles)
-- [Canal 16 (Reverb globale)](#canal-16-reverb-globale)
+- [Canal 16 (Contrôles globaux)](#canal-16-contrôles-globaux)
 - [Notes MIDI](#notes-midi)
 - [Exemples pratiques](#exemples-pratiques)
 
@@ -20,7 +21,7 @@ ComposeSiren répond aux messages MIDI sur **16 canaux** :
 
 - **Canaux 1-7** : Contrôle individuel des 7 sirènes (S1-S7)
 - **Canaux 8-15** : Non utilisés (réservés pour futures extensions)
-- **Canal 16** : Reverb globale + Reset ALL
+- **Canal 16** : Contrôles globaux (Master Volume, Limiter, Reverb, Reset)
 
 ### Architecture MIDI
 
@@ -32,8 +33,47 @@ Canal MIDI 4  →  Sirène S4 (Tenor)
 Canal MIDI 5  →  Sirène S5 (Soprano)
 Canal MIDI 6  →  Sirène S6 (Soprano)
 Canal MIDI 7  →  Sirène S7 (Piccolo)
-Canal MIDI 16 →  Reverb globale + Reset ALL
+Canal MIDI 16 →  Master Volume, Limiter, Reverb, Reset ALL
 ```
+
+---
+
+## 🎨 Interface utilisateur
+
+### Section des contrôles globaux (en haut)
+
+À côté du bouton **Reset** (en haut de la fenêtre), vous trouverez les contrôles globaux du canal 16 :
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ [Reset] Master Vol (CC7 ch16) [━━━━━━] [Limiter (CC72)]        │
+│         Threshold (CC73) [━━━━━━]                               │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+- **Master Vol (CC7 ch16)** : Slider de 0 à 127 pour le gain global (dB→RMS)
+- **Limiter (CC72)** : Bouton Toggle pour activer/désactiver le limiter
+- **Threshold (CC73)** : Slider de 0.3 à 0.95 pour le seuil du limiter
+
+### Section Mixeur (7 canaux)
+
+Chaque sirène (S1-S7) dispose de :
+- **Pan** : Knob pour le panoramique gauche/droite (CC10)
+- **Master Volume** : Slider pour le volume indépendant (CC70)
+- **LED** : Indicateur Note On/Off
+
+### Section Reverb (en bas)
+
+La section REVERB contient tous les paramètres de réverbération :
+- **Enable** : Bouton pour activer/désactiver (CC64 ch16)
+- **Room Size** : Taille de la salle (CC65 ch16)
+- **Dry/Wet** : Balance signal sec/effet (CC66 ch16)
+- **Damp** : Amortissement des aigus (CC67 ch16)
+- **Width** : Largeur stéréo (CC70 ch16)
+- **HPF** : Filtre passe-haut 20Hz-2kHz (CC68 ch16)
+- **LPF** : Filtre passe-bas 2kHz-20kHz (CC69 ch16)
+
+**💡 Synchronisation** : Tous les contrôles de l'interface sont synchronisés en temps réel avec les messages MIDI entrants (50ms de rafraîchissement).
 
 ---
 
@@ -134,9 +174,13 @@ Canal 5, CC121 = 127 →  Reset complet de la Sirène S5
 
 ---
 
-## 🌀 Canal 16 (Gain global + Reverb globale)
+## 🌀 Canal 16 (Contrôles globaux)
 
-Le canal 16 contrôle le gain global de sortie et la reverb stéréo globale appliquée à toutes les sirènes.
+Le canal 16 contrôle tous les paramètres globaux de ComposeSiren :
+- **Master Volume (CC7)** : Gain global de sortie avec courbe logarithmique (dB→RMS)
+- **Limiter (CC72/CC73)** : Protection anti-saturation avec seuil réglable
+- **Reverb (CC64-70)** : Réverbération stéréo globale appliquée à toutes les sirènes
+- **Reset (CC121)** : Réinitialisation de toutes les sirènes
 
 ### CC7 - Gain Global (dB→RMS)
 
@@ -163,6 +207,10 @@ Canal 16, CC7 = 120 →  +20 dB (×10.0)
 ```
 
 **💡 Utilisation** : Contrôle le volume général de sortie du plugin avec une courbe logarithmique (dB). Permet d'atténuer ou de booster le signal final avant la sortie audio.
+
+**🎨 Interface** : Un slider horizontal "Master Vol (CC7 ch16)" est visible en haut de la fenêtre, à côté du bouton Reset. Le slider affiche la valeur CC directement (0-127).
+
+**⚠️ Attention** : À des valeurs élevées (>110), activez le limiter (CC72) pour éviter la saturation numérique.
 
 ---
 
@@ -345,6 +393,8 @@ Canal 16, CC72 = 127 →  Activer le limiter
 
 **💡 Utilisation** : Le limiter empêche la saturation numérique en réduisant automatiquement les pics au-dessus du seuil. Recommandé quand le gain global (CC7) est élevé.
 
+**🎨 Interface** : Un bouton "Limiter (CC72)" est visible en haut de la fenêtre. Il s'allume quand le limiter est activé.
+
 ---
 
 ### CC73 - Limiter Threshold (Seuil du limiteur)
@@ -373,6 +423,8 @@ Canal 16, CC73 = 127 →  Threshold -0.5dB (limite peu, juste la protection)
 - Threshold bas (0-30) = Compression forte (son plus compact)
 
 **⚙️ Technique** : Le limiter utilise un attack instantané et un release rapide (0.9995) pour une réponse transparente.
+
+**🎨 Interface** : Un slider "Threshold (CC73)" est visible en haut de la fenêtre, à côté du bouton Limiter. Le slider affiche la valeur directe (0.30-0.95).
 
 ---
 
@@ -535,15 +587,32 @@ Canal 2, CC121 = 0
 
 ### Fichiers sources
 
-- **`PluginProcessor.cpp`** (ligne 170-235) : Traitement CC pour Pan, Master Volume, Reverb (canal 16)
-- **`CS_midiIN.cpp`** (ligne 143-203) : Traitement CC pour canaux 1-7 (Volume, etc.)
-- **`PluginEditor.cpp`** : Interface graphique (sliders, knobs) avec synchronisation temps réel
+- **`PluginProcessor.cpp`** : Traitement MIDI des CC pour tous les canaux
+  - Lignes 170-245 : Canal 16 (Master Volume, Limiter, Reverb)
+  - Gestion du limiter (CC72/CC73)
+- **`CS_midiIN.cpp`** : Traitement CC pour canaux 1-7
+  - Lignes 143-203 : Volume (CC7), Pan (CC10), etc.
+- **`synth.cpp`** : Logique audio
+  - Lignes 423-487 : Master Volume (formule dB→RMS) et Limiter professionnel
+  - Lignes 333-378 : Traitement de la reverb avec filtres
+- **`PluginEditor.cpp`** : Interface graphique
+  - `MainCommandsComponent` : Contrôles globaux (Master Vol, Limiter)
+  - `ReverbComponent` : Contrôles de reverb
+  - `MixerStripComponent` : 7 canaux de mixage
+  - Timer 50ms pour synchronisation MIDI → UI
 
 ### Synchronisation MIDI ↔ Interface
 
-Tous les changements MIDI sont reflétés instantanément dans l'interface graphique via des callbacks :
-- `onVelocityChanged` (volume)
-- `onEngineSpeedChanged` (pan et autres paramètres)
+**Tous les contrôles sont bidirectionnels** :
+- 📥 **MIDI → Interface** : Les changements CC sont reflétés dans l'UI (50ms)
+- 📤 **Interface → MIDI** : Les changements UI sont appliqués instantanément à l'audio
+
+**Contrôles synchronisés** :
+- Master Volume (CC7 ch16) → Slider dans MainCommandsComponent
+- Limiter Enable/Threshold (CC72/CC73 ch16) → Bouton + Slider dans MainCommandsComponent
+- Pan (CC10 ch1-7) → Knobs dans MixerStripComponent
+- Master Volume sirènes (CC70 ch1-7) → Sliders dans MixerStripComponent
+- Paramètres Reverb (CC64-70 ch16) → Sliders/Boutons dans ReverbComponent
 
 ---
 
@@ -556,5 +625,13 @@ Tous les changements MIDI sont reflétés instantanément dans l'interface graph
 ---
 
 **Dernière mise à jour** : 2 Novembre 2025  
-**Version** : 1.5.2 (Limiter professionnel)
+**Version** : 1.5.2 (Limiter professionnel + Interface complète)
+
+### Nouveautés v1.5.2
+- ✅ Limiter professionnel avec attack instantané et release rapide
+- ✅ Master Volume visible dans l'interface (CC7 ch16)
+- ✅ Contrôles Limiter dans l'interface (CC72/CC73 ch16)
+- ✅ Correction bug Dry/Wet Reverb (oscillation et sauts aléatoires)
+- ✅ Interface réorganisée : contrôles globaux regroupés en haut
+- ✅ Synchronisation MIDI bidirectionnelle complète (50ms)
 
