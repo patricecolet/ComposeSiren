@@ -119,7 +119,11 @@ private:
     juce::Label widthLabel;
     juce::Label highpassLabel;
     juce::Label lowpassLabel;
-    juce::Label ccInfoLabel; // Pour afficher les CC sur canal 16
+    
+    // Limiter controls (CC72 et CC73 sur canal 16)
+    juce::ToggleButton limiterEnableButton;
+    juce::Slider limiterThresholdSlider;
+    juce::Label limiterThresholdLabel;
 };
 
 //==============================================================================

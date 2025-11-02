@@ -398,12 +398,27 @@ ReverbComponent::ReverbComponent(SirenePlugAudioProcessor& p)
     lowpassSlider.addListener(this);
     addAndMakeVisible(lowpassSlider);
     
-    // Info CC sur canal 16
-    ccInfoLabel.setText("Canal 16", juce::dontSendNotification);
-    ccInfoLabel.setJustificationType(juce::Justification::centred);
-    ccInfoLabel.setColour(juce::Label::textColourId, juce::Colours::yellow);
-    ccInfoLabel.setFont(juce::Font(14.0f, juce::Font::bold));
-    addAndMakeVisible(ccInfoLabel);
+    // Limiter Enable (CC72 sur canal 16)
+    limiterEnableButton.setButtonText("Limiter (CC72)");
+    limiterEnableButton.setToggleState(audioProcessor.mySynth->isLimiterEnabled(), juce::dontSendNotification);
+    limiterEnableButton.addListener(this);
+    addAndMakeVisible(limiterEnableButton);
+    
+    // Limiter Threshold (CC73 sur canal 16)
+    limiterThresholdLabel.setText("Threshold (CC73)", juce::dontSendNotification);
+    limiterThresholdLabel.setJustificationType(juce::Justification::centredLeft);
+    limiterThresholdLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+    limiterThresholdLabel.setFont(juce::Font(10.0f));
+    addAndMakeVisible(limiterThresholdLabel);
+    
+    limiterThresholdSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    limiterThresholdSlider.setRange(0.3, 0.95, 0.01);
+    limiterThresholdSlider.setValue(audioProcessor.mySynth->getLimiterThreshold());
+    limiterThresholdSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 18);
+    limiterThresholdSlider.setColour(juce::Slider::thumbColourId, juce::Colours::yellow);
+    limiterThresholdSlider.setColour(juce::Slider::trackColourId, juce::Colour(100, 100, 0));
+    limiterThresholdSlider.addListener(this);
+    addAndMakeVisible(limiterThresholdSlider);
     
     // Démarrer le timer pour synchroniser l'UI avec les changements MIDI
     startTimer(50); // 50ms = 20 Hz
@@ -466,6 +481,20 @@ void ReverbComponent::timerCallback()
     {
         lowpassSlider.setValue(currentLowpass, juce::dontSendNotification);
     }
+    
+    // Synchroniser Limiter Enable (CC72)
+    bool currentLimiterEnabled = audioProcessor.mySynth->isLimiterEnabled();
+    if (limiterEnableButton.getToggleState() != currentLimiterEnabled)
+    {
+        limiterEnableButton.setToggleState(currentLimiterEnabled, juce::dontSendNotification);
+    }
+    
+    // Synchroniser Limiter Threshold (CC73)
+    float currentThreshold = audioProcessor.mySynth->getLimiterThreshold();
+    if (std::abs(limiterThresholdSlider.getValue() - currentThreshold) > 0.01)
+    {
+        limiterThresholdSlider.setValue(currentThreshold, juce::dontSendNotification);
+    }
 }
 
 void ReverbComponent::paint(juce::Graphics& g)
@@ -521,10 +550,17 @@ void ReverbComponent::resized()
     auto lpfRow = area.removeFromTop(sliderHeight);
     lowpassLabel.setBounds(lpfRow.removeFromLeft(80));
     lowpassSlider.setBounds(lpfRow);
+    area.removeFromTop(3);
     
-    // Info CC en bas
+    // Limiter Enable
     area.removeFromTop(5);
-    ccInfoLabel.setBounds(area.removeFromTop(20));
+    limiterEnableButton.setBounds(area.removeFromTop(22));
+    area.removeFromTop(3);
+    
+    // Limiter Threshold
+    auto limiterRow = area.removeFromTop(sliderHeight);
+    limiterThresholdLabel.setBounds(limiterRow.removeFromLeft(80));
+    limiterThresholdSlider.setBounds(limiterRow);
 }
 
 void ReverbComponent::sliderValueChanged(juce::Slider* slider)
@@ -556,6 +592,10 @@ void ReverbComponent::sliderValueChanged(juce::Slider* slider)
     {
         audioProcessor.mySynth->setReverbLowpass((float)lowpassSlider.getValue());
     }
+    else if (slider == &limiterThresholdSlider)
+    {
+        audioProcessor.mySynth->setLimiterThreshold((float)limiterThresholdSlider.getValue());
+    }
 }
 
 void ReverbComponent::buttonClicked(juce::Button* button)
@@ -563,6 +603,10 @@ void ReverbComponent::buttonClicked(juce::Button* button)
     if (button == &enableButton)
     {
         audioProcessor.mySynth->setReverbEnabled(enableButton.getToggleState());
+    }
+    else if (button == &limiterEnableButton)
+    {
+        audioProcessor.mySynth->setLimiterEnabled(limiterEnableButton.getToggleState());
     }
 }
 
