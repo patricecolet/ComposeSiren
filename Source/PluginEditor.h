@@ -34,7 +34,10 @@ private:
 
 //==============================================================================
 // class MainCommandsComponent : main commands
-class MainCommandsComponent   : public juce::Component
+class MainCommandsComponent   : public juce::Component,
+                                 public juce::Slider::Listener,
+                                 public juce::Button::Listener,
+                                 private juce::Timer
 {
 public:
     MainCommandsComponent(SirenePlugAudioProcessor&);
@@ -42,14 +45,21 @@ public:
 
     void paint (juce::Graphics&) override;
     void resized() override;
+    void sliderValueChanged(juce::Slider* slider) override;
+    void buttonClicked(juce::Button* button) override;
     
     juce::TextButton resetButton;
 
 private:
+    void timerCallback() override;
     SirenePlugAudioProcessor& audioProcessor;
     
-   
-    
+    // Contrôles globaux (Canal 16)
+    juce::Label masterVolumeLabel;
+    juce::Slider masterVolumeSlider; // CC7 canal 16
+    juce::ToggleButton limiterEnableButton; // CC72 canal 16
+    juce::Label limiterThresholdLabel;
+    juce::Slider limiterThresholdSlider; // CC73 canal 16
 };
 
 //==============================================================================
@@ -119,11 +129,6 @@ private:
     juce::Label widthLabel;
     juce::Label highpassLabel;
     juce::Label lowpassLabel;
-    
-    // Limiter controls (CC72 et CC73 sur canal 16)
-    juce::ToggleButton limiterEnableButton;
-    juce::Slider limiterThresholdSlider;
-    juce::Label limiterThresholdLabel;
 };
 
 //==============================================================================
