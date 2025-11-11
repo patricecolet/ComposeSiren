@@ -66,15 +66,16 @@ public:
     };
     
     MidiState getMidiState() const { return midiState; }
+    
+    // Accès public pour l'interface
+    MidiIn* myMidiInHandler;
+    Synth* mySynth;
 
 private:
     //==============================================================================
     void timerCallback() override;
     
-    MidiIn* myMidiInHandler;
-    Synth* mySynth;
     int sampleCountForMidiInTimer = 0;
-    
     MidiState midiState;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SireneS1AudioProcessor)

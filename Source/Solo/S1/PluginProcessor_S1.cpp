@@ -200,17 +200,15 @@ void SireneS1AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         float sampleS1 = 0.0f;
         
         // Générer l'audio de S1 uniquement (canal 1)
+        // Pas de master volume ni pan - le DAW gère ces aspects
         if (mySynth->s1) {
             sampleS1 = mySynth->s1->calculwave();
-            sampleS1 *= mySynth->getMasterVolume(1);
         }
         
-        // Stéréo simple : pan centré pour Solo
-        float panLeft = mySynth->getPan(1, 0);
-        float panRight = mySynth->getPan(1, 1);
-        
-        channelDataL[sample] = sampleS1 * panLeft;
-        channelDataR[sample] = sampleS1 * panRight;
+        // Sortie mono → stéréo (identique sur les deux canaux)
+        // Le compositeur gère le panoramique dans son DAW
+        channelDataL[sample] = sampleS1;
+        channelDataR[sample] = sampleS1;
     }
 }
 
