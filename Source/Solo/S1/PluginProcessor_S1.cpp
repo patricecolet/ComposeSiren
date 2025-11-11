@@ -194,14 +194,20 @@ void SireneS1AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     
     for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
     {
-        float outputL = 0.0f;
-        float outputR = 0.0f;
+        float sampleS1 = 0.0f;
         
         // Générer l'audio de S1 uniquement (canal 1)
-        mySynth->compute(1, &outputL, &outputR);
+        if (mySynth->s1) {
+            sampleS1 = mySynth->s1->calculwave();
+            sampleS1 *= mySynth->getMasterVolume(1);
+        }
         
-        channelDataL[sample] = outputL;
-        channelDataR[sample] = outputR;
+        // Stéréo simple : pan centré pour Solo
+        float panLeft = mySynth->getPan(1, 0);
+        float panRight = mySynth->getPan(1, 1);
+        
+        channelDataL[sample] = sampleS1 * panLeft;
+        channelDataR[sample] = sampleS1 * panRight;
         
         sampleCountForMidiInTimer++;
     }
