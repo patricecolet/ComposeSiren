@@ -12,7 +12,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "PluginProcessor_S1.h"
+#include "PluginProcessor.h"
 
 //==============================================================================
 class SireneS1AudioProcessorEditor  : public juce::AudioProcessorEditor,

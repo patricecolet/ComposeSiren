@@ -7,8 +7,8 @@
   ==============================================================================
 */
 
-#include "PluginProcessor_S1.h"
-#include "PluginEditor_S1.h"
+#include "PluginProcessor.h"
+#include "PluginEditor.h"
 
 #include <functional>
 
@@ -162,30 +162,26 @@ void SireneS1AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     {
         const auto msg = metadata.getMessage();
         
+        // Mettre à jour l'état MIDI pour l'affichage
         if (msg.isNoteOn())
         {
             midiState.noteOn = true;
             midiState.currentNote = msg.getNoteNumber();
             midiState.currentVelocity = msg.getVelocity();
-            
-            // Transmettre au handler MIDI (canal 1 pour mode Solo)
-            myMidiInHandler->myNoteON(1, msg.getNoteNumber(), msg.getVelocity());
         }
         else if (msg.isNoteOff())
         {
             midiState.noteOn = false;
-            myMidiInHandler->myNoteOFF(1, msg.getNoteNumber());
         }
         else if (msg.isController())
         {
-            int ccNumber = msg.getControllerNumber();
-            int ccValue = msg.getControllerValue();
-            
-            midiState.activeCC[ccNumber] = ccValue;
-            
-            // Transmettre au handler MIDI
-            myMidiInHandler->myCC(1, ccNumber, ccValue);
+            midiState.activeCC[msg.getControllerNumber()] = msg.getControllerValue();
         }
+        
+        // Transmettre au handler MIDI
+        int* midiArray = new int[3]{msg.getChannel(), msg.getRawData()[1], msg.getRawData()[2]};
+        myMidiInHandler->handleMIDIMessage2(midiArray[0], midiArray[1], midiArray[2]);
+        delete[] midiArray;
     }
 
     // Générer l'audio depuis le synth
@@ -194,6 +190,13 @@ void SireneS1AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     
     for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
     {
+        // Appeler le timer audio tous les 512 samples
+        if(sampleCountForMidiInTimer % 512 == 0)
+        {
+            myMidiInHandler->timerAudio();
+        }
+        ++sampleCountForMidiInTimer;
+        
         float sampleS1 = 0.0f;
         
         // Générer l'audio de S1 uniquement (canal 1)
@@ -208,8 +211,6 @@ void SireneS1AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         
         channelDataL[sample] = sampleS1 * panLeft;
         channelDataR[sample] = sampleS1 * panRight;
-        
-        sampleCountForMidiInTimer++;
     }
 }
 
@@ -238,8 +239,9 @@ void SireneS1AudioProcessor::setStateInformation (const void* data, int sizeInBy
 
 void SireneS1AudioProcessor::timerCallback()
 {
-    myMidiInHandler->callbackEvery1ms(sampleCountForMidiInTimer);
-    sampleCountForMidiInTimer = 0;
+    if (mySynth->s1) {
+        mySynth->s1->setnote();
+    }
 }
 
 //==============================================================================

@@ -7,8 +7,8 @@
   ==============================================================================
 */
 
-#include "PluginProcessor_S1.h"
-#include "PluginEditor_S1.h"
+#include "PluginProcessor.h"
+#include "PluginEditor.h"
 
 //==============================================================================
 SireneS1AudioProcessorEditor::SireneS1AudioProcessorEditor (SireneS1AudioProcessor& p)
