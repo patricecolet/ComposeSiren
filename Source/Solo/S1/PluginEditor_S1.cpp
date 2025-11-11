@@ -125,88 +125,76 @@ void SireneS1AudioProcessorEditor::paint (juce::Graphics& g)
 
 void SireneS1AudioProcessorEditor::resized()
 {
-    auto area = getLocalBounds();
+    // Coordonnées absolues pour éviter toute confusion
+    int margin = 15;
+    int headerHeight = 100;
+    int groupHeight = 220;
+    int groupSpacing = 10;
+    int groupWidth = (getWidth() - 2 * margin - groupSpacing) / 2;
     
-    // En-tête (titre + indicateurs MIDI)
-    auto header = area.removeFromTop(100);
+    // === EN-TÊTE ===
     noteLabel.setBounds(50, 78, 150, 20);
     velocityLabel.setBounds(220, 78, 150, 20);
     
-    // Marge
-    area.removeFromTop(10);
-    area.reduce(15, 0);
+    int yPos = headerHeight + 10;
     
-    // Organisation en 2 lignes de 2 colonnes
-    int groupHeight = 220;
-    int groupSpacing = 10;
+    // === LIGNE 1: VIBRATO + TREMOLO ===
     
-    // Ligne 1 : Vibrato + Tremolo
-    auto line1 = area.removeFromTop(groupHeight);
+    // Groupe Vibrato (gauche)
+    vibratoGroup.setBounds(margin, yPos, groupWidth, groupHeight);
+    int vibratoX = margin + 10;
+    int vibratoY = yPos + 25;
+    int vibratoKnobWidth = (groupWidth - 20 - 10) / 3; // 3 knobs avec espaces
     
-    auto vibratoArea = line1.removeFromLeft((getWidth() - 30 - groupSpacing) / 2);
-    vibratoGroup.setBounds(vibratoArea);
+    vibratoDepthLabel.setBounds(vibratoX, vibratoY, vibratoKnobWidth, 20);
+    vibratoDepthKnob.setBounds(vibratoX, vibratoY + 20, vibratoKnobWidth, 100);
     
-    line1.removeFromLeft(groupSpacing);
+    vibratoRateLabel.setBounds(vibratoX + vibratoKnobWidth + 5, vibratoY, vibratoKnobWidth, 20);
+    vibratoRateKnob.setBounds(vibratoX + vibratoKnobWidth + 5, vibratoY + 20, vibratoKnobWidth, 100);
     
-    auto tremoloArea = line1;
-    tremoloGroup.setBounds(tremoloArea);
+    vibratoAttackLabel.setBounds(vibratoX + 2 * (vibratoKnobWidth + 5), vibratoY, vibratoKnobWidth, 20);
+    vibratoAttackKnob.setBounds(vibratoX + 2 * (vibratoKnobWidth + 5), vibratoY + 20, vibratoKnobWidth, 100);
     
-    // Layout interne Vibrato (3 knobs)
-    auto vibratoContent = vibratoArea.reduced(10, 25);
-    int knobWidth = vibratoContent.getWidth() / 3 - 5;
+    // Groupe Tremolo (droite)
+    int tremoloX = margin + groupWidth + groupSpacing;
+    tremoloGroup.setBounds(tremoloX, yPos, groupWidth, groupHeight);
+    int tremoloContentX = tremoloX + 10;
+    int tremoloContentY = yPos + 25;
+    int tremoloKnobWidth = (groupWidth - 20 - 10) / 2; // 2 knobs
     
-    vibratoDepthLabel.setBounds(vibratoContent.removeFromLeft(knobWidth).removeFromTop(20));
-    vibratoDepthKnob.setBounds(vibratoDepthLabel.getBounds().withY(vibratoDepthLabel.getBottom()).withHeight(100));
-    vibratoContent.removeFromLeft(5);
+    tremoloRateLabel.setBounds(tremoloContentX, tremoloContentY, tremoloKnobWidth, 20);
+    tremoloRateKnob.setBounds(tremoloContentX, tremoloContentY + 20, tremoloKnobWidth, 100);
     
-    vibratoRateLabel.setBounds(vibratoContent.removeFromLeft(knobWidth).removeFromTop(20));
-    vibratoRateKnob.setBounds(vibratoRateLabel.getBounds().withY(vibratoRateLabel.getBottom()).withHeight(100));
-    vibratoContent.removeFromLeft(5);
+    tremoloDepthLabel.setBounds(tremoloContentX + tremoloKnobWidth + 10, tremoloContentY, tremoloKnobWidth, 20);
+    tremoloDepthKnob.setBounds(tremoloContentX + tremoloKnobWidth + 10, tremoloContentY + 20, tremoloKnobWidth, 100);
     
-    vibratoAttackLabel.setBounds(vibratoContent.removeFromLeft(knobWidth).removeFromTop(20));
-    vibratoAttackKnob.setBounds(vibratoAttackLabel.getBounds().withY(vibratoAttackLabel.getBottom()).withHeight(100));
+    // === LIGNE 2: ENVELOPPE + PORTAMENTO ===
+    yPos += groupHeight + groupSpacing;
     
-    // Layout interne Tremolo (2 knobs)
-    auto tremoloContent = tremoloArea.reduced(10, 25);
-    knobWidth = tremoloContent.getWidth() / 2 - 5;
+    // Groupe Enveloppe (gauche)
+    envelopeGroup.setBounds(margin, yPos, groupWidth, groupHeight);
+    int envelopeX = margin + 10;
+    int envelopeY = yPos + 25;
+    int envelopeKnobWidth = (groupWidth - 20 - 10) / 2; // 2 knobs
     
-    tremoloRateLabel.setBounds(tremoloContent.removeFromLeft(knobWidth).removeFromTop(20));
-    tremoloRateKnob.setBounds(tremoloRateLabel.getBounds().withY(tremoloRateLabel.getBottom()).withHeight(100));
-    tremoloContent.removeFromLeft(10);
+    attackLabel.setBounds(envelopeX, envelopeY, envelopeKnobWidth, 20);
+    attackKnob.setBounds(envelopeX, envelopeY + 20, envelopeKnobWidth, 100);
     
-    tremoloDepthLabel.setBounds(tremoloContent.removeFromLeft(knobWidth).removeFromTop(20));
-    tremoloDepthKnob.setBounds(tremoloDepthLabel.getBounds().withY(tremoloDepthLabel.getBottom()).withHeight(100));
+    releaseLabel.setBounds(envelopeX + envelopeKnobWidth + 10, envelopeY, envelopeKnobWidth, 20);
+    releaseKnob.setBounds(envelopeX + envelopeKnobWidth + 10, envelopeY + 20, envelopeKnobWidth, 100);
     
-    // Ligne 2 : Enveloppe + Portamento
-    area.removeFromTop(groupSpacing);
-    auto line2 = area.removeFromTop(groupHeight);
+    // Groupe Portamento (DROITE - séparé de Enveloppe!)
+    int portamentoX = margin + groupWidth + groupSpacing;
+    portamentoGroup.setBounds(portamentoX, yPos, groupWidth, groupHeight);
+    int portamentoContentX = portamentoX + 10;
+    int portamentoContentY = yPos + 25;
     
-    auto envelopeArea = line2.removeFromLeft((getWidth() - 30 - groupSpacing) / 2);
-    envelopeGroup.setBounds(envelopeArea);
-    
-    line2.removeFromLeft(groupSpacing);
-    
-    auto portamentoArea = line2;
-    portamentoGroup.setBounds(portamentoArea);
-    
-    // Layout interne Enveloppe (2 knobs)
-    auto envelopeContent = envelopeArea.reduced(10, 25);
-    knobWidth = envelopeContent.getWidth() / 2 - 5;
-    
-    attackLabel.setBounds(envelopeContent.removeFromLeft(knobWidth).removeFromTop(20));
-    attackKnob.setBounds(attackLabel.getBounds().withY(attackLabel.getBottom()).withHeight(100));
-    envelopeContent.removeFromLeft(10);
-    
-    releaseLabel.setBounds(envelopeContent.removeFromLeft(knobWidth).removeFromTop(20));
-    releaseKnob.setBounds(releaseLabel.getBounds().withY(releaseLabel.getBottom()).withHeight(100));
-    
-    // Layout interne Portamento (1 knob centré)
-    auto portamentoContent = portamentoArea.reduced(10, 25);
-    int centerX = portamentoContent.getWidth() / 2 - 60;
-    
-    portamentoLabel.setBounds(portamentoContent.removeFromLeft(portamentoContent.getWidth()).removeFromTop(20));
+    portamentoLabel.setBounds(portamentoContentX, portamentoContentY, groupWidth - 20, 20);
     portamentoLabel.setJustificationType(juce::Justification::centred);
-    portamentoKnob.setBounds(centerX, portamentoLabel.getBottom(), 120, 100);
+    
+    // Knob centré horizontalement dans le groupe Portamento
+    int knobX = portamentoX + (groupWidth - 120) / 2;
+    portamentoKnob.setBounds(knobX, portamentoContentY + 25, 120, 120);
 }
 
 void SireneS1AudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
