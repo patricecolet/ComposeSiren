@@ -19,7 +19,7 @@
 class Synth
 {
 public:
-    Synth();
+    Synth(bool soloMode = false, const std::string& soloModel = "");
     ~Synth();
 
     void chooseOutputFile();

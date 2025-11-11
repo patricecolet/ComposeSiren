@@ -14,7 +14,7 @@
 #include <iostream>
 #include <vector>
 
-Synth::Synth(){
+Synth::Synth(bool soloMode, const std::string& soloModel){
 
     // left channel
     PanS1=0.75;
@@ -131,35 +131,49 @@ Synth::Synth(){
     #endif
 #endif
     
-    s1 = new Sirene("S1", dataFilePath);
-    s2 = new Sirene("S2", dataFilePath);
-    s3 = new Sirene("S3", dataFilePath);
-    s4 = new Sirene("S4", dataFilePath);
-    s5 = new Sirene("S5", dataFilePath);
-    s6 = new Sirene("S6", dataFilePath);
-    s7 = new Sirene("S7", dataFilePath);
+    // En mode Solo, n'instancier que la sirène demandée
+    // En mode Orchestra, instancier toutes les sirènes
+    if (soloMode && !soloModel.empty()) {
+        // Mode Solo : instancier uniquement la sirène demandée
+        s1 = (soloModel == "S1") ? new Sirene("S1", dataFilePath) : nullptr;
+        s2 = nullptr;  // S2 n'est jamais utilisé en Solo (même données que S1)
+        s3 = (soloModel == "S3") ? new Sirene("S3", dataFilePath) : nullptr;
+        s4 = (soloModel == "S4") ? new Sirene("S4", dataFilePath) : nullptr;
+        s5 = (soloModel == "S5") ? new Sirene("S5", dataFilePath) : nullptr;
+        s6 = nullptr;  // S6 n'est jamais utilisé en Solo (même données que S5)
+        s7 = (soloModel == "S7") ? new Sirene("S7", dataFilePath) : nullptr;
+    } else {
+        // Mode Orchestra : instancier toutes les sirènes
+        s1 = new Sirene("S1", dataFilePath);
+        s2 = new Sirene("S2", dataFilePath);
+        s3 = new Sirene("S3", dataFilePath);
+        s4 = new Sirene("S4", dataFilePath);
+        s5 = new Sirene("S5", dataFilePath);
+        s6 = new Sirene("S6", dataFilePath);
+        s7 = new Sirene("S7", dataFilePath);
+    }
 }
 
 Synth::~Synth(){
-    delete (s1);
-    delete (s2);
-    delete (s3);
-    delete (s4);
-    delete (s5);
-    delete (s6);
-    delete (s7);
+    if (s1) delete (s1);
+    if (s2) delete (s2);
+    if (s3) delete (s3);
+    if (s4) delete (s4);
+    if (s5) delete (s5);
+    if (s6) delete (s6);
+    if (s7) delete (s7);
     delete (reverb);
 }
 
 void Synth::setSampleRate(double newSampleRate) {
-    // Propager le sample rate à toutes les sirènes
-    s1->setSampleRate(newSampleRate);
-    s2->setSampleRate(newSampleRate);
-    s3->setSampleRate(newSampleRate);
-    s4->setSampleRate(newSampleRate);
-    s5->setSampleRate(newSampleRate);
-    s6->setSampleRate(newSampleRate);
-    s7->setSampleRate(newSampleRate);
+    // Propager le sample rate à toutes les sirènes (seulement celles qui existent)
+    if (s1) s1->setSampleRate(newSampleRate);
+    if (s2) s2->setSampleRate(newSampleRate);
+    if (s3) s3->setSampleRate(newSampleRate);
+    if (s4) s4->setSampleRate(newSampleRate);
+    if (s5) s5->setSampleRate(newSampleRate);
+    if (s6) s6->setSampleRate(newSampleRate);
+    if (s7) s7->setSampleRate(newSampleRate);
     
     // Mettre à jour le sample rate pour les filtres reverb
     currentSampleRate = newSampleRate;

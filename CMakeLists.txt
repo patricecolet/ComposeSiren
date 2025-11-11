@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.19.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED)
 set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE INTERNAL "")
+
 # Get the git hash
 execute_process(
         COMMAND git rev-parse --short HEAD
@@ -13,8 +14,7 @@ execute_process(
 string(TIMESTAMP CURRENT_DATE "%Y-%m-%d")
 set(PROJECT_DESCRIPTION "ComposeSiren du ${CURRENT_DATE} sur commit n ${GIT_HASH}")
 
-project(ComposeSiren VERSION 1.5.0 DESCRIPTION ${PROJECT_DESCRIPTION})
-set(BaseTargetName ${PROJECT_NAME})
+project(ComposeSiren VERSION 2.0.0 DESCRIPTION ${PROJECT_DESCRIPTION})
 set(VendorName "Mecanique Vivante")
 
 # Inclure la configuration locale pour la signature et notarisation (si elle existe)
@@ -44,45 +44,38 @@ if (APPLE)
   list(APPEND FORMATS "AU")
 endif()
 
-juce_add_plugin(${BaseTargetName}
-  PRODUCT_NAME "${BaseTargetName}"
-  COMPANY_NAME "${VendorName}"
-  VERSION ${CMAKE_PROJECT_VERSION}
-  ICON_BIG "${CMAKE_SOURCE_DIR}/Assets/Icon_1024.png"
-  ICON_SMALL "${CMAKE_SOURCE_DIR}/Assets/Icon_1024.png"
-  FORMATS ${FORMATS}
-  # A four-character manufacturer id with at least one upper-case character
-  PLUGIN_MANUFACTURER_CODE McVv
-  # A unique four-character plugin id with at least one upper-case character
-  PLUGIN_CODE MvCs
-  IS_SYNTH TRUE                     # Is this a synth or an effect?
-  NEEDS_MIDI_INPUT TRUE             # Does the plugin need midi input?
-  NEEDS_MIDI_OUTPUT TRUE            # Does the plugin need midi output?
-  IS_MIDI_EFFECT FALSE              # Is this plugin a MIDI effect?
-  EDITOR_WANTS_KEYBOARD_FOCUS TRUE  # Does the editor need keyboard focus?
-  COPY_PLUGIN_AFTER_BUILD FALSE     # Should the plugin be installed to a default location after building?
-  # VST3_CATEGORIES
-  # AAX_CATEGORY
-  # AU_MAIN_TYPE
-  # COMPANY_WEBSITE https://www.mecanique-vivante.com
-  # COMPANY_EMAIL
-  BUNDLE_ID "com.mecaviv.${BaseTargetName}"
-  PLUGIN_NAME "${BaseTargetName}"
-  PRODUCT_NAME "${BaseTargetName}"
+################################################################################
+# Bibliothèque commune partagée entre tous les plugins
+################################################################################
+
+# Configurer config.h
+configure_file(Source/Common/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/Source/Common/config.h)
+
+add_library(ComposeSiren_Common STATIC
+  Source/Common/CS_midiIN.cpp
+  Source/Common/CS_midiIN.h
+  Source/Common/Sirene.cpp
+  Source/Common/Sirene.h
+  Source/Common/synth.cpp
+  Source/Common/synth.h
+  Source/Common/allpass.cpp
+  Source/Common/allpass.h
+  Source/Common/comb.cpp
+  Source/Common/comb.h
+  Source/Common/mareverbe.cpp
+  Source/Common/mareverbe.h
+  Source/Common/parameters.h
+  ${CMAKE_CURRENT_BINARY_DIR}/Source/Common/config.h
 )
 
-juce_generate_juce_header(${BaseTargetName})
+target_include_directories(ComposeSiren_Common
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/Source/Common
+    ${CMAKE_CURRENT_BINARY_DIR}/Source/Common
+)
 
-# without this, build uses c++14 somehow, disregarding other settings about CXX standard.
-target_compile_features ("${BaseTargetName}" PRIVATE cxx_std_20)
-target_compile_definitions("${BaseTargetName}" PRIVATE CMS_BUILD_WITH_CMAKE=1)
-
-add_subdirectory(Assets)
-add_subdirectory(Source)
-
-target_link_libraries(${BaseTargetName}
-  PRIVATE
-    # copied from projucer project
+target_link_libraries(ComposeSiren_Common
+  PUBLIC
     juce::juce_audio_basics
     juce::juce_audio_devices
     juce::juce_audio_formats
@@ -94,43 +87,153 @@ target_link_libraries(${BaseTargetName}
     juce::juce_graphics
     juce::juce_gui_basics
     juce::juce_gui_extra
-    # recommended
+)
+
+target_compile_features(ComposeSiren_Common PRIVATE cxx_std_20)
+target_compile_definitions(ComposeSiren_Common PUBLIC CMS_BUILD_WITH_CMAKE=1)
+
+if(LINUX)
+  target_compile_definitions(ComposeSiren_Common PUBLIC JUCE_USE_CURL=0)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
+
+################################################################################
+# Plugin Orchestra (7 sirènes avec mixeur complet)
+################################################################################
+
+juce_add_plugin(ComposeSiren_Orchestra
+  PRODUCT_NAME "ComposeSiren Orchestra"
+  COMPANY_NAME "${VendorName}"
+  VERSION ${CMAKE_PROJECT_VERSION}
+  ICON_BIG "${CMAKE_SOURCE_DIR}/Assets/Icon_1024.png"
+  ICON_SMALL "${CMAKE_SOURCE_DIR}/Assets/Icon_1024.png"
+  FORMATS ${FORMATS}
+  PLUGIN_MANUFACTURER_CODE McVv
+  PLUGIN_CODE MvCs
+  IS_SYNTH TRUE
+  NEEDS_MIDI_INPUT TRUE
+  NEEDS_MIDI_OUTPUT TRUE
+  IS_MIDI_EFFECT FALSE
+  EDITOR_WANTS_KEYBOARD_FOCUS TRUE
+  COPY_PLUGIN_AFTER_BUILD FALSE
+  BUNDLE_ID "com.mecaviv.ComposeSiren.Orchestra"
+  PLUGIN_NAME "ComposeSiren Orchestra"
+  PRODUCT_NAME "ComposeSiren Orchestra"
+)
+
+juce_generate_juce_header(ComposeSiren_Orchestra)
+
+target_sources(ComposeSiren_Orchestra
+  PRIVATE
+    Source/Orchestra/PluginEditor.cpp
+    Source/Orchestra/PluginEditor.h
+    Source/Orchestra/PluginProcessor.cpp
+    Source/Orchestra/PluginProcessor.h
+)
+
+target_compile_features(ComposeSiren_Orchestra PRIVATE cxx_std_20)
+target_compile_definitions(ComposeSiren_Orchestra PRIVATE 
+  CMS_BUILD_WITH_CMAKE=1
+  JUCE_VST3_CAN_REPLACE_VST2=0
+  JUCE_WEB_BROWSER=0
+)
+
+target_link_libraries(ComposeSiren_Orchestra
+  PRIVATE
+    ComposeSiren_Common
     juce::juce_recommended_warning_flags
     juce::juce_recommended_config_flags
     juce::juce_recommended_lto_flags
 )
 
 if(LINUX)
-  # to fix linker error looking for curl symbols
-  target_compile_definitions("${BaseTargetName}" PRIVATE JUCE_USE_CURL=0)
-
-  # to fix
-  # relocation R_X86_64_PC32 against symbol `_ZN10BinaryData18knobbackground_svgE' can not be used when making a shared object; recompile with -fPIC
-  # https://forum.juce.com/t/linux-cmake-and-fpic/54149/2
-  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  target_compile_definitions(ComposeSiren_Orchestra PRIVATE JUCE_USE_CURL=0)
 endif()
 
-target_compile_definitions(${BaseTargetName} 
-  PUBLIC 
-    JUCE_VST3_CAN_REPLACE_VST2=0
-    JUCE_WEB_BROWSER=0
-)
+add_subdirectory(Assets)
 
 ################################################################################
-# packaging
+# Fonction helper pour créer un plugin Solo
+################################################################################
 
-# if JUCE_COPY_PLUGIN_AFTER_BUILD is set to true, it means we will install non
-# signed binaries locally (e.g. for debugging purpose) and we likely don't want
-# to build an installer right now, so we stop here :
+function(add_siren_solo_plugin MODEL_NAME DISPLAY_NAME PLUGIN_CODE)
+    set(TARGET_NAME "ComposeSiren_${MODEL_NAME}")
+    
+    juce_add_plugin(${TARGET_NAME}
+        PRODUCT_NAME "ComposeSiren ${DISPLAY_NAME}"
+        COMPANY_NAME "${VendorName}"
+        VERSION ${CMAKE_PROJECT_VERSION}
+        ICON_BIG "${CMAKE_SOURCE_DIR}/Assets/Icon_1024.png"
+        ICON_SMALL "${CMAKE_SOURCE_DIR}/Assets/Icon_1024.png"
+        FORMATS ${FORMATS}
+        PLUGIN_MANUFACTURER_CODE McVv
+        PLUGIN_CODE ${PLUGIN_CODE}
+        IS_SYNTH TRUE
+        NEEDS_MIDI_INPUT TRUE
+        NEEDS_MIDI_OUTPUT TRUE
+        IS_MIDI_EFFECT FALSE
+        EDITOR_WANTS_KEYBOARD_FOCUS TRUE
+        COPY_PLUGIN_AFTER_BUILD FALSE
+        BUNDLE_ID "com.mecaviv.ComposeSiren.${MODEL_NAME}"
+        PLUGIN_NAME "ComposeSiren ${DISPLAY_NAME}"
+        PRODUCT_NAME "ComposeSiren ${DISPLAY_NAME}"
+    )
+    
+    juce_generate_juce_header(${TARGET_NAME})
+    
+    target_sources(${TARGET_NAME}
+        PRIVATE
+            Source/Solo/${MODEL_NAME}/PluginEditor_${MODEL_NAME}.cpp
+            Source/Solo/${MODEL_NAME}/PluginEditor_${MODEL_NAME}.h
+            Source/Solo/${MODEL_NAME}/PluginProcessor_${MODEL_NAME}.cpp
+            Source/Solo/${MODEL_NAME}/PluginProcessor_${MODEL_NAME}.h
+    )
+    
+    target_compile_features(${TARGET_NAME} PRIVATE cxx_std_20)
+    target_compile_definitions(${TARGET_NAME} PRIVATE
+        CMS_BUILD_WITH_CMAKE=1
+        SIREN_MODEL="${MODEL_NAME}"
+        SIREN_DISPLAY_NAME="${DISPLAY_NAME}"
+        JUCE_VST3_CAN_REPLACE_VST2=0
+        JUCE_WEB_BROWSER=0
+        SOLO_PLUGIN=1
+    )
+    
+    target_link_libraries(${TARGET_NAME}
+        PRIVATE
+            ComposeSiren_Common
+            juce::juce_recommended_warning_flags
+            juce::juce_recommended_config_flags
+            juce::juce_recommended_lto_flags
+    )
+    
+    if(LINUX)
+        target_compile_definitions(${TARGET_NAME} PRIVATE JUCE_USE_CURL=0)
+    endif()
+endfunction()
+
+################################################################################
+# Plugins Solo (à décommenter au fur et à mesure de leur création)
+################################################################################
+
+add_siren_solo_plugin("S1" "S1 Alto" "Cs01")
+# add_siren_solo_plugin("S3" "S3 Bass" "Cs03")
+# add_siren_solo_plugin("S4" "S4 Tenor" "Cs04")
+# add_siren_solo_plugin("S5" "S5 Soprano" "Cs05")
+# add_siren_solo_plugin("S7" "S7 Piccolo" "Cs07")
+
+################################################################################
+# Packaging
+################################################################################
 
 if(JUCE_COPY_PLUGIN_AFTER_BUILD)
   return()
 endif()
 
-if(APPLE) # we generate a cmake subproject to build the installer
+if(APPLE)
   include(Packaging/Apple/MakePackage.cmake)
-elseif(WIN32) # we just proceed the regular way
+elseif(WIN32)
   include(Packaging/Windows/MakePackage.cmake)
-elseif(UNIX AND NOT APPLE) # Linux packaging
+elseif(UNIX AND NOT APPLE)
   include(Packaging/Linux/MakePackage.cmake)
 endif()
