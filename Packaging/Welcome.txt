@@ -1,2 +1,7 @@
 Welcome to the ComposeSiren installer.
 This program will guide you through the installation of this software.
+
+SYSTEM REQUIREMENTS
+==================
+macOS 13.0 (Ventura) or later
+Intel (x86_64) or Apple Silicon (arm64)

@@ -9,7 +9,7 @@ project(@BaseTargetName@_Installer VERSION @CMAKE_PROJECT_VERSION@)
 
 function(_set_apple_install_folder_from_format FORMAT)
   if(${FORMAT} STREQUAL "Standalone")
-    set(INSTALL_FOLDER "/Applications" PARENT_SCOPE)
+    set(INSTALL_FOLDER "/Applications/@VendorName@" PARENT_SCOPE)
   elseif(${FORMAT} STREQUAL "AU")
     set(INSTALL_FOLDER "Components" PARENT_SCOPE)
   else()
@@ -56,33 +56,48 @@ endfunction()
 ################################################################################
 # install components
 
-foreach(FORMAT @FORMATS@)
-  # if project is multi-config (-G Xcode, Visual Studio or Ninja Multi-Config)
-  if(@MULTI_CONFIG@)
-    foreach(CONFIG @CMAKE_CONFIGURATION_TYPES@)
+# List of all plugin targets (Orchestra + Solo)
+set(ALL_PLUGIN_TARGETS "@BaseTargetName@")
+set(SOLO_MODELS "S1" "S3" "S4" "S5" "S7")
+foreach(MODEL ${SOLO_MODELS})
+  list(APPEND ALL_PLUGIN_TARGETS "ComposeSiren_${MODEL}")
+endforeach()
 
-      file(READ "@CMAKE_CURRENT_BINARY_DIR@/@BaseTargetName@_${FORMAT}_${CONFIG}_path" ARTEFACTS_DIR)
-      if(EXISTS "${ARTEFACTS_DIR}")
-        message("we have a ${CONFIG} build for ${FORMAT} target")
-        if(${CONFIG} STREQUAL ${CMAKE_BUILD_TYPE})
-          message(STATUS ">>>>> installing ${CONFIG} ${FORMAT} target from ${ARTEFACTS_DIR}")
+foreach(PLUGIN_TARGET ${ALL_PLUGIN_TARGETS})
+  foreach(FORMAT @FORMATS@)
+    # if project is multi-config (-G Xcode, Visual Studio or Ninja Multi-Config)
+    if(@MULTI_CONFIG@)
+      foreach(CONFIG @CMAKE_CONFIGURATION_TYPES@)
+
+        set(PATH_FILE "@CMAKE_CURRENT_BINARY_DIR@/${PLUGIN_TARGET}_${FORMAT}_${CONFIG}_path")
+        if(EXISTS "${PATH_FILE}")
+          file(READ "${PATH_FILE}" ARTEFACTS_DIR)
+          if(EXISTS "${ARTEFACTS_DIR}")
+            message("we have a ${CONFIG} build for ${PLUGIN_TARGET} ${FORMAT} target")
+            if(${CONFIG} STREQUAL ${CMAKE_BUILD_TYPE})
+              message(STATUS ">>>>> installing ${CONFIG} ${PLUGIN_TARGET} ${FORMAT} target from ${ARTEFACTS_DIR}")
+              _sign_component_from_build_path("${ARTEFACTS_DIR}")
+              _install_component_from_build_path_and_format("${ARTEFACTS_DIR}" ${FORMAT})
+            endif()
+          endif()
+        endif()
+
+      endforeach()
+    # otherwise (e.g using -G Makefile or Ninja)
+    else()
+
+      set(PATH_FILE "@CMAKE_CURRENT_BINARY_DIR@/${PLUGIN_TARGET}_${FORMAT}_path")
+      if(EXISTS "${PATH_FILE}")
+        file(READ "${PATH_FILE}" ARTEFACTS_DIR)
+        if(EXISTS "${ARTEFACTS_DIR}")
+          message("we have a build for ${PLUGIN_TARGET} ${FORMAT} target !")
           _sign_component_from_build_path("${ARTEFACTS_DIR}")
           _install_component_from_build_path_and_format("${ARTEFACTS_DIR}" ${FORMAT})
         endif()
       endif()
 
-    endforeach()
-  # otherwise (e.g using -G Makefile or Ninja)
-  else()
-
-    file(READ "@CMAKE_CURRENT_BINARY_DIR@/@BaseTargetName@_${FORMAT}_path" ARTEFACTS_DIR)
-    if(EXISTS "${ARTEFACTS_DIR}")
-      message("we have a build for ${FORMAT} target !")
-      _sign_component_from_build_path("${ARTEFACTS_DIR}")
-      _install_component_from_build_path_and_format("${ARTEFACTS_DIR}" ${FORMAT})
     endif()
-
-  endif()
+  endforeach()
 endforeach()
 
 # install Resources
@@ -127,7 +142,7 @@ set(CPACK_PACKAGE_RELOCATABLE "true")
 
 set(CPACK_GENERATOR "productbuild")
 
-set(CPACK_SET_DESTDIR ON) # because we install Standalone in /Applications
+set(CPACK_SET_DESTDIR ON) # because we install Standalone in /Applications/@VendorName@
 set(CPACK_INSTALL_PREFIX "/Library/Audio/Plug-ins") # used for relative paths
 set(CPACK_PACKAGE_FILE_NAME "@BaseTargetName@-@PROJECT_VERSION@-Darwin-universal")
 

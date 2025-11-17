@@ -27,3 +27,7 @@ MyConfig.cmake
 # Configuration locale de signature et notarisation (voir SIGNATURE_ET_NOTARISATION.md)
 LocalConfig.cmake
 
+
+# DMG releases (too large for git)
+*.dmg
+Releases/v*/
