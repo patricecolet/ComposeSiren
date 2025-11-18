@@ -4,29 +4,71 @@
 # generating an extra cmake project)
 # see : https://stackoverflow.com/a/64882742/3810717 and dig doc
 
-foreach(FORMAT ${FORMATS})
-  get_target_property(ARTEFACTS_DIR ${BaseTargetName}_${FORMAT} JUCE_PLUGIN_ARTEFACT_FILE)
-  if(CMAKE_CONFIGURATION_TYPES)
-    set(MULTI_CONFIG TRUE)
-    file(
-      GENERATE
-      OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${BaseTargetName}_${FORMAT}_$<CONFIG>_path"
-      CONTENT "${ARTEFACTS_DIR}"
-    )
-  else()
-    set(MULTI_CONFIG FALSE)
-    file(
-      GENERATE
-      OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${BaseTargetName}_${FORMAT}_path"
-      CONTENT "${ARTEFACTS_DIR}"
-    )
-  endif()
+# List of all plugin targets (Orchestra + Solo)
+set(ALL_PLUGIN_TARGETS ${BaseTargetName})
+set(SOLO_MODELS "S1" "S3" "S4" "S5" "S7")
+foreach(MODEL ${SOLO_MODELS})
+  list(APPEND ALL_PLUGIN_TARGETS "ComposeSiren_${MODEL}")
+endforeach()
+
+foreach(PLUGIN_TARGET ${ALL_PLUGIN_TARGETS})
+  foreach(FORMAT ${FORMATS})
+    get_target_property(ARTEFACTS_DIR ${PLUGIN_TARGET}_${FORMAT} JUCE_PLUGIN_ARTEFACT_FILE)
+    if(ARTEFACTS_DIR)
+      if(CMAKE_CONFIGURATION_TYPES)
+        set(MULTI_CONFIG TRUE)
+        file(
+          GENERATE
+          OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TARGET}_${FORMAT}_$<CONFIG>_path"
+          CONTENT "${ARTEFACTS_DIR}"
+        )
+      else()
+        set(MULTI_CONFIG FALSE)
+        file(
+          GENERATE
+          OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TARGET}_${FORMAT}_path"
+          CONTENT "${ARTEFACTS_DIR}"
+        )
+      endif()
+    endif()
+  endforeach()
 endforeach()
 
 # configure the cmake package subproject
 set(PACKAGING_RESOURCES_DIR "${CMAKE_SOURCE_DIR}/Packaging")
 set(PACKAGING_SCRIPTS_DIR "${CMAKE_SOURCE_DIR}/Packaging/Apple")
 set(PACKAGING_PROJECT_SOURCE_DIR "${CMAKE_BINARY_DIR}/Packaging")
+
+# Copy path files to Packaging directory so the packaging subproject can find them
+file(MAKE_DIRECTORY ${PACKAGING_PROJECT_SOURCE_DIR})
+foreach(PLUGIN_TARGET ${ALL_PLUGIN_TARGETS})
+  foreach(FORMAT ${FORMATS})
+    if(CMAKE_CONFIGURATION_TYPES)
+      foreach(CONFIG ${CMAKE_CONFIGURATION_TYPES})
+        set(SOURCE_PATH_FILE "${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TARGET}_${FORMAT}_${CONFIG}_path")
+        if(EXISTS "${SOURCE_PATH_FILE}")
+          file(COPY "${SOURCE_PATH_FILE}" DESTINATION ${PACKAGING_PROJECT_SOURCE_DIR})
+        endif()
+      endforeach()
+    else()
+      set(SOURCE_PATH_FILE "${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TARGET}_${FORMAT}_path")
+      if(EXISTS "${SOURCE_PATH_FILE}")
+        file(COPY "${SOURCE_PATH_FILE}" DESTINATION ${PACKAGING_PROJECT_SOURCE_DIR})
+      endif()
+    endif()
+  endforeach()
+endforeach()
+
+# Pass variables to the packaging template
+# PLUGIN_RESOURCES_DIR: directory containing plugin resources (from Config.cmake)
+# CMAKE_SOURCE_DIR: source directory of the main project (for Resources path)
+if(NOT DEFINED PLUGIN_RESOURCES_DIR)
+  set(PLUGIN_RESOURCES_DIR "")
+endif()
+
+# CMAKE_SOURCE_DIR will be the source dir of the main project in the template
+# We need to pass it explicitly since the packaging subproject has its own CMAKE_SOURCE_DIR
+set(MAIN_CMAKE_SOURCE_DIR "${CMAKE_SOURCE_DIR}")
 
 configure_file(
   ${PACKAGING_SCRIPTS_DIR}/Packaging.CMakeLists.cmake.in
@@ -36,8 +78,12 @@ configure_file(
 
 # wait until all targets are built, then build the package subproject
 set(ALL_TARGETS "")
-foreach(FORMAT ${FORMATS})
-  list(APPEND ALL_TARGETS "${BaseTargetName}_${FORMAT}")
+foreach(PLUGIN_TARGET ${ALL_PLUGIN_TARGETS})
+  foreach(FORMAT ${FORMATS})
+    if(TARGET "${PLUGIN_TARGET}_${FORMAT}")
+      list(APPEND ALL_TARGETS "${PLUGIN_TARGET}_${FORMAT}")
+    endif()
+  endforeach()
 endforeach()
 
 add_custom_target(Packaging ALL DEPENDS ${ALL_TARGETS})

@@ -7,8 +7,7 @@
               displaySplashScreen="1" version="1.5.0" pluginManufacturerCode="McVv"
               pluginCode="MvCs" aaxIdentifier="com.mecaviv.ComposeSiren" cppLanguageStandard="latest"
               pluginName="ComposeSiren" pluginDesc="ComposeSiren" pluginManufacturer="Mecanique Vivante"
-              defines="CMS_BUILD_WITH_PROJUCER=1" headerPath="/usr/local/share/juce/include"
-              smallIcon="ozpZKk" bigIcon="ozpZKk">
+              defines="CMS_BUILD_WITH_PROJUCER=1" headerPath="/usr/local/share/juce/include">
   <MAINGROUP id="UbOsgL" name="ComposeSiren">
     <GROUP id="{180CB63E-E4B9-595B-08AD-75743DC296F2}" name="Assets">
       <FILE id="ozpZKk" name="Picto_Siren_40x37.png" compile="0" resource="1"
@@ -82,11 +81,11 @@
   </MAINGROUP>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"/>
   <EXPORTFORMATS>
-    <XCODE_MAC targetFolder="Builds/MacOSX">
+    <XCODE_MAC targetFolder="Builds/MacOSX" bigIcon="ozpZKk" smallIcon="ozpZKk">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" targetName="ComposeSiren" headerPath="/usr/local/Cellar/boost/1.72.0_3/include&#10;"
                        enablePluginBinaryCopyStep="1"/>
-        <CONFIGURATION isDebug="0" name="Release" targetName="ComposeSiren" headerPath="/usr/local/Cellar/boost/1.72.0_3/include&#10;"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="ComposeSiren" headerPath="/usr/local/Cellar/boost/1.72.0_3/include&#10;" enablePluginBinaryCopyStep="0"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_audio_basics" path="Dependencies/JUCE/modules"/>
@@ -103,7 +102,7 @@
         <MODULEPATH id="juce_gui_extra" path="Dependencies/JUCE/modules"/>
       </MODULEPATHS>
     </XCODE_MAC>
-    <VS2022 targetFolder="Builds/VisualStudio2022">
+    <VS2022 targetFolder="Builds/VisualStudio2022" bigIcon="ozpZKk" smallIcon="ozpZKk">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug"/>
         <CONFIGURATION isDebug="0" name="Release"/>
@@ -123,7 +122,7 @@
         <MODULEPATH id="juce_gui_extra" path="Dependencies/JUCE/modules"/>
       </MODULEPATHS>
     </VS2022>
-    <LINUX_MAKE targetFolder="Builds/LinuxMakefile">
+    <LINUX_MAKE targetFolder="Builds/LinuxMakefile" bigIcon="ozpZKk" smallIcon="ozpZKk">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug"/>
         <CONFIGURATION isDebug="0" name="Release"/>

@@ -37,14 +37,20 @@ SireneS1AudioProcessor::SireneS1AudioProcessor()
     auto onVelocityChanged =
         [this](int ch, int val)
         {
-            mySynth->setVelocite(1, val);  // Canal 1 pour S1 en mode Solo
-            midiState.currentVelocity = val;
+            if (ch == 1)
+            {
+                mySynth->setVelocite(1, val);  // Canal 1 pour S1 en mode Solo
+                midiState.currentVelocity = juce::jlimit(0, 127, val);
+            }
         };
 
     auto onEnginePitchChanged =
         [this](int ch, int val)
         {
-            mySynth->setVitesse(1, val);  // Canal 1 pour S1 en mode Solo
+            if (ch == 1)
+            {
+                mySynth->setVitesse(1, val);  // Canal 1 pour S1 en mode Solo
+            }
         };
 
     myMidiInHandler = new MidiIn(onVelocityChanged, onEnginePitchChanged);
@@ -121,6 +127,14 @@ void SireneS1AudioProcessor::changeProgramName (int index, const juce::String& n
 void SireneS1AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     mySynth->setSampleRate(sampleRate);
+    
+    if (myMidiInHandler != nullptr)
+    {
+        myMidiInHandler->setSampleRate(sampleRate);
+        myMidiInHandler->isWithSound(true);
+    }
+    
+    sampleCountForMidiInTimer = 0;
 }
 
 void SireneS1AudioProcessor::releaseResources()
@@ -165,9 +179,14 @@ void SireneS1AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         // Mettre à jour l'état MIDI pour l'affichage
         if (msg.isNoteOn())
         {
+            const int note = msg.getNoteNumber();
+            const int velocityValue = (msg.getRawDataSize() > 2)
+                ? (static_cast<unsigned char>(msg.getRawData()[2]) & 0x7F)
+                : juce::jlimit<int>(0, 127, msg.getVelocity());
+            
             midiState.noteOn = true;
-            midiState.currentNote = msg.getNoteNumber();
-            midiState.currentVelocity = msg.getVelocity();
+            midiState.currentNote = note;
+            midiState.currentVelocity = velocityValue;
         }
         else if (msg.isNoteOff())
         {
@@ -178,10 +197,32 @@ void SireneS1AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
             midiState.activeCC[msg.getControllerNumber()] = msg.getControllerValue();
         }
         
-        // Transmettre au handler MIDI
-        int* midiArray = new int[3]{msg.getChannel(), msg.getRawData()[1], msg.getRawData()[2]};
-        myMidiInHandler->handleMIDIMessage2(midiArray[0], midiArray[1], midiArray[2]);
-        delete[] midiArray;
+        if (myMidiInHandler != nullptr)
+        {
+            const int midiChannel = juce::jlimit<int>(1, 16, msg.getChannel()); // 1-based
+            const int rawVelocity = (msg.getRawDataSize() > 2)
+                ? (static_cast<unsigned char>(msg.getRawData()[2]) & 0x7F)
+                : juce::jlimit<int>(0, 127, msg.getVelocity());
+            
+            if (msg.isNoteOn())
+            {
+            const int note = msg.getNoteNumber();
+                const int velocityValue = rawVelocity;
+                myMidiInHandler->RealTimeStartNote(midiChannel, note, velocityValue);
+            }
+            else if (msg.isNoteOff())
+            {
+                myMidiInHandler->RealTimeStopNote(midiChannel, msg.getNoteNumber());
+            }
+            else if (msg.isController())
+            {
+                myMidiInHandler->HandleControlChange(midiChannel, msg.getControllerNumber(), msg.getControllerValue());
+            }
+            else if (msg.isPitchWheel())
+            {
+                myMidiInHandler->HandlePitchWheel(midiChannel, msg.getPitchWheelValue() & 0x7F, (msg.getPitchWheelValue() >> 7) & 0x7F);
+            }
+        }
     }
 
     // Générer l'audio depuis le synth

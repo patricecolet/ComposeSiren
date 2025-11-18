@@ -104,8 +104,9 @@ endforeach()
 
 if(NOT "@PLUGIN_RESOURCES_DIR@" STREQUAL "")
   set(INSTALL_FOLDER "@VendorName@/@BaseTargetName@")
+  # Use MAIN_CMAKE_SOURCE_DIR which points to the main project source directory
   install(
-    DIRECTORY "@CMAKE_SOURCE_DIR@/@PLUGIN_RESOURCES_DIR@"
+    DIRECTORY "@MAIN_CMAKE_SOURCE_DIR@/@PLUGIN_RESOURCES_DIR@"
     DESTINATION ${INSTALL_FOLDER}
     COMPONENT "Resources"
     PATTERN ".DS_Store" EXCLUDE

@@ -65,3 +65,5 @@ echo ""
 echo "💡 Conseil: Relancez votre DAW ou exécutez:"
 echo "   killall -9 AudioComponentRegistrar"
 
+
+

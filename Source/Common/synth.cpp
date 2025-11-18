@@ -73,17 +73,32 @@ Synth::Synth(bool soloMode, const std::string& soloModel){
     juce::File resourcesDir;
     
     #if defined(__APPLE__)
-        // macOS: chercher dans le bundle de l'app
-        resourcesDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
-                                    .getParentDirectory()
-                                    .getChildFile("../Resources");
-        if (!resourcesDir.exists()) {
-            // Fallback pour développement
-            resourcesDir = juce::File::getSpecialLocation(juce::File::currentApplicationFile)
-                            .getParentDirectory()
-                            .getParentDirectory()
-                            .getParentDirectory()
-                            .getChildFile("Resources");
+        // macOS: chercher dans le bundle de l'app (Contents/Resources)
+        const auto executableDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+                                        .getParentDirectory();
+        resourcesDir = executableDir.getSiblingFile("Resources");
+
+        if (!resourcesDir.exists())
+        {
+            // Fallback: calculer explicitement depuis le .app
+            const auto applicationFile = juce::File::getSpecialLocation(juce::File::currentApplicationFile);
+            resourcesDir = applicationFile.getChildFile("Contents/Resources");
+        }
+
+        if (!resourcesDir.exists())
+        {
+            // Fallback: dossier partagé d'installation
+            resourcesDir = juce::File("/Library/Audio/Plug-Ins/Mecanique Vivante/ComposeSiren_Orchestra/Resources");
+        }
+        
+        if (!resourcesDir.exists())
+        {
+            // Dernier fallback: dossier Resources du projet (en développement)
+            resourcesDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+                                .getParentDirectory()
+                                .getParentDirectory()
+                                .getParentDirectory()
+                                .getChildFile("Resources");
         }
     #elif defined(_MSC_VER)
         // Windows: chercher à côté de l'exécutable
@@ -96,7 +111,7 @@ Synth::Synth(bool soloMode, const std::string& soloModel){
         
         if (!resourcesDir.exists()) {
             // Fallback: chemin macOS (pour compatibilité/symlink)
-            resourcesDir = juce::File("/Library/Audio/Plug-ins/Mecanique Vivante/ComposeSiren/Resources");
+            resourcesDir = juce::File("/Library/Audio/Plug-Ins/Mecanique Vivante/ComposeSiren_Orchestra/Resources");
         }
         
         if (!resourcesDir.exists()) {
@@ -121,10 +136,10 @@ Synth::Synth(bool soloMode, const std::string& soloModel){
     // Pour les plugins (AU, VST, etc.), utiliser le chemin d'installation
     #if defined (_MSC_VER)
         // Windows
-        dataFilePath = "C:\\Program Files\\Common Files\\Mecanique Vivante\\ComposeSiren\\Resources\\";
+        dataFilePath = "C:\\Program Files\\Common Files\\Mecanique Vivante\\ComposeSiren_Orchestra\\Resources\\";
     #elif defined (__APPLE__)
         // macOS
-        dataFilePath = "/Library/Audio/Plug-ins/Mecanique Vivante/ComposeSiren/Resources/";
+        dataFilePath = "/Library/Audio/Plug-Ins/Mecanique Vivante/ComposeSiren_Orchestra/Resources/";
     #else
         // Linux
         dataFilePath = "/usr/share/ComposeSiren/Resources/";

@@ -16,6 +16,12 @@ set(PROJECT_DESCRIPTION "ComposeSiren du ${CURRENT_DATE} sur commit n ${GIT_HASH
 
 project(ComposeSiren VERSION 2.0.0 DESCRIPTION ${PROJECT_DESCRIPTION})
 set(VendorName "Mecanique Vivante")
+set(BaseTargetName "ComposeSiren_Orchestra")
+
+# Inclure Config.cmake pour les variables de configuration (PLUGIN_RESOURCES_DIR, etc.)
+if(EXISTS "${CMAKE_SOURCE_DIR}/Config.cmake")
+  include("${CMAKE_SOURCE_DIR}/Config.cmake")
+endif()
 
 # Inclure la configuration locale pour la signature et notarisation (si elle existe)
 if(EXISTS "${CMAKE_SOURCE_DIR}/LocalConfig.cmake")
@@ -68,10 +74,20 @@ add_library(ComposeSiren_Common STATIC
   ${CMAKE_CURRENT_BINARY_DIR}/Source/Common/config.h
 )
 
+set_target_properties(ComposeSiren_Common PROPERTIES
+  JUCE_GENERATED_SOURCES_DIRECTORY
+    ${CMAKE_CURRENT_BINARY_DIR}/ComposeSiren_Common_artefacts
+  JUCE_PRODUCT_NAME "ComposeSiren Common"
+)
+_juce_write_generate_time_info(ComposeSiren_Common)
+juce_generate_juce_header(ComposeSiren_Common)
+
 target_include_directories(ComposeSiren_Common
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/Source/Common
     ${CMAKE_CURRENT_BINARY_DIR}/Source/Common
+    ${CMAKE_CURRENT_BINARY_DIR}/ComposeSiren_Common_artefacts
+    ${CMAKE_CURRENT_BINARY_DIR}/ComposeSiren_Common_artefacts/JuceLibraryCode
 )
 
 target_link_libraries(ComposeSiren_Common
@@ -183,10 +199,10 @@ function(add_siren_solo_plugin MODEL_NAME DISPLAY_NAME PLUGIN_CODE)
     
     target_sources(${TARGET_NAME}
         PRIVATE
-            Source/Solo/${MODEL_NAME}/PluginEditor_${MODEL_NAME}.cpp
-            Source/Solo/${MODEL_NAME}/PluginEditor_${MODEL_NAME}.h
-            Source/Solo/${MODEL_NAME}/PluginProcessor_${MODEL_NAME}.cpp
-            Source/Solo/${MODEL_NAME}/PluginProcessor_${MODEL_NAME}.h
+            Source/Solo/common/SoloPluginEditor.cpp
+            Source/Solo/common/SoloPluginEditor.h
+            Source/Solo/common/SoloPluginProcessor.cpp
+            Source/Solo/common/SoloPluginProcessor.h
     )
     
     target_compile_features(${TARGET_NAME} PRIVATE cxx_std_20)
@@ -217,10 +233,10 @@ endfunction()
 ################################################################################
 
 add_siren_solo_plugin("S1" "S1 Alto" "Cs01")
-# add_siren_solo_plugin("S3" "S3 Bass" "Cs03")
-# add_siren_solo_plugin("S4" "S4 Tenor" "Cs04")
-# add_siren_solo_plugin("S5" "S5 Soprano" "Cs05")
-# add_siren_solo_plugin("S7" "S7 Piccolo" "Cs07")
+add_siren_solo_plugin("S3" "S3 Bass" "Cs03")
+add_siren_solo_plugin("S4" "S4 Tenor" "Cs04")
+add_siren_solo_plugin("S5" "S5 Soprano" "Cs05")
+add_siren_solo_plugin("S7" "S7 Piccolo" "Cs07")
 
 ################################################################################
 # Packaging

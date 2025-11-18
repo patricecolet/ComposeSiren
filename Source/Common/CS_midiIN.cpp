@@ -32,12 +32,12 @@ MidiIn::MidiIn(const std::function<void(int,int)> onVelocityChanged,
         ControlCh[12][i]=127.;
         ControlCh[13][i]=127.;
         ControlCh[6][i]=60;
-        volumefinalCh[i]=500.;
+        volumefinalCh[i]=0.;
         MSBCh[i]=64;
         isEnVeilleCh[i]=1;
         ancienVeloCh[i]=-1;
         AncienVolFinalCh[i]=-1;
-        veloFinal[i]=500;
+        veloFinal[i]=0;
     }
     isEnVeilleCh[8]=0;
     velociteCh[8]=127;

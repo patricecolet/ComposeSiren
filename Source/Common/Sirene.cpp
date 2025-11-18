@@ -135,9 +135,8 @@ void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmp
   }
   
   // Log seulement en cas d'erreur
-  if (!allLoaded) {
-    DBG("✗ Some resources failed to load for " << name);
-  }
+  if (! allLoaded)
+      throw std::runtime_error("Failed to load siren resources for " + name + " at " + dataFilePath);
 
 }
 

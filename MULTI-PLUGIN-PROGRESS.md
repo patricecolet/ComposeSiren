@@ -26,9 +26,9 @@
 - ✅ Mode Solo: n'instancie que la sirène demandée (économie mémoire)
 - ✅ Destructeur et `setSampleRate` : gèrent les pointeurs nullptr
 
-### Plugin S1 Alto (TERMINÉ ✓)
-- ✅ `PluginProcessor_S1.cpp/h` : processeur simplifié 1 sirène
-- ✅ `PluginEditor_S1.cpp/h` : interface complète avec knobs interactifs
+### Plugin Solo commun (TERMINÉ ✓)
+- ✅ `Source/Solo/common/SoloPluginProcessor.cpp/h` : processeur générique paramétré par `SIREN_MODEL`
+- ✅ `Source/Solo/common/SoloPluginEditor.cpp/h` : interface complète avec knobs interactifs
 - ✅ Interface 720x580 organisée en 4 sections:
   - **Vibrato** : Depth (CC1), Rate (CC9), Attack (CC11)
   - **Tremolo** : Rate (CC15), Depth (CC92)
@@ -74,18 +74,12 @@ f819e97 - Doc: Mise à jour progression
 
 ---
 
-## 🔜 Phase 3: Duplication S3, S4, S5, S7
+## ✅ Phase 3: Plugins Solo multi-modèles
 
-### Étapes
-1. Copier `Solo/S1/` vers `Solo/S3/`, `/S4/`, `/S5/`, `/S7/`
-2. Adapter les noms de classes et identifiants
-3. Mettre à jour les titres d'affichage:
-   - S3 Bass
-   - S4 Tenor
-   - S5 Soprano
-   - S7 Piccolo
-4. Décommenter les lignes correspondantes dans `CMakeLists.txt`
-5. Tester la compilation des 5 plugins Solo
+- ✅ Factorisation du code Solo dans `Source/Solo/common/`
+- ✅ Activation des cibles `ComposeSiren_S1/S3/S4/S5/S7` via `add_siren_solo_plugin`
+- ✅ Gestion dynamique du canal MIDI, du chargement des données et de l'ambitus
+- ⚠️ Compilation CMake bloquée par le bug JUCE macOS 15 (`CGWindowListCreateImage` indisponible). Utiliser Xcode (standalone) pour tester en attendant un patch JUCE (script `scripts/build_and_test_s1.sh <MODELE>`).
 
 ---
 
@@ -104,16 +98,12 @@ f819e97 - Doc: Mise à jour progression
 
 ### Plugins
 - **ComposeSiren Orchestra** : 7 sirènes + mixeur + reverb + limiter
-- **ComposeSiren S1 Alto** : 1 sirène, interface MIDI simple
-- **ComposeSiren S3 Bass** : À créer
-- **ComposeSiren S4 Tenor** : À créer
-- **ComposeSiren S5 Soprano** : À créer
-- **ComposeSiren S7 Piccolo** : À créer
+- **ComposeSiren S1/S3/S4/S5/S7** : générés depuis la même base `SoloPluginProcessor/Editor`
 
 ### Taille de code
-- Code commun : ~13 fichiers partagés
+- Code commun : ~13 fichiers partagés + 1 processeur/éditeur Solo
 - Plugin Orchestra : 2 fichiers (Processor + Editor)
-- Plugin Solo S1 : 2 fichiers (Processor + Editor)
+- Plugins Solo : 2 fichiers partagés (Processor + Editor)
 
 ### Économie mémoire estimée (Solo vs Orchestra)
 - Orchestra : charge ~22 fichiers de données
