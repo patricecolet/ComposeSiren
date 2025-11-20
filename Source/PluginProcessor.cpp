@@ -111,7 +111,12 @@ void SirenePlugAudioProcessor::changeProgramName (int index, const juce::String&
 //==============================================================================
 void SirenePlugAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-
+    if (mySynth != nullptr) {
+        mySynth->setSampleRate(sampleRate);
+    }   
+    if (myMidiInHandler != nullptr) {
+        myMidiInHandler->setSampleRate(sampleRate);
+    }
 }
 
 void SirenePlugAudioProcessor::releaseResources()

@@ -46,6 +46,7 @@ public:
 
   void timerAudio();
   void sirenium_in(unsigned char *buf);
+  void setSampleRate(double newSampleRate);
 
 private:
 
@@ -67,7 +68,8 @@ private:
   float vitesseCh[17] = {0};
   float tremoloCh[17] = {0};
   int veloFinal[17];
-  float incrementationVibrato=(512./44100.)/0.025;
+  double sampleRate;
+  float incrementationVibrato;
 
   bool isWithSoundON;
   int VolumeDuClic = 100;

@@ -29,7 +29,6 @@
 #include <math.h>
 #endif
 
-#define DeuxPieSampleRate (2.* M_PI / 44100)
 #define MAX_Partiel 200
 #define NOMBRE_DE_NOTE 80
 #define MAX_TAB 1000
@@ -61,6 +60,9 @@ private:
   
   int coeffPicolo;
   float inertiaFactorTweak;
+
+  double sampleRate;
+  double deuxPieSampleRate;
 public:
   void setMidicent(int note);
   void setnoteFromExt(int note);
@@ -69,7 +71,7 @@ public:
   void changeQualite(int qualt);
   void set16ou8Bit(bool is);
   void setVelocite(int velo);
-
+  void setSampleRate(double newSampleRate);
   void setisCrossFade(int is);
 
   // use :

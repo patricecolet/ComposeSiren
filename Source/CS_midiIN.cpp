@@ -21,6 +21,7 @@ MidiIn::MidiIn(const std::function<void(int,int)> onVelocityChanged,
     , onEngineSpeedChanged(onEnginePitchChanged)
 
 {
+    setSampleRate(44100.0);
     for (int i =0; i<17; i++)
     {
         ChangevolumegeneralCh[i]=1.0;
@@ -43,6 +44,10 @@ MidiIn::~MidiIn(){
 }
 
 
+void MidiIn::setSampleRate(double newSampleRate) {
+    sampleRate = newSampleRate;
+    incrementationVibrato = (512.0 / sampleRate) / 0.025;
+}
 
 void MidiIn::timerAudio(){
     if(isWithSynth){

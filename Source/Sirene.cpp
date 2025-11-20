@@ -16,6 +16,7 @@
 
 Sirene::Sirene(const std::string& str, const std::string& dataFilePath) :
 name(str) {
+  setSampleRate(44100.0);
   memset(&tabAmp, 0, sizeof(tabAmp));
   memset(&tabFreq, 0, sizeof(tabFreq));
   memset(&dureTabs, 0, sizeof(dureTabs));
@@ -55,6 +56,15 @@ name(str) {
 
 Sirene::~Sirene() {}
 
+void Sirene::setSampleRate(double newSampleRate) {
+  sampleRate = newSampleRate;
+  deuxPieSampleRate = (2.0 * M_PI) / sampleRate;
+  
+  // Recalculer les pitchSchift avec le nouveau sample rate
+  if (midiCentVoulue > 0) {
+    setMidicent(midiCentVoulue);
+  }
+}
 
 void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmpFile, std::string tabFreqFile, std::string dureTabFile){
 
@@ -95,8 +105,8 @@ void Sirene::setMidicent(int note) {
   else if (midiCentVoulue % 100 == 99) midiCentVoulue++;
   noteInf = midiCentVoulue / 100;
   noteSup = noteInf + 1;
-  pitchSchift[noteInf] = ((440.0 * pow(2., ((midiCentVoulue/100.) - 69.) / 12.))  /  (440.0 * pow(2., ((noteInf) - 69.) / 12.)))  * DeuxPieSampleRate;
-  pitchSchift[noteSup] = ((440.0 * pow(2., ((midiCentVoulue/100.) - 69.) / 12.))  /   (440.0 * pow(2., ((noteSup) - 69.) / 12.)))  * DeuxPieSampleRate;
+  pitchSchift[noteInf] = ((440.0 * pow(2., ((midiCentVoulue/100.) - 69.) / 12.))  /  (440.0 * pow(2., ((noteInf) - 69.) / 12.)))  * deuxPieSampleRate;
+  pitchSchift[noteSup] = ((440.0 * pow(2., ((midiCentVoulue/100.) - 69.) / 12.))  /   (440.0 * pow(2., ((noteSup) - 69.) / 12.)))  * deuxPieSampleRate;
 }
 
 void Sirene::setnoteFromExt(int note) {

@@ -58,6 +58,16 @@ Synth::~Synth(){
     delete (s7);
 }
 
+void Synth::setSampleRate(double newSampleRate) {
+    // Propager le sample rate à toutes les sirènes
+    s1->setSampleRate(newSampleRate);
+    s2->setSampleRate(newSampleRate);
+    s3->setSampleRate(newSampleRate);
+    s4->setSampleRate(newSampleRate);
+    s5->setSampleRate(newSampleRate);
+    s6->setSampleRate(newSampleRate);
+    s7->setSampleRate(newSampleRate);
+}
 
 void Synth::setnote(int sireneNumber, int note)
 {
