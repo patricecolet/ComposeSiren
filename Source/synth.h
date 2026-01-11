@@ -11,8 +11,8 @@
 #pragma once
 
 #include "Sirene.h"
-
-
+#include "mareverbe.h"
+#include "JuceHeader.h"
 
 class Synth
 {
@@ -49,6 +49,18 @@ public:
     void setisCrossfade(int is);
     void timer512();
     void setSampleRate(double newSampleRate);
+
+    void setReverbEnabled(bool enabled);
+    bool isReverbEnabled();
+    void setReverbHighpass(float freq); // 20Hz-2000Hz
+    float getReverbHighpass();
+    void setReverbLowpass(float freq); // 2kHz-20kHz
+    float getReverbLowpass();
+
+
+    // Appliquer la reverb avec filtres sur un buffer
+    void processReverbWithFilters(float* left, float* right, int numSamples);
+    
     float getPan(int sireneNumber, int channel);
 
 
@@ -72,6 +84,19 @@ private:
     float PanS5;//0.1;
     float PanS6;//0.9;
     float PanS7;//0.65;
+
+    // Reverb
+    mareverbe reverb;
+    bool reverbEnabled;
+    float reverbHighpassFreq; // 20-2000 Hz
+    float reverbLowpassFreq;  // 2000-20000 Hz
+    
+    // Filtres pour la reverb (stéréo)
+    juce::IIRFilter reverbHighpassL;
+    juce::IIRFilter reverbHighpassR;
+    juce::IIRFilter reverbLowpassL;
+    juce::IIRFilter reverbLowpassR;
+
     //float Volsynthz;
     //AudioComponentDescription cd1;
     //AudioComponentDescription cdmix;

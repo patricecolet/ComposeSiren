@@ -214,6 +214,14 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
             ;
         }
     }
+
+
+    // Appliquer la reverb avec filtres si activée
+    if(buffer.getNumSamples() > 0) {
+        auto* left = buffer.getWritePointer(0);
+        auto* right = buffer.getWritePointer(1);
+        mySynth->processReverbWithFilters(left, right, buffer.getNumSamples());
+    }
 }
 
 //==============================================================================

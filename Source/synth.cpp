@@ -24,6 +24,9 @@ Synth::Synth(){
     PanS6=0.1;
     PanS7=0.45;
     
+    reverbEnabled = false;
+    reverbHighpassFreq = 20.0f;
+    reverbLowpassFreq = 20000.0f;
     isWithSynthe=true;
     isWithClic=false;
     WideCoeff=1.5;
@@ -67,6 +70,12 @@ void Synth::setSampleRate(double newSampleRate) {
     s5->setSampleRate(newSampleRate);
     s6->setSampleRate(newSampleRate);
     s7->setSampleRate(newSampleRate);
+
+    // Recalculer les coefficients des filtres
+    reverbHighpassL.setCoefficients(juce::IIRCoefficients::makeHighPass(newSampleRate, reverbHighpassFreq));
+    reverbHighpassR.setCoefficients(juce::IIRCoefficients::makeHighPass(newSampleRate, reverbHighpassFreq));
+    reverbLowpassL.setCoefficients(juce::IIRCoefficients::makeLowPass(newSampleRate, reverbLowpassFreq));
+    reverbLowpassR.setCoefficients(juce::IIRCoefficients::makeLowPass(newSampleRate, reverbLowpassFreq));
 }
 
 void Synth::setnote(int sireneNumber, int note)
@@ -169,6 +178,54 @@ void Synth::changeQualite(int qualt){
     }
 }
 
+void Synth::processReverbWithFilters(float* left, float* right, int numSamples){
+    if (!reverbEnabled || numSamples <= 0) return;
+    
+    // Buffers temporaires pour dry et wet
+    std::vector<float> dryLeft(numSamples);
+    std::vector<float> dryRight(numSamples);
+    std::vector<float> wetLeft(numSamples);
+    std::vector<float> wetRight(numSamples);
+    
+    // Sauvegarder le dry (signal original)
+    auto dryLevel = reverb.getdry();
+    auto wetLevel = reverb.getwet();
+    
+    for (int i = 0; i < numSamples; i++)
+    {
+        dryLeft[i] = left[i] * dryLevel;
+        dryRight[i] = right[i] * dryLevel;
+        wetLeft[i] = left[i];
+        wetRight[i] = right[i];
+    }
+    
+    // 1. Appliquer le highpass sur le wet avant la reverb
+    for (int i = 0; i < numSamples; i++)
+    {
+        wetLeft[i] = reverbHighpassL.processSingleSampleRaw(wetLeft[i]);
+        wetRight[i] = reverbHighpassR.processSingleSampleRaw(wetRight[i]);
+    }
+    
+    // 2. Appliquer la reverb sur le wet (avec dry=0 pour éviter le double dry)
+    auto originalDry = reverb.dry;
+    reverb.setdry(0.0f); // Temporairement mettre dry à 0
+    reverb.processreplace(wetLeft.data(), wetRight.data(), wetLeft.data(), wetRight.data(), numSamples, 1);
+    reverb.dry = originalDry; // Restaurer
+    
+    // 3. Appliquer le lowpass sur le wet après la reverb
+    for (int i = 0; i < numSamples; i++)
+    {
+        wetLeft[i] = reverbLowpassL.processSingleSampleRaw(wetLeft[i]);
+        wetRight[i] = reverbLowpassR.processSingleSampleRaw(wetRight[i]);
+    }
+    
+    // 4. Mixer dry (non filtré) + wet (filtré)
+    for (int i = 0; i < numSamples; i++)
+    {
+        left[i] = dryLeft[i] + wetLeft[i];
+        right[i] = dryRight[i] + wetRight[i];
+    }
+}
 
 void Synth::setVitesse(int chanal, float vitesse){
     if(isWithSynthe){
