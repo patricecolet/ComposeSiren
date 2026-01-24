@@ -24,7 +24,7 @@ Synth::Synth(){
     PanS6=0.1;
     PanS7=0.45;
     
-    reverbEnabled = false;
+    reverbEnabled = true;
     reverbHighpassFreq = 20.0f;
     reverbLowpassFreq = 20000.0f;
     isWithSynthe=true;
