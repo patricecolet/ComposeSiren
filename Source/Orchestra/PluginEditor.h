@@ -57,9 +57,6 @@ private:
     // Contrôles globaux (Canal 16)
     juce::Label masterVolumeLabel;
     juce::Slider masterVolumeSlider; // CC7 canal 16
-    juce::ToggleButton limiterEnableButton; // CC72 canal 16
-    juce::Label limiterThresholdLabel;
-    juce::Slider limiterThresholdSlider; // CC73 canal 16
 };
 
 //==============================================================================

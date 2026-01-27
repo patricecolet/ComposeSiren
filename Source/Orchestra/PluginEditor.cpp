@@ -99,28 +99,6 @@ MainCommandsComponent::MainCommandsComponent(SirenePlugAudioProcessor& p)
     masterVolumeSlider.addListener(this);
     addAndMakeVisible(masterVolumeSlider);
     
-    // Limiter Enable (CC72 canal 16)
-    limiterEnableButton.setButtonText("Limiter (CC72)");
-    limiterEnableButton.setToggleState(audioProcessor.mySynth->isLimiterEnabled(), juce::dontSendNotification);
-    limiterEnableButton.addListener(this);
-    addAndMakeVisible(limiterEnableButton);
-    
-    // Limiter Threshold (CC73 canal 16)
-    limiterThresholdLabel.setText("Threshold (CC73)", juce::dontSendNotification);
-    limiterThresholdLabel.setJustificationType(juce::Justification::centredLeft);
-    limiterThresholdLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    limiterThresholdLabel.setFont(juce::Font(11.0f));
-    addAndMakeVisible(limiterThresholdLabel);
-    
-    limiterThresholdSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    limiterThresholdSlider.setRange(0.3, 0.95, 0.01);
-    limiterThresholdSlider.setValue(audioProcessor.mySynth->getLimiterThreshold());
-    limiterThresholdSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 18);
-    limiterThresholdSlider.setColour(juce::Slider::thumbColourId, juce::Colours::yellow);
-    limiterThresholdSlider.setColour(juce::Slider::trackColourId, juce::Colour(100, 100, 0));
-    limiterThresholdSlider.addListener(this);
-    addAndMakeVisible(limiterThresholdSlider);
-    
     // Démarrer le timer pour synchroniser l'UI avec les changements MIDI
     startTimer(50); // 50ms = 20 Hz
 }
@@ -175,16 +153,6 @@ void MainCommandsComponent::resized()
     masterArea.removeFromLeft(80); // Espace après le reset button
     masterVolumeLabel.setBounds(masterArea.removeFromTop(15));
     masterVolumeSlider.setBounds(masterArea.removeFromTop(20));
-    
-    // Limiter Enable
-    area.removeFromLeft(10); // Petit espace
-    limiterEnableButton.setBounds(area.removeFromLeft(120).removeFromTop(35));
-    
-    // Limiter Threshold
-    area.removeFromLeft(10); // Petit espace
-    auto limiterArea = area.removeFromLeft(220);
-    limiterThresholdLabel.setBounds(limiterArea.removeFromTop(15));
-    limiterThresholdSlider.setBounds(limiterArea.removeFromTop(20));
 }
 
 void MainCommandsComponent::sliderValueChanged(juce::Slider* slider)
@@ -194,18 +162,12 @@ void MainCommandsComponent::sliderValueChanged(juce::Slider* slider)
         int ccValue = static_cast<int>(masterVolumeSlider.getValue());
         audioProcessor.mySynth->setGlobalGain(ccValue);
     }
-    else if (slider == &limiterThresholdSlider)
-    {
-        audioProcessor.mySynth->setLimiterThreshold((float)limiterThresholdSlider.getValue());
-    }
 }
 
 void MainCommandsComponent::buttonClicked(juce::Button* button)
 {
-    if (button == &limiterEnableButton)
-    {
-        audioProcessor.mySynth->setLimiterEnabled(limiterEnableButton.getToggleState());
-    }
+    // Plus de limiteur
+    juce::ignoreUnused(button);
 }
 
 void MainCommandsComponent::timerCallback()
@@ -217,20 +179,6 @@ void MainCommandsComponent::timerCallback()
     if (std::abs(masterVolumeSlider.getValue() - ccValue) > 1.0)
     {
         masterVolumeSlider.setValue(ccValue, juce::dontSendNotification);
-    }
-    
-    // Synchroniser Limiter Enable (CC72)
-    bool currentLimiterEnabled = audioProcessor.mySynth->isLimiterEnabled();
-    if (limiterEnableButton.getToggleState() != currentLimiterEnabled)
-    {
-        limiterEnableButton.setToggleState(currentLimiterEnabled, juce::dontSendNotification);
-    }
-    
-    // Synchroniser Limiter Threshold (CC73)
-    float currentThreshold = audioProcessor.mySynth->getLimiterThreshold();
-    if (std::abs(limiterThresholdSlider.getValue() - currentThreshold) > 0.01)
-    {
-        limiterThresholdSlider.setValue(currentThreshold, juce::dontSendNotification);
     }
 }
 
