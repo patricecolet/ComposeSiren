@@ -7,7 +7,9 @@
 */
 
 #include "PluginProcessor.h"
+#ifndef COMPOSESIREN_HEADLESS
 #include "PluginEditor.h"
+#endif
 
 #include <functional>
 
@@ -321,12 +323,20 @@ void SirenePlugAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 //==============================================================================
 bool SirenePlugAudioProcessor::hasEditor() const
 {
-    return true; // (change this to false if you choose to not supply an editor)
+#ifdef COMPOSESIREN_HEADLESS
+    return false;
+#else
+    return true;
+#endif
 }
 
 juce::AudioProcessorEditor* SirenePlugAudioProcessor::createEditor()
 {
+#ifdef COMPOSESIREN_HEADLESS
+    return nullptr;
+#else
     return new SirenePlugAudioProcessorEditor (*this);
+#endif
 }
 
 //==============================================================================

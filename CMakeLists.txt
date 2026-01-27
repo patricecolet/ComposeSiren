@@ -1,6 +1,18 @@
 cmake_minimum_required(VERSION 3.19.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED)
+
+# Option pour build headless (Linux sans X11/GUI)
+option(HEADLESS_BUILD "Build without GUI support (for Linux servers, Raspberry Pi headless, etc.)" OFF)
+
+if(HEADLESS_BUILD)
+  message(STATUS "=== HEADLESS BUILD MODE ===")
+  message(STATUS "Building without GUI - no X11/GTK dependencies")
+endif()
+
+# Forcer la compatibilité minimale macOS Catalina (10.15)
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum macOS version")
+
 set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE INTERNAL "")
 
 # Get the git hash
@@ -96,17 +108,28 @@ target_link_libraries(ComposeSiren_Common
     juce::juce_audio_devices
     juce::juce_audio_formats
     juce::juce_audio_processors
-    juce::juce_audio_utils
     juce::juce_core
     juce::juce_data_structures
     juce::juce_events
-    juce::juce_graphics
-    juce::juce_gui_basics
-    juce::juce_gui_extra
 )
+
+# Modules GUI - seulement si pas en mode headless
+if(NOT HEADLESS_BUILD)
+  target_link_libraries(ComposeSiren_Common
+    PUBLIC
+      juce::juce_audio_utils
+      juce::juce_graphics
+      juce::juce_gui_basics
+      juce::juce_gui_extra
+  )
+endif()
 
 target_compile_features(ComposeSiren_Common PRIVATE cxx_std_20)
 target_compile_definitions(ComposeSiren_Common PUBLIC CMS_BUILD_WITH_CMAKE=1)
+
+if(HEADLESS_BUILD)
+  target_compile_definitions(ComposeSiren_Common PUBLIC COMPOSESIREN_HEADLESS=1)
+endif()
 
 if(LINUX)
   target_compile_definitions(ComposeSiren_Common PUBLIC JUCE_USE_CURL=0)
@@ -141,11 +164,18 @@ juce_generate_juce_header(ComposeSiren_Orchestra)
 
 target_sources(ComposeSiren_Orchestra
   PRIVATE
-    Source/Orchestra/PluginEditor.cpp
-    Source/Orchestra/PluginEditor.h
     Source/Orchestra/PluginProcessor.cpp
     Source/Orchestra/PluginProcessor.h
 )
+
+# Ajouter l'éditeur GUI seulement si pas en mode headless
+if(NOT HEADLESS_BUILD)
+  target_sources(ComposeSiren_Orchestra
+    PRIVATE
+      Source/Orchestra/PluginEditor.cpp
+      Source/Orchestra/PluginEditor.h
+  )
+endif()
 
 target_compile_features(ComposeSiren_Orchestra PRIVATE cxx_std_20)
 target_compile_definitions(ComposeSiren_Orchestra PRIVATE 
@@ -199,11 +229,18 @@ function(add_siren_solo_plugin MODEL_NAME DISPLAY_NAME PLUGIN_CODE)
     
     target_sources(${TARGET_NAME}
         PRIVATE
-            Source/Solo/common/SoloPluginEditor.cpp
-            Source/Solo/common/SoloPluginEditor.h
             Source/Solo/common/SoloPluginProcessor.cpp
             Source/Solo/common/SoloPluginProcessor.h
     )
+    
+    # Ajouter l'éditeur GUI seulement si pas en mode headless
+    if(NOT HEADLESS_BUILD)
+      target_sources(${TARGET_NAME}
+          PRIVATE
+              Source/Solo/common/SoloPluginEditor.cpp
+              Source/Solo/common/SoloPluginEditor.h
+      )
+    endif()
     
     target_compile_features(${TARGET_NAME} PRIVATE cxx_std_20)
     target_compile_definitions(${TARGET_NAME} PRIVATE

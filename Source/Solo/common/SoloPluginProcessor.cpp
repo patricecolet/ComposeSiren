@@ -8,7 +8,9 @@
 */
 
 #include "SoloPluginProcessor.h"
+#ifndef COMPOSESIREN_HEADLESS
 #include "SoloPluginEditor.h"
+#endif
 
 #include <cmath>
 #include <functional>
@@ -243,12 +245,20 @@ void SoloPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 //==============================================================================
 bool SoloPluginAudioProcessor::hasEditor() const
 {
+#ifdef COMPOSESIREN_HEADLESS
+    return false;
+#else
     return true;
+#endif
 }
 
 juce::AudioProcessorEditor* SoloPluginAudioProcessor::createEditor()
 {
+#ifdef COMPOSESIREN_HEADLESS
+    return nullptr;
+#else
     return new SoloPluginAudioProcessorEditor (*this);
+#endif
 }
 
 //==============================================================================
