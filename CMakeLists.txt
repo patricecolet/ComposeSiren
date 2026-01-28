@@ -7,7 +7,8 @@ option(HEADLESS_BUILD "Build without GUI support (for Linux servers, Raspberry P
 
 if(HEADLESS_BUILD)
   message(STATUS "=== HEADLESS BUILD MODE ===")
-  message(STATUS "Building without GUI - plugin will run without X11/GTK at runtime")
+  message(STATUS "Le plugin compilé n'aura pas d'interface graphique (hasEditor=false)")
+  message(STATUS "GTK requis pour compiler, mais pas pour exécuter le plugin")
 endif()
 
 # Forcer la compatibilité minimale macOS Catalina (10.15)
@@ -136,21 +137,16 @@ target_link_libraries(ComposeSiren_Common
     juce::juce_audio_devices
     juce::juce_audio_formats
     juce::juce_audio_processors
+    juce::juce_audio_utils
     juce::juce_core
     juce::juce_data_structures
     juce::juce_events
+    juce::juce_graphics
+    juce::juce_gui_basics
+    juce::juce_gui_extra
 )
-
-# Modules GUI - seulement si pas en mode headless
-if(NOT HEADLESS_BUILD)
-  target_link_libraries(ComposeSiren_Common
-    PUBLIC
-      juce::juce_audio_utils
-      juce::juce_graphics
-      juce::juce_gui_basics
-      juce::juce_gui_extra
-  )
-endif()
+# Note: Les modules GUI sont requis pour la compilation (dépendance JUCE interne)
+# En mode HEADLESS_BUILD, le plugin fonctionnera sans GUI à l'exécution
 
 target_compile_features(ComposeSiren_Common PRIVATE cxx_std_20)
 target_compile_definitions(ComposeSiren_Common PUBLIC CMS_BUILD_WITH_CMAKE=1)
