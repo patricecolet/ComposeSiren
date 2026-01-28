@@ -7,7 +7,7 @@ option(HEADLESS_BUILD "Build without GUI support (for Linux servers, Raspberry P
 
 if(HEADLESS_BUILD)
   message(STATUS "=== HEADLESS BUILD MODE ===")
-  message(STATUS "Building without GUI - no X11/GTK dependencies")
+  message(STATUS "Building without GUI - plugin will run without X11/GTK at runtime")
 endif()
 
 # Forcer la compatibilité minimale macOS Catalina (10.15)
@@ -35,13 +35,35 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/Config.cmake")
   include("${CMAKE_SOURCE_DIR}/Config.cmake")
 endif()
 
-# Inclure la configuration locale pour la signature et notarisation (si elle existe)
-if(EXISTS "${CMAKE_SOURCE_DIR}/LocalConfig.cmake")
-  include("${CMAKE_SOURCE_DIR}/LocalConfig.cmake")
-  message(STATUS "✓ Configuration locale chargée : signature et notarisation activées")
-else()
-  message(WARNING "LocalConfig.cmake non trouvé : le build ne sera pas signé ni notarisé")
-  message(WARNING "Voir SIGNATURE_ET_NOTARISATION.md pour plus d'informations")
+# Inclure la configuration locale pour la signature et notarisation (macOS uniquement)
+if(APPLE)
+  if(EXISTS "${CMAKE_SOURCE_DIR}/LocalConfig.cmake")
+    include("${CMAKE_SOURCE_DIR}/LocalConfig.cmake")
+    message(STATUS "✓ Configuration locale chargée : signature et notarisation activées")
+  else()
+    message(WARNING "LocalConfig.cmake non trouvé : le build ne sera pas signé ni notarisé")
+    message(WARNING "Voir SIGNATURE_ET_NOTARISATION.md pour plus d'informations")
+  endif()
+endif()
+
+# Vérifier les dépendances Linux (GTK3 requis pour la compilation, même en mode headless)
+if(UNIX AND NOT APPLE)
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(GTK3 gtk+-3.0)
+  if(NOT GTK3_FOUND)
+    message(FATAL_ERROR 
+      "\n"
+      "=== ERREUR: GTK3 development headers manquants ===\n"
+      "JUCE nécessite les headers GTK3 pour compiler sur Linux.\n"
+      "Installez-les avec:\n"
+      "  sudo apt-get install libgtk-3-dev\n"
+      "\n"
+      "Note: En mode HEADLESS_BUILD, GTK n'est requis que pour la\n"
+      "compilation, pas pour l'exécution du plugin.\n"
+    )
+  else()
+    message(STATUS "✓ GTK3 trouvé: ${GTK3_VERSION}")
+  endif()
 endif()
 
 add_subdirectory(Dependencies/JUCE)
