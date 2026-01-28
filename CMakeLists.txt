@@ -47,9 +47,11 @@ if(APPLE)
   endif()
 endif()
 
-# Vérifier les dépendances Linux (GTK3 requis pour la compilation, même en mode headless)
+# Vérifier les dépendances Linux (GTK3 et WebKit requis pour la compilation)
 if(UNIX AND NOT APPLE)
   find_package(PkgConfig REQUIRED)
+  
+  # Vérifier GTK3
   pkg_check_modules(GTK3 gtk+-3.0)
   if(NOT GTK3_FOUND)
     message(FATAL_ERROR 
@@ -57,23 +59,28 @@ if(UNIX AND NOT APPLE)
       "=== ERREUR: GTK3 development headers manquants ===\n"
       "JUCE nécessite les headers GTK3 pour compiler sur Linux.\n"
       "Installez-les avec:\n"
-      "  sudo apt-get install libgtk-3-dev\n"
-      "\n"
-      "Note: En mode HEADLESS_BUILD, GTK n'est requis que pour la\n"
-      "compilation, pas pour l'exécution du plugin.\n"
+      "  sudo apt-get install libgtk-3-dev libwebkit2gtk-4.0-dev\n"
     )
-  else()
-    message(STATUS "✓ GTK3 trouvé: ${GTK3_VERSION}")
-    # Ajouter manuellement les include directories GTK (nécessaire pour JUCE)
-    include_directories(${GTK3_INCLUDE_DIRS})
-    link_directories(${GTK3_LIBRARY_DIRS})
   endif()
   
-  # Désactiver les dépendances optionnelles sur Linux (AVANT d'inclure JUCE)
-  # Ces options doivent être définies avant add_subdirectory(JUCE)
-  set(JUCE_USE_CURL OFF CACHE BOOL "Disable CURL dependency" FORCE)
-  set(JUCE_WEB_BROWSER OFF CACHE BOOL "Disable WebKit dependency" FORCE)
-  message(STATUS "✓ CURL et WebKit désactivés (non requis)")
+  # Vérifier WebKit2GTK
+  pkg_check_modules(WEBKIT2GTK webkit2gtk-4.0)
+  if(NOT WEBKIT2GTK_FOUND)
+    message(FATAL_ERROR 
+      "\n"
+      "=== ERREUR: WebKit2GTK development headers manquants ===\n"
+      "JUCE nécessite les headers WebKit2GTK pour compiler sur Linux.\n"
+      "Installez-les avec:\n"
+      "  sudo apt-get install libwebkit2gtk-4.0-dev\n"
+    )
+  endif()
+  
+  message(STATUS "✓ GTK3 trouvé: ${GTK3_VERSION}")
+  message(STATUS "✓ WebKit2GTK trouvé: ${WEBKIT2GTK_VERSION}")
+  
+  # Ajouter manuellement les include directories (nécessaire pour JUCE)
+  include_directories(${GTK3_INCLUDE_DIRS} ${WEBKIT2GTK_INCLUDE_DIRS})
+  link_directories(${GTK3_LIBRARY_DIRS} ${WEBKIT2GTK_LIBRARY_DIRS})
 endif()
 
 add_subdirectory(Dependencies/JUCE)
