@@ -64,6 +64,12 @@ if(UNIX AND NOT APPLE)
   else()
     message(STATUS "✓ GTK3 trouvé: ${GTK3_VERSION}")
   endif()
+  
+  # Désactiver les dépendances optionnelles sur Linux (AVANT d'inclure JUCE)
+  # Ces options doivent être définies avant add_subdirectory(JUCE)
+  set(JUCE_USE_CURL OFF CACHE BOOL "Disable CURL dependency" FORCE)
+  set(JUCE_WEB_BROWSER OFF CACHE BOOL "Disable WebKit dependency" FORCE)
+  message(STATUS "✓ CURL et WebKit désactivés (non requis)")
 endif()
 
 add_subdirectory(Dependencies/JUCE)
