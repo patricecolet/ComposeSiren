@@ -169,37 +169,102 @@ int Sirene::computeInertiaBias(SireneSpeedSlideState ouJeSuis){
 }
 
 void Sirene::setnote() {
-  SireneSpeedSlideState ouJeSuis = oujesuis();
-  auto appliedFactor = coeffPicolo;
-  auto inertiaBias = computeInertiaBias(ouJeSuis);
-  auto inertiaFactor = computeInertiaFactor(noteEncour);
+    SireneSpeedSlideState ouJeSuis = oujesuis();
+    auto appliedFactor = coeffPicolo;
 
-  auto inertiaSpeedToTweak = this->inertiaFactorTweak;
-  if(inertiaBias != 0){
-      auto vectorIntervalValueNew = inertiaBias * appliedFactor * inertiaFactor * inertiaSpeedToTweak;
-      noteEncour=noteEncour+vectorIntervalValueNew;
-      switch(ouJeSuis){
-        case Montant:
-        case QuartUpBefore:
-        case QuartUpAfter:
-            if(noteEncour > noteVoulueAvantSlide)noteEncour=noteVoulueAvantSlide;
-            break;
-        case Descandant:
-        case QuartDownAfter:
-        case QuartDownBefore:
-            if(noteEncour < noteVoulueAvantSlide)noteEncour=noteVoulueAvantSlide;
-              break;
-        case TonUpBefore:
-        case DemiUpBefore:
-        case Boucle:
-        case jesuisrest:
-              break;
-      }
+    bool approx = false;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // METHODE GAUTHIER, APROXIMATION /////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+
+    if (approx) {
+        auto inertiaBias = computeInertiaBias(ouJeSuis);
+        auto inertiaFactor = computeInertiaFactor(noteEncour);
+
+        auto inertiaSpeedToTweak = this->inertiaFactorTweak;
+
+        if(inertiaBias != 0){
+            auto vectorIntervalValueNew = inertiaBias * appliedFactor * inertiaFactor * inertiaSpeedToTweak;
+            noteEncour=noteEncour+vectorIntervalValueNew;
+            switch(ouJeSuis) {
+                case Montant:
+                case QuartUpBefore:
+                case QuartUpAfter: {
+                    if (noteEncour > noteVoulueAvantSlide) {
+                        noteEncour = noteVoulueAvantSlide;
+                    }
+                    break;
+                }
+                case Descandant:
+                case QuartDownAfter:
+                case QuartDownBefore: {
+                    if (noteEncour < noteVoulueAvantSlide) {
+                        noteEncour = noteVoulueAvantSlide;
+                    }
+                    break;
+                }
+                case TonUpBefore:
+                case DemiUpBefore:
+                case Boucle:
+                case jesuisrest:
+                    break;
+            }
+        }
+
+        return;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // METHODE PAT, RECONSTITUTION ORIGINALE A PARTIR DE FICHIER DATA /////////
+    ///////////////////////////////////////////////////////////////////////////
+
+    // Convertir noteEncour en note entière pour l'indexation (comme dans l'original)
+    int note = (int)((noteEncour - 50) / 100.0f);
+    if (note < noteMin) note = noteMin;
+
+    // Calculer baseNoteIndex (note - noteMin, comme dans l'original)
+    int baseNoteIndex = note - noteMin;
+
+    // Appliquer les formules vectorInterval originales
+    if (ouJeSuis == Montant) {
+        noteEncour = noteEncour + (100.0f / (vectorInterval[baseNoteIndex + 294] * appliedFactor));
+        if(noteEncour > noteVoulueAvantSlide) noteEncour = noteVoulueAvantSlide;
+    }
+    else if (ouJeSuis == Descandant) {
+        noteEncour = noteEncour - (100.0f / (vectorInterval[391 - baseNoteIndex] * appliedFactor));
+        if(noteEncour < noteVoulueAvantSlide) noteEncour = noteVoulueAvantSlide;
+    }
+    else if (ouJeSuis == TonUpBefore) {
+        noteEncour = noteEncour + (100.0f / (vectorInterval[((baseNoteIndex + 2) * 6) + 1] * appliedFactor));
+    }
+    else if (ouJeSuis == DemiUpBefore) {
+        noteEncour = noteEncour + (100.0f / (vectorInterval[((baseNoteIndex + 1) * 6) + 2] * appliedFactor));
+    }
+    else if (ouJeSuis == QuartUpBefore) {
+        noteEncour = noteEncour + (100.0f / (vectorInterval[(baseNoteIndex * 6) + 3] * appliedFactor));
+        if(noteEncour > noteVoulueAvantSlide) noteEncour = noteVoulueAvantSlide;
+    }
+    else if (ouJeSuis == Boucle) {
+        // Pas de changement
+    }
+    else if (ouJeSuis == QuartDownAfter) {
+        noteEncour = noteEncour - (100.0f / (vectorInterval[(baseNoteIndex * 6) + 4] * appliedFactor));
+        if(noteEncour < noteVoulueAvantSlide) noteEncour = noteVoulueAvantSlide;
+    }
+    else if (ouJeSuis == QuartDownBefore) {
+        noteEncour = noteEncour - (100.0f / (vectorInterval[baseNoteIndex * 6] * appliedFactor));
+        if(noteEncour < noteVoulueAvantSlide) noteEncour = noteVoulueAvantSlide;
+    }
+    else if (ouJeSuis == QuartUpAfter) {
+        noteEncour = noteEncour + (100.0f / (vectorInterval[(baseNoteIndex * 6) + 5] * appliedFactor));
+        if(noteEncour > noteVoulueAvantSlide) noteEncour = noteVoulueAvantSlide;
     }
 
   setMidicent(noteEncour);
 }
 
+// que représentent ces valeurs de 50, 150 et 250 ? -> des MIDI cents
 SireneSpeedSlideState Sirene::oujesuis() {
   int inter = static_cast<int>(noteVoulueAvantSlide) - noteEncour;
   SireneSpeedSlideState ouJeSuis = Boucle;
