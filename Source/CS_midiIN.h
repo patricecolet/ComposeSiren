@@ -2,7 +2,7 @@
 #pragma once
 
 #include <math.h>
-#include "synth.h"
+#include "Synth.h"
 #include <functional>
 
 // valeur maxi de l'amplitude VFO en % de la vitesse correspondant ‡ une note
@@ -47,6 +47,11 @@ public:
   void timerAudio();
   void sirenium_in(unsigned char *buf);
   void setSampleRate(double newSampleRate);
+
+  // Méthodes pour accéder au volume et état Note On/Off pour l'interface
+  float getVolumeFinal(int channel); // Retourne 0.0-1.0
+  void setVolumeFinal(int channel, float volume); // 0.0-1.0
+  bool isNoteOn(int channel); // true si une note est active
 
 private:
 

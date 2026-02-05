@@ -8,8 +8,12 @@
   ==============================================================================
 */
 
-#include "synth.h"
+#define STRING(x) #x
+#define XSTRING(x) STRING(x)
 
+#include "Synth.h"
+
+#include "config.h"
 #include <JuceHeader.h>
 #include <iostream>
 
@@ -24,6 +28,18 @@ Synth::Synth(){
     PanS6=0.1;
     PanS7=0.45;
     
+    // Volumes indépendants (master) initialisés à 1.0 (100%)
+    masterVolumeS1 = 1.0f;
+    masterVolumeS2 = 1.0f;
+    masterVolumeS3 = 1.0f;
+    masterVolumeS4 = 1.0f;
+    masterVolumeS5 = 1.0f;
+    masterVolumeS6 = 1.0f;
+    masterVolumeS7 = 1.0f;
+
+    // Gain global initialisé à 1.0 (correspond à CC=100)
+    globalGain = 1.0f;
+
     reverbEnabled = true;
     reverbHighpassFreq = 20.0f;
     reverbLowpassFreq = 20000.0f;
@@ -31,16 +47,87 @@ Synth::Synth(){
     isWithClic=false;
     WideCoeff=1.5;
     
-#if defined (_MSC_VER)
-    std::string dataFilePath = "C:\\Program Files\\Common Files\\Mecanique Vivante\\ComposeSiren\\Resources\\";
-#elif defined(__linux__)
-    std::string dataFilePath = "/home/sirenateur/Documents/src/mecaviv/ComposeSiren/Resources/";
+// #if defined (_MSC_VER)
+//     std::string dataFilePath = "C:\\Program Files\\Common Files\\Mecanique Vivante\\ComposeSiren\\Resources\\";
+// #elif defined(__linux__)
+//     std::string dataFilePath = "/home/sirenateur/Documents/src/mecaviv/ComposeSiren/Resources/";
+// #else
+// #if CMS_BUILD_WITH_PROJUCER
+//     std::string dataFilePath = juce::File::getSpecialLocation(juce::File::currentApplicationFile).getChildFile ("Contents/Resources/").getFullPathName().toStdString() + '/';
+// #elif CMS_BUILD_WITH_CMAKE
+//     std::string dataFilePath = "/Library/Audio/Plug-ins/Mecanique Vivante/ComposeSiren/Resources/";
+// #endif
+// #endif
+
+    // Déterminer le chemin des ressources selon le contexte
+    std::string dataFilePath;
+
+#ifdef JucePlugin_Build_Standalone
+    // Pour le standalone, chercher les ressources dans plusieurs emplacements
+    juce::File resourcesDir;
+
+    #if defined(__APPLE__)
+        // macOS: chercher dans le bundle de l'app
+        resourcesDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+                                    .getParentDirectory()
+                                    .getChildFile("../Resources");
+        if (!resourcesDir.exists()) {
+            // Fallback pour développement
+            resourcesDir = juce::File::getSpecialLocation(juce::File::currentApplicationFile)
+                            .getParentDirectory()
+                            .getParentDirectory()
+                            .getParentDirectory()
+                            .getChildFile("Resources");
+        }
+
+        std::string sourceDir = XSTRING(PROJECT_SOURCE_DIR);
+        resourcesDir = juce::File(sourceDir).getChildFile("Resources");;
+        std::cout << sourceDir << std::endl;
+
+    #elif defined(_MSC_VER)
+        // Windows: chercher à côté de l'exécutable
+        resourcesDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+                                    .getParentDirectory()
+                                    .getChildFile("Resources");
+    #else
+        // Linux: chercher dans plusieurs emplacements possibles
+        resourcesDir = juce::File("/usr/share/ComposeSiren/Resources");
+
+        if (!resourcesDir.exists()) {
+            // Fallback: chemin macOS (pour compatibilité/symlink)
+            resourcesDir = juce::File("/Library/Audio/Plug-ins/Mecanique Vivante/ComposeSiren/Resources");
+        }
+
+        if (!resourcesDir.exists()) {
+            // Fallback: à côté de l'exécutable (développement)
+            resourcesDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+                                        .getParentDirectory()
+                                        .getChildFile("Resources");
+        }
+
+        if (!resourcesDir.exists()) {
+            // Fallback: dossier du projet (développement)
+            auto projectDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+                                        .getParentDirectory()
+                                        .getParentDirectory()
+                                        .getParentDirectory();
+            resourcesDir = projectDir.getChildFile("Resources");
+        }
+    #endif
+
+    dataFilePath = resourcesDir.getFullPathName().toStdString() + "/";
 #else
-#if CMS_BUILD_WITH_PROJUCER
-    std::string dataFilePath = juce::File::getSpecialLocation(juce::File::currentApplicationFile).getChildFile ("Contents/Resources/").getFullPathName().toStdString() + '/';
-#elif CMS_BUILD_WITH_CMAKE
-    std::string dataFilePath = "/Library/Audio/Plug-ins/Mecanique Vivante/ComposeSiren/Resources/";
-#endif
+    // Pour les plugins (AU, VST, etc.), utiliser le chemin d'installation
+    #if defined (_MSC_VER)
+        // Windows
+        dataFilePath = "C:\\Program Files\\Common Files\\Mecanique Vivante\\ComposeSiren\\Resources\\";
+    #elif defined (__APPLE__)
+        // macOS
+        dataFilePath = "/Library/Audio/Plug-ins/Mecanique Vivante/ComposeSiren/Resources/";
+    #else
+        // Linux
+        dataFilePath = "/usr/share/ComposeSiren/Resources/";
+    #endif
 #endif
     s1 = new Sirene("S1", dataFilePath);
     s2 = new Sirene("S2", dataFilePath);
@@ -71,6 +158,9 @@ void Synth::setSampleRate(double newSampleRate) {
     s6->setSampleRate(newSampleRate);
     s7->setSampleRate(newSampleRate);
 
+    // Mettre à jour le sample rate pour les filtres reverb
+    currentSampleRate = newSampleRate;
+    
     // Recalculer les coefficients des filtres
     reverbHighpassL.setCoefficients(juce::IIRCoefficients::makeHighPass(newSampleRate, reverbHighpassFreq));
     reverbHighpassR.setCoefficients(juce::IIRCoefficients::makeHighPass(newSampleRate, reverbHighpassFreq));
@@ -114,7 +204,6 @@ void Synth::setVelocite(int sireneNumber, int velo){
     }
 }
 
-
 void Synth::setPan(int sireneNumber, float value){
     if(isWithSynthe){
         switch (sireneNumber) {
@@ -150,7 +239,6 @@ float Synth::getPan(int sireneNumber, int channel)
     else
     {
         // left channel
-
         switch (sireneNumber) {
             case 1: return PanS1+ 0.5;  break;
             case 2: return PanS2+ 0.5;  break;
@@ -161,10 +249,9 @@ float Synth::getPan(int sireneNumber, int channel)
             case 7: return PanS7+ 0.5;  break;
             default:  return 0.5;
         
-    }
+        }
     }
 }
-
 
 void Synth::changeQualite(int qualt){
     if(isWithSynthe){
@@ -176,6 +263,65 @@ void Synth::changeQualite(int qualt){
         s6->changeQualite(qualt);
         s7->changeQualite(qualt);
     }
+}
+
+void Synth::setMasterVolume(int sireneNumber, float volume){
+    if(volume < 0.0f) volume = 0.0f;
+    if(volume > 1.0f) volume = 1.0f;
+
+    switch (sireneNumber) {
+        case 1: masterVolumeS1 = volume; break;
+        case 2: masterVolumeS2 = volume; break;
+        case 3: masterVolumeS3 = volume; break;
+        case 4: masterVolumeS4 = volume; break;
+        case 5: masterVolumeS5 = volume; break;
+        case 6: masterVolumeS6 = volume; break;
+        case 7: masterVolumeS7 = volume; break;
+        default: break;
+    }
+}
+
+float Synth::getMasterVolume(int sireneNumber){
+    switch (sireneNumber) {
+        case 1: return masterVolumeS1;
+        case 2: return masterVolumeS2;
+        case 3: return masterVolumeS3;
+        case 4: return masterVolumeS4;
+        case 5: return masterVolumeS5;
+        case 6: return masterVolumeS6;
+        case 7: return masterVolumeS7;
+        default: return 1.0f;
+    }
+}
+
+void Synth::setReverbEnabled(bool enabled){
+    reverbEnabled = enabled;
+}
+
+bool Synth::isReverbEnabled(){
+    return reverbEnabled;
+}
+
+void Synth::setReverbHighpass(float freq){
+    reverbHighpassFreq = freq;
+    // Mettre à jour les coefficients du filtre
+    reverbHighpassL.setCoefficients(juce::IIRCoefficients::makeHighPass(currentSampleRate, freq));
+    reverbHighpassR.setCoefficients(juce::IIRCoefficients::makeHighPass(currentSampleRate, freq));
+}
+
+float Synth::getReverbHighpass(){
+    return reverbHighpassFreq;
+}
+
+void Synth::setReverbLowpass(float freq){
+    reverbLowpassFreq = freq;
+    // Mettre à jour les coefficients du filtre
+    reverbLowpassL.setCoefficients(juce::IIRCoefficients::makeLowPass(currentSampleRate, freq));
+    reverbLowpassR.setCoefficients(juce::IIRCoefficients::makeLowPass(currentSampleRate, freq));
+}
+
+float Synth::getReverbLowpass(){
+    return reverbLowpassFreq;
 }
 
 void Synth::processReverbWithFilters(float* left, float* right, int numSamples){
@@ -266,10 +412,28 @@ void Synth::setVitesse(int chanal, float vitesse){
                 if (midicent<0) midicent=0;
                 setnote(7, midicent);
                 break;
-
-
             default:
                 break;
         }
     }
+}
+
+void Synth::setGlobalGain(int ccValue){
+    // Conversion dB→RMS comme [dbtorms~] de PureData
+    // Formule: gain = 10^((ccValue - 100) / 20)
+    // CC 100 = 0 dB = gain 1.0 (nominal)
+    // CC 0 = -100 dB = gain 0.00001
+    // CC 120 = +20 dB = gain 10.0
+    // CC 127 = +27 dB = gain ~22.4
+
+    if(ccValue < 0) ccValue = 0;
+    if(ccValue > 127) ccValue = 127;
+
+    // Formule de PureData: exp((log(10) * 0.05) * (f - 100))
+    // Ce qui équivaut à: 10^((f - 100) / 20)
+    globalGain = std::pow(10.0f, (ccValue - 100.0f) / 20.0f);
+}
+
+float Synth::getGlobalGain(){
+    return globalGain;
 }

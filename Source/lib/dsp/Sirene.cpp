@@ -20,6 +20,7 @@ name(str) {
   memset(&tabAmp, 0, sizeof(tabAmp));
   memset(&tabFreq, 0, sizeof(tabFreq));
   memset(&dureTabs, 0, sizeof(dureTabs));
+  memset(&vectorInterval, 0, sizeof(vectorInterval));
 
   std::string sireneNameForData(name);
 
@@ -27,7 +28,13 @@ name(str) {
     sireneNameForData = "S1"; // s2 has the same data files than s1
   else if (name == "S6")
     sireneNameForData = "S5"; // s6 has the same data files than s5
-	
+
+  // S7 (Piccolo) utilise les données vectorInterval de S5
+  std::string vectorIntervalSuffix = sireneNameForData;
+  if (name == "S7") {
+    vectorIntervalSuffix = "S5";
+  }
+
   // both methods should end up loading data in the float arrays :
 
   // veeeeeery slow to load, failed attempt :
@@ -38,7 +45,8 @@ name(str) {
     dataFilePath,
     "dataAmp" + sireneNameForData,
     "dataFreq" + sireneNameForData,
-    "datadureTabs" + sireneNameForData
+    "datadureTabs" + sireneNameForData,
+    "dataVectorInterval" + vectorIntervalSuffix
   );
 
   std::cout << "tabFreq[46][20][3] : " << std::fixed << std::setprecision(7) << tabFreq[46][20][3] << std::endl;
@@ -66,7 +74,11 @@ void Sirene::setSampleRate(double newSampleRate) {
   }
 }
 
-void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmpFile, std::string tabFreqFile, std::string dureTabFile){
+void Sirene::readDataFromBinaryFile(std::string dataFilePath,
+                                    std::string tabAmpFile,
+                                    std::string tabFreqFile,
+                                    std::string dureTabFile,
+                                    std::string vectorIntervalFile) {
 
   std::ifstream myfile;
 
@@ -97,6 +109,14 @@ void Sirene::readDataFromBinaryFile(std::string dataFilePath, std::string tabAmp
   }
   else std::cout <<  "Error. Binary file not found.\n";
 
+  // Read vectorIntervalFile
+  myfile.open(dataFilePath + vectorIntervalFile, std::ios::binary);
+  if (myfile.is_open())
+  {
+    myfile.read(reinterpret_cast<char *>(vectorInterval), sizeof vectorInterval); // todo: check that input.gcount() is the number of bytes expected
+    myfile.close();
+  }
+  else std::cout <<  "Error. Binary file not found.\n";
 }
 
 void Sirene::setMidicent(int note) {
@@ -105,6 +125,14 @@ void Sirene::setMidicent(int note) {
   else if (midiCentVoulue % 100 == 99) midiCentVoulue++;
   noteInf = midiCentVoulue / 100;
   noteSup = noteInf + 1;
+
+  // Pat added :
+  // Réinitialiser les compteurs de fenêtres FFT pour les nouvelles notes
+  countP[noteInf] = 0;
+  countP[noteSup] = 0;
+  countKInf = 0;
+  countKSup = 0;
+
   pitchSchift[noteInf] = ((440.0 * pow(2., ((midiCentVoulue/100.) - 69.) / 12.))  /  (440.0 * pow(2., ((noteInf) - 69.) / 12.)))  * deuxPieSampleRate;
   pitchSchift[noteSup] = ((440.0 * pow(2., ((midiCentVoulue/100.) - 69.) / 12.))  /   (440.0 * pow(2., ((noteSup) - 69.) / 12.)))  * deuxPieSampleRate;
 }

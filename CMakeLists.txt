@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.19.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED)
 set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE INTERNAL "")
+
+# see : https://forum.juce.com/t/best-way-to-build-with-support-for-older-macos-versions/64879/3
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.11" CACHE STRING "minimum supported target macos version")
+
 # Get the git hash
 execute_process(
         COMMAND git rev-parse --short HEAD

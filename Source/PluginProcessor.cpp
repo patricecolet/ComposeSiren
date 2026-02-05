@@ -44,6 +44,8 @@ SirenePlugAudioProcessor::SirenePlugAudioProcessor()
 
 SirenePlugAudioProcessor::~SirenePlugAudioProcessor()
 {
+    delete mySynth;
+    delete myMidiInHandler;
 }
 
 //==============================================================================

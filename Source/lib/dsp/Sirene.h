@@ -81,7 +81,8 @@ public:
     std::string dataFilePath,
     std::string tabAmpFile,
     std::string tabFreqFile,
-    std::string dureTabFile
+    std::string dureTabFile,
+    std::string vectorIntervalFile
   );
   // to fill tabAmp, tabFreq and dureTabs
 
@@ -164,6 +165,7 @@ private:
   float tabAmp[NOMBRE_DE_NOTE][MAX_TAB][MAX_Partiel];
   float tabFreq[NOMBRE_DE_NOTE][MAX_TAB][MAX_Partiel];
   float dureTabs[NOMBRE_DE_NOTE][3]; // 0=dureTab en samples // 1=nombreMax de Tab // 2=FreqMoyenne
+  float vectorInterval[392];
 
   bool count8bit = true;
   double vitesseClape = 0.0002;
@@ -193,14 +195,13 @@ private:
   int interDepart = 0;  // gauthier: deterministically init interDepart to 0
   bool isCrossfade = false; // gauthier: deterministically init isCrossfade to false
 
+  int computeInertiaBias(SireneSpeedSlideState ouJeSuis);
+  float computeInertiaFactor(float cents){
+      float octaveRatio = cents / 1200;
+      if(octaveRatio == 0. || octaveRatio < 0.01){ return 1.; }
+      else {
+          return 1. / octaveRatio;
 
-    int computeInertiaBias(SireneSpeedSlideState ouJeSuis);
-    float computeInertiaFactor(float cents){
-        float octaveRatio = cents / 1200;
-        if(octaveRatio == 0. || octaveRatio < 0.01){ return 1.; }
-        else {
-            return 1. / octaveRatio;
-
-        }
-    }
+      }
+  }
 };

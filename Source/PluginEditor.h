@@ -10,12 +10,12 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
-
-
+#include "Components/MainCommandsComponent.h"
+#include "Components/MixerComponent.h"
 
 //==============================================================================
 // class headComponent : head of the main window
-class headComponent   : public juce::Component
+class headComponent : public juce::Component
 {
 public:
     headComponent();
@@ -31,31 +31,7 @@ private:
 
 //==============================================================================
 
-
-//==============================================================================
-// class MainCommandsComponent : main commands
-class MainCommandsComponent   : public juce::Component
-{
-public:
-    MainCommandsComponent(SirenePlugAudioProcessor&);
-    ~MainCommandsComponent();
-
-    void paint (juce::Graphics&) override;
-    void resized() override;
-    
-    juce::TextButton resetButton;
-
-private:
-    SirenePlugAudioProcessor& audioProcessor;
-    
-   
-    
-};
-
-//==============================================================================
-
-
-class SirenePlugAudioProcessorEditor  : public juce::AudioProcessorEditor//, public juce::Button::Listener
+class SirenePlugAudioProcessorEditor : public juce::AudioProcessorEditor//, public juce::Button::Listener
 
 {
 public:
@@ -76,7 +52,9 @@ private:
     
     headComponent head;
     MainCommandsComponent mainCommands;
-    
+    MixerComponent mixer;
+    // std::vector<std::unique_ptr<SirenStripComponent>> orchestra;
+
     /*
     void buttonClicked (juce::Button* button) override
     {

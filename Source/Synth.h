@@ -10,8 +10,8 @@
 
 #pragma once
 
-#include "Sirene.h"
-#include "mareverbe.h"
+#include "lib/dsp/Sirene.h"
+#include "lib/dsp/mareverbe.h"
 #include "JuceHeader.h"
 
 class Synth
@@ -50,13 +50,18 @@ public:
     void timer512();
     void setSampleRate(double newSampleRate);
 
+    // Méthodes pour le mixeur
+    void setMasterVolume(int sireneNumber, float volume); // Volume indépendant CC70
+    float getMasterVolume(int sireneNumber);
+    void setGlobalGain(int ccValue); // Gain global via CC7 canal 16 (formule [dbtorms~] PD: 10^((cc-100)/20))
+    float getGlobalGain(); // Retourne le gain actuel
+
     void setReverbEnabled(bool enabled);
     bool isReverbEnabled();
     void setReverbHighpass(float freq); // 20Hz-2000Hz
     float getReverbHighpass();
     void setReverbLowpass(float freq); // 2kHz-20kHz
     float getReverbLowpass();
-
 
     // Appliquer la reverb avec filtres sur un buffer
     void processReverbWithFilters(float* left, float* right, int numSamples);
@@ -72,7 +77,8 @@ public:
     Sirene* s6;
     Sirene* s7;
 
-
+    // Reverb
+    mareverbe reverb;
 
 private:
 
@@ -85,8 +91,19 @@ private:
     float PanS6;//0.9;
     float PanS7;//0.65;
 
+    // Volumes indépendants (master volume) par sirène - CC70
+    float masterVolumeS1;
+    float masterVolumeS2;
+    float masterVolumeS3;
+    float masterVolumeS4;
+    float masterVolumeS5;
+    float masterVolumeS6;
+    float masterVolumeS7;
+
+    // Gain global - CC7 canal 16
+    float globalGain;
+
     // Reverb
-    mareverbe reverb;
     bool reverbEnabled;
     float reverbHighpassFreq; // 20-2000 Hz
     float reverbLowpassFreq;  // 2000-20000 Hz
@@ -96,6 +113,8 @@ private:
     juce::IIRFilter reverbHighpassR;
     juce::IIRFilter reverbLowpassL;
     juce::IIRFilter reverbLowpassR;
+
+    double currentSampleRate;
 
     //float Volsynthz;
     //AudioComponentDescription cd1;
