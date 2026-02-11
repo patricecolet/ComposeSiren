@@ -63,8 +63,8 @@ private:
 
   double sampleRate;
   double deuxPieSampleRate;
+
 public:
-  void setMidicent(int note);
   void setnoteFromExt(int note);
   void setnote();
   SireneSpeedSlideState oujesuis();
@@ -86,6 +86,10 @@ public:
   );
   // to fill tabAmp, tabFreq and dureTabs
 
+private:
+    void setMidicent(int note);
+
+public:
   inline float  calculwave() {
     isChangementdenote = false;
     float wavefinal = 0.;
@@ -196,12 +200,12 @@ private:
   bool isCrossfade = false; // gauthier: deterministically init isCrossfade to false
 
   int computeInertiaBias(SireneSpeedSlideState ouJeSuis);
+
   float computeInertiaFactor(float cents){
       float octaveRatio = cents / 1200;
-      if(octaveRatio == 0. || octaveRatio < 0.01){ return 1.; }
+      if (octaveRatio == 0. || octaveRatio < 0.01) { return 1.; }
       else {
           return 1. / octaveRatio;
-
       }
   }
 };
