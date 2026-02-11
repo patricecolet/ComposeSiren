@@ -83,108 +83,114 @@ void MidiIn::JouerClic(int value){
 
 
 void MidiIn::handleMIDIMessage2(int Ch, int value1, int value2){
-    //std::cout << "Message MIDI reçu: " << Ch << value1 << value2 << std::endl;
+    // std::cout << "Message MIDI reçu: " << Ch << " " << value1 << " " << value2 << std::endl;
     if (Ch >= 144 && Ch < 160 ) {
         if (value2 != 0) {
-            if(value2==200) {RealTimeStartNote(Ch-143, value1, 0);}
-            else {RealTimeStartNote(Ch-143, value1, value2);}
+            if (value2 == 200) {
+                RealTimeStartNote(Ch - 143, value1, 0);
+            } else {
+                RealTimeStartNote(Ch - 143, value1, value2);
+            }
 
-        }else {
-            RealTimeStopNote(Ch-143, value1);
+        } else {
+            RealTimeStopNote(Ch - 143, value1);
         }
-    }
-    else if (Ch >= 128 && Ch < 144 ) {
-        RealTimeStopNote(Ch-127, value1);
-    }
-    else if (Ch >= 176 && Ch < 192) {
+    } else if (Ch >= 128 && Ch < 144 ) {
+        RealTimeStopNote(Ch - 127, value1);
+    } else if (Ch >= 176 && Ch < 192) {
         HandleControlChange(Ch - 175, value1, value2);
-    }else if (Ch >=224 && Ch <240){
-        HandlePitchWheel(Ch-223, value1, value2);
+    } else if (Ch >=224 && Ch < 240) {
+        HandlePitchWheel(Ch - 223, value1, value2);
     }
 }
 
-void MidiIn::RealTimeStartNote(int Ch, int value1, int value2){
+void MidiIn::RealTimeStartNote(int Ch, int value1, int value2) {
     // std::cout << "RealTimeStartNote: " << Ch << "-" << value1 << "-" << value2 << std::endl;
-    if (Ch >=1 && Ch <8) {
-        if(Ch ==1)countvibra = 0;
-        if((ControlCh[1][Ch] != 0 && ControlCh[9][Ch] != 0 && ControlCh[11][Ch] != 0 && value2>0 && velociteCh[Ch]==0) ||(ControlCh[1][Ch] != 0 && ControlCh[9][Ch] != 0 && ControlCh[11][Ch] != 0 && value2>0 && value1 !=noteonCh[Ch] ) ){
-            Control1FinalCh[Ch]=0;
-            isAttacVibrato[Ch]=1;
+    if (Ch >= 1 && Ch < 8) {
+        if (Ch == 1) countvibra = 0;
+        if ((ControlCh[1][Ch] != 0 && ControlCh[9][Ch] != 0 && ControlCh[11][Ch] != 0 && value2 > 0 && velociteCh[Ch] == 0)
+            ||(ControlCh[1][Ch] != 0 && ControlCh[9][Ch] != 0 && ControlCh[11][Ch] != 0 && value2 > 0 && value1 != noteonCh[Ch])) {
+            Control1FinalCh[Ch] = 0;
+            isAttacVibrato[Ch] = 1;
         }
         noteonCh[Ch] = value1;
         velociteCh[Ch] = value2;
-        noteonfinalCh[Ch] = ((noteonCh[Ch]) + pitchbendCh[Ch])  ;
-        volumefinalCh[Ch] =(velociteCh[Ch] *(ControlCh[7][Ch]/127.0))*(500./127.) ;
-        if(volumefinalCh[Ch] < 0.0)volumefinalCh[Ch]=0.0;
-        if(volumefinalCh[Ch] > 500.0)volumefinalCh[Ch]=500.0;
+        noteonfinalCh[Ch] = (noteonCh[Ch] + pitchbendCh[Ch]);
+        volumefinalCh[Ch] = (velociteCh[Ch] * (ControlCh[7][Ch] / 127.0)) * (500. / 127.);
+        if (volumefinalCh[Ch] < 0.0) volumefinalCh[Ch] = 0.0;
+        if (volumefinalCh[Ch] > 500.0) volumefinalCh[Ch] = 500.0;
         tourmoteurCh[Ch] = tabledecorresponcanceMidinote(noteonfinalCh[Ch], Ch);
         sendVariaCh(Ch);
-        sendVolCh((int) (volumefinalCh[Ch]*ChangevolumegeneralCh[Ch]), Ch);
-    }else if(Ch==10){
-        if(value1 > 1 && value2 > 1) JouerClic(value1);
+        sendVolCh((int) (volumefinalCh[Ch] * ChangevolumegeneralCh[Ch]), Ch);
+    } else if (Ch == 10) {
+        if (value1 > 1 && value2 > 1) JouerClic(value1);
     }
 }
 
-void MidiIn::RealTimeStopNote(int Ch, int note){
+void MidiIn::RealTimeStopNote(int Ch, int note) {
     if (Ch < 8) {
-        if(note == noteonCh[Ch])
-        {
+        if(note == noteonCh[Ch]) {
             sendVariaCh(Ch);
             sendVolCh(0, Ch);
             velociteCh[Ch] = 0.0;
-            volumefinalCh[Ch]=0.0;
+            volumefinalCh[Ch] = 0.0;
 
         }
     }
 }
 
-void MidiIn::HandleControlChange(int Ch, int value1, int value2){
-
+void MidiIn::HandleControlChange(int Ch, int value1, int value2) {
+    // std::cout << "received control change" << std::endl;
     if (Ch < 9) {
-        switch (value1)
-        {
+        switch (value1) {
             case 121: // Reset All Controllers (standard MIDI)^M
                 resetSireneCh(Ch);
                 break;
-            case 1 :
+            case 1 : {
                 ControlCh[1][Ch] = value2 ;
-                if(ControlCh[11][Ch]==0)Control1FinalCh[Ch] =ControlCh[1][Ch];
-                if(ControlCh[1][Ch]==0 && isAttacVibrato[Ch]==1){
+                if (ControlCh[11][Ch] == 0) {
+                    Control1FinalCh[Ch] = ControlCh[1][Ch];
+                }
+                if (ControlCh[1][Ch] == 0 && isAttacVibrato[Ch]==1) {
                     isAttacVibrato[Ch]=0;
                 }
                 break;
+            }
             case 5 :
-                ControlCh[5][Ch] =value2;
+                ControlCh[5][Ch] = value2;
                 break;
             case 6 :
-                ControlCh[6][Ch] =value2;
+                ControlCh[6][Ch] = value2;
                 break;
-            case 7 :
+            case 7 : {
                 ControlCh[7][Ch] = value2 ;
-                volumefinalCh[Ch] =(velociteCh[Ch] *(ControlCh[7][Ch]/127.0))*(500./127.) ;
-                if(volumefinalCh[Ch] < 0.0)volumefinalCh[Ch]=0.0;
-                if(volumefinalCh[Ch] > 500.0)volumefinalCh[Ch]=500.0;
-                sendVolCh((int)(volumefinalCh[Ch]*ChangevolumegeneralCh[Ch]), Ch);
+                volumefinalCh[Ch] = velociteCh[Ch] * (ControlCh[7][Ch] / 127.0) * (500./127.) ;
+                if (volumefinalCh[Ch] < 0.0) volumefinalCh[Ch] = 0.0;
+                if (volumefinalCh[Ch] > 500.0) volumefinalCh[Ch] = 500.0;
+                sendVolCh((int)(volumefinalCh[Ch] * ChangevolumegeneralCh[Ch]), Ch);
                 break;
-            case 9 :
+            }
+            case 9 : {
                 ControlCh[9][Ch] = value2 ;
-                if(ControlCh[9][Ch] < 0.0)ControlCh[9][Ch]=0.0;
-                if(ControlCh[9][Ch] > 127.0)ControlCh[9][Ch]=127.0;
-                if(ControlCh[9][Ch]==0 && isAttacVibrato[Ch]==1){
-                    isAttacVibrato[Ch]=0;
+                if (ControlCh[9][Ch] < 0.0) ControlCh[9][Ch] = 0.0;
+                if (ControlCh[9][Ch] > 127.0) ControlCh[9][Ch] = 127.0;
+                if (ControlCh[9][Ch] == 0 && isAttacVibrato[Ch] == 1) {
+                    isAttacVibrato[Ch] = 0;
                 }
                 break;
-            case 11 :
+            }
+            case 11 : {
                 ControlCh[11][Ch] = value2 ;
-                if(ControlCh[11][Ch]==0 && isAttacVibrato[Ch]==1){
-                    isAttacVibrato[Ch]=0;
-
+                if (ControlCh[11][Ch] == 0 && isAttacVibrato[Ch] == 1) {
+                    isAttacVibrato[Ch] = 0;
                 }
                 break;
-            case 15 :
+            }
+            case 15 : {
                 ControlCh[15][Ch] = value2 ;
-                if(value2==0)vartremoloCh[Ch]=0;
+                if (value2 == 0) vartremoloCh[Ch] = 0;
                 break;
+            }
             case 72 :
                 ControlCh[72][Ch] = value2;
                 break;
@@ -192,7 +198,7 @@ void MidiIn::HandleControlChange(int Ch, int value1, int value2){
                 ControlCh[73][Ch] = value2;
                 break;
             case 92 :
-                ControlCh[92][Ch]= value2 ;
+                ControlCh[92][Ch] = value2 ;
                 break;
             default:
                 break;
@@ -200,16 +206,16 @@ void MidiIn::HandleControlChange(int Ch, int value1, int value2){
     }
 }
 
-void MidiIn::HandlePitchWheel(int Ch, int value1, int value2){
+void MidiIn::HandlePitchWheel(int Ch, int value1, int value2) {
     if (Ch < 8) {
-        pitchbendCh[Ch] = ((value2 << 7) | value1);
-        pitchbendCh[Ch] = (float)((pitchbendCh[Ch]) - 8192) / 8192.;
-        noteonfinalCh[Ch] = (noteonCh[Ch] + pitchbendCh[Ch] )  ;
+        pitchbendCh[Ch] = (value2 << 7) | value1;
+        pitchbendCh[Ch] = (float)(pitchbendCh[Ch] - 8192) / 8192.;
+        noteonfinalCh[Ch] = noteonCh[Ch] + pitchbendCh[Ch];
         tourmoteurCh[Ch] = tabledecorresponcanceMidinote(noteonfinalCh[Ch], Ch);
     }
 }
 
-float MidiIn::tabledecorresponcanceMidinote(float note, int Ch){
+float MidiIn::tabledecorresponcanceMidinote(float note, int Ch) {
     float Midinote=note;
     float tourmoteur=0.;
     float multiplicateur=0.;
