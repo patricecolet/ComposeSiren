@@ -33,8 +33,8 @@ MixerStripComponent::MixerStripComponent(SirenePlugAudioProcessor& p, int sirene
 
     // Knob de pan rotatif avec couleur pour meilleure visibilité
     panKnob.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    panKnob.setRange(-0.5, 0.5, 0.01);
-    panKnob.setValue(audioProcessor.mySynth->getPan(sireneNumber, 0) - 0.5); // Convertir de 0-1 à -0.5-0.5
+    panKnob.setRange(-1.f, 1.f, 0.01);
+    panKnob.setValue(audioProcessor.mySynth->getPan(sireneNumber) * 2.f - 1.f); // Convertir de 0;1 à -1;1
     panKnob.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
     panKnob.setColour(juce::Slider::rotarySliderFillColourId, juce::Colours::orange);
     panKnob.setColour(juce::Slider::thumbColourId, juce::Colours::yellow);
@@ -77,8 +77,7 @@ void MixerStripComponent::timerCallback()
 
     // Mettre à jour le Pan si changé par MIDI
     // getPan retourne 0.5-1.5, on veut -0.5 à +0.5 pour le slider
-    float currentPanLeft = audioProcessor.mySynth->getPan(sireneNumber, 0);
-    float panValue = currentPanLeft - 0.5f; // Convertir 0.5-1.5 en -0.5 à +0.5
+    float panValue = audioProcessor.mySynth->getPan(sireneNumber) * 2.f - 1.f;
     if (std::abs(panKnob.getValue() - panValue) > 0.01)
     {
         panKnob.setValue(panValue, juce::dontSendNotification);
@@ -152,6 +151,6 @@ void MixerStripComponent::sliderValueChanged(juce::Slider* slider)
     }
     else if (slider == &panKnob)
     {
-        audioProcessor.mySynth->setPan(sireneNumber, (float)panKnob.getValue());
+        audioProcessor.mySynth->setPan(sireneNumber, (float)panKnob.getValue() * 0.5f + 0.5f);
     }
 }
