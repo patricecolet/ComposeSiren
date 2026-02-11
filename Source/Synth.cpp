@@ -19,7 +19,7 @@
 
 Synth::Synth(){
 
-    // left channel
+    // normalized pan value
     PanS1=0.75;
     PanS2=0.25;
     PanS3=0.6;
@@ -46,7 +46,30 @@ Synth::Synth(){
     isWithSynthe=true;
     isWithClic=false;
     WideCoeff=1.5;
-    
+
+    std::string dataFilePath = getResourcesPath();
+    std::cout << dataFilePath << std::endl;
+
+    s1 = new Sirene("S1", dataFilePath);
+    s2 = new Sirene("S2", dataFilePath);
+    s3 = new Sirene("S3", dataFilePath);
+    s4 = new Sirene("S4", dataFilePath);
+    s5 = new Sirene("S5", dataFilePath);
+    s6 = new Sirene("S6", dataFilePath);
+    s7 = new Sirene("S7", dataFilePath);
+}
+
+Synth::~Synth(){
+    delete (s1);
+    delete (s2);
+    delete (s3);
+    delete (s4);
+    delete (s5);
+    delete (s6);
+    delete (s7);
+}
+
+std::string Synth::getResourcesPath() {
 // #if defined (_MSC_VER)
 //     std::string dataFilePath = "C:\\Program Files\\Common Files\\Mecanique Vivante\\ComposeSiren\\Resources\\";
 // #elif defined(__linux__)
@@ -80,9 +103,8 @@ Synth::Synth(){
                             .getChildFile("Resources");
         }
 
-        std::string sourceDir = XSTRING(PROJECT_SOURCE_DIR);
-        resourcesDir = juce::File(sourceDir).getChildFile("Resources");;
-        std::cout << sourceDir << std::endl;
+        std::string projectSourceDir = XSTRING(PROJECT_SOURCE_DIR);
+        resourcesDir = juce::File(projectSourceDir).getChildFile("Resources");
 
     #elif defined(_MSC_VER)
         // Windows: chercher à côté de l'exécutable
@@ -116,6 +138,7 @@ Synth::Synth(){
     #endif
 
     dataFilePath = resourcesDir.getFullPathName().toStdString() + "/";
+
 #else
     // Pour les plugins (AU, VST, etc.), utiliser le chemin d'installation
     #if defined (_MSC_VER)
@@ -129,23 +152,8 @@ Synth::Synth(){
         dataFilePath = "/usr/share/ComposeSiren/Resources/";
     #endif
 #endif
-    s1 = new Sirene("S1", dataFilePath);
-    s2 = new Sirene("S2", dataFilePath);
-    s3 = new Sirene("S3", dataFilePath);
-    s4 = new Sirene("S4", dataFilePath);
-    s5 = new Sirene("S5", dataFilePath);
-    s6 = new Sirene("S6", dataFilePath);
-    s7 = new Sirene("S7", dataFilePath);
-}
 
-Synth::~Synth(){
-    delete (s1);
-    delete (s2);
-    delete (s3);
-    delete (s4);
-    delete (s5);
-    delete (s6);
-    delete (s7);
+    return dataFilePath;
 }
 
 void Synth::setSampleRate(double newSampleRate) {
@@ -168,8 +176,7 @@ void Synth::setSampleRate(double newSampleRate) {
     reverbLowpassR.setCoefficients(juce::IIRCoefficients::makeLowPass(newSampleRate, reverbLowpassFreq));
 }
 
-void Synth::setnote(int sireneNumber, int note)
-{
+void Synth::setnote(int sireneNumber, int note) {
     if(isWithSynthe){
         switch (sireneNumber) {
             case 1:s1->setnoteFromExt(note);break;
@@ -184,10 +191,9 @@ void Synth::setnote(int sireneNumber, int note)
                 break;
         }
     }
-
 }
 
-void Synth::setVelocite(int sireneNumber, int velo){
+void Synth::setVelocite(int sireneNumber, int velo) {
     if(isWithSynthe){
         switch (sireneNumber) {
             case 1:s1->setVelocite(velo);break;
@@ -204,8 +210,8 @@ void Synth::setVelocite(int sireneNumber, int velo){
     }
 }
 
-void Synth::setPan(int sireneNumber, float value){
-    if(isWithSynthe){
+void Synth::setPan(int sireneNumber, float value) {
+    if (isWithSynthe) {
         switch (sireneNumber) {
             case 1:PanS1=value;  break;
             case 2:PanS2=value;  break;
@@ -220,36 +226,29 @@ void Synth::setPan(int sireneNumber, float value){
     }
 }
 
-float Synth::getPan(int sireneNumber, int channel)
-{
-    // Return the panoramic value according to the sirene number and the channel (left : 0, right :1)
-    if(channel){
-        // right channel
-        switch (sireneNumber) {
-            case 1: return 1-PanS1 + 0.5;  break;
-            case 2: return 1-PanS2+ 0.5;  break;
-            case 3: return 1-PanS3+ 0.5;  break;
-            case 4: return 1-PanS4+ 0.5;  break;
-            case 5: return 1-PanS5+ 0.5;  break;
-            case 6: return 1-PanS6+ 0.5;  break;
-            case 7: return 1-PanS7+ 0.5;  break;
-            default:  return 0.5;
-        }
+float Synth::getPan(int sireneNumber) {
+    switch (sireneNumber) {
+        case 1: return PanS1;
+        case 2: return PanS2;
+        case 3: return PanS3;
+        case 4: return PanS4;
+        case 5: return PanS5;
+        case 6: return PanS6;
+        case 7: return PanS7;
+        default: return 0.5f;
     }
-    else
-    {
-        // left channel
-        switch (sireneNumber) {
-            case 1: return PanS1+ 0.5;  break;
-            case 2: return PanS2+ 0.5;  break;
-            case 3: return PanS3+ 0.5;  break;
-            case 4: return PanS4+ 0.5;  break;
-            case 5: return PanS5+ 0.5;  break;
-            case 6: return PanS6+ 0.5;  break;
-            case 7: return PanS7+ 0.5;  break;
-            default:  return 0.5;
-        
-        }
+}
+
+float Synth::getPan(int sireneNumber, int channel) {
+    // Return the panoramic value according to the sirene number and the channel (left : 0, right :1)
+    float pan = getPan(sireneNumber);
+
+    switch (channel) {
+        case 0:
+            return sqrt(1.f - pan);
+        case 1:
+        default:
+            return sqrt(pan);
     }
 }
 
@@ -327,12 +326,11 @@ float Synth::getReverbLowpass(){
 void Synth::processReverbWithFilters(float* left, float* right, int numSamples){
     if (!reverbEnabled || numSamples <= 0) return;
     
-    // Buffers temporaires pour dry et wet
-    std::vector<float> dryLeft(numSamples);
-    std::vector<float> dryRight(numSamples);
-    std::vector<float> wetLeft(numSamples);
-    std::vector<float> wetRight(numSamples);
-    
+    dryLeft.resize(numSamples);
+    dryRight.resize(numSamples);
+    wetLeft.resize(numSamples);
+    wetRight.resize(numSamples);
+
     // Sauvegarder le dry (signal original)
     auto dryLevel = reverb.getdry();
     auto wetLevel = reverb.getwet();
@@ -341,8 +339,8 @@ void Synth::processReverbWithFilters(float* left, float* right, int numSamples){
     {
         dryLeft[i] = left[i] * dryLevel;
         dryRight[i] = right[i] * dryLevel;
-        wetLeft[i] = left[i];
-        wetRight[i] = right[i];
+        wetLeft[i] = left[i] * wetLevel;
+        wetRight[i] = right[i] * wetLevel;
     }
     
     // 1. Appliquer le highpass sur le wet avant la reverb

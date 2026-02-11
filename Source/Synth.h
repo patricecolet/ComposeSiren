@@ -20,6 +20,7 @@ public:
     Synth();
     ~Synth();
 
+    std::string getResourcesPath();
     void chooseOutputFile();
     void record(bool isrecord);
     //id initWithControleur(id Controleurdelegate); // traduire id par auto ?
@@ -27,7 +28,6 @@ public:
     void clauseAudio();
     void setnote(int sirene, int note);
     void setVelocite(int sirene, int velo);
-    void setPan(int sirene, float value);
     void jouerunenotePiano(int note, int, int chanal);
     void changeQualite(int qualt);
     void set16ou8Bit(bool is);
@@ -65,8 +65,10 @@ public:
 
     // Appliquer la reverb avec filtres sur un buffer
     void processReverbWithFilters(float* left, float* right, int numSamples);
-    
+
+    float getPan(int sireneNumber);
     float getPan(int sireneNumber, int channel);
+    void setPan(int sirene, float value);
 
 
     Sirene* s1;
@@ -114,6 +116,12 @@ private:
     juce::IIRFilter reverbLowpassL;
     juce::IIRFilter reverbLowpassR;
 
+    // Buffers temporaires pour dry et wet reverb
+    std::vector<float> dryLeft;
+    std::vector<float> dryRight;
+    std::vector<float> wetLeft;
+    std::vector<float> wetRight;
+
     double currentSampleRate;
 
     //float Volsynthz;
@@ -156,7 +164,4 @@ private:
     //float mIntervalFromAudio; // pat : pas besoin je crois
 
     //S1 *s1;
-
-
-
 };
