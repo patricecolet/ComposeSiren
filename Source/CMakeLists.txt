@@ -2,10 +2,9 @@ configure_file(config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.h)
 target_sources(${BaseTargetName}
   PRIVATE 
     CS_midiIN.cpp
-
     PluginEditor.cpp
-
     PluginProcessor.cpp
+    Synth.cpp
 
 #    lib/definitions/parameterDefinitions.cpp
 #    lib/definitions/sirenProperties.cpp
@@ -14,8 +13,6 @@ target_sources(${BaseTargetName}
     lib/dsp/allpass.cpp
     lib/dsp/comb.cpp
     lib/dsp/mareverbe.cpp
-
-    synth.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/Components/MainCommandsComponent.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/Components/MixerComponent.cpp
