@@ -24,15 +24,18 @@ public:
     void sliderValueChanged(juce::Slider* slider) override;
     // void buttonClicked(juce::Button* button) override;
 
-    juce::TextButton resetButton;
-
 private:
     void timerCallback() override;
     SirenePlugAudioProcessor& audioProcessor;
 
+    juce::TextButton resetButton;
+    juce::TextButton showResourcesButton;
+
     // Contrôles globaux (Canal 16)
     juce::Label masterVolumeLabel;
     juce::Slider masterVolumeSlider; // CC7 canal 16
+
+    std::unique_ptr<juce::FileChooser> fileChooser;
 };
 
 #endif //COMPOSESIREN_MAINCOMMANDSCOMPONENT_H

@@ -109,6 +109,9 @@ target_compile_definitions(${BaseTargetName}
   PUBLIC 
     JUCE_VST3_CAN_REPLACE_VST2=0
     JUCE_WEB_BROWSER=0
+  PRIVATE
+    $<$<CONFIG:Debug>:DEBUG>
+    $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
 )
 
 ################################################################################

@@ -41,7 +41,7 @@ name(str) {
   // readDataFromBinaryData(sireneNameForData);
 
   // we read from files instead, still slow but acceptable :
-	readDataFromBinaryFile(
+  readDataFromBinaryFile(
     dataFilePath,
     "dataAmp" + sireneNameForData,
     "dataFreq" + sireneNameForData,

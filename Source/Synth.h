@@ -12,7 +12,7 @@
 
 #include "lib/dsp/Sirene.h"
 #include "lib/dsp/mareverbe.h"
-#include "JuceHeader.h"
+#include <JuceHeader.h>
 
 class Synth
 {

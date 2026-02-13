@@ -7,7 +7,7 @@
 //==============================================================================
 // Component on the top of the main window
 MainCommandsComponent::MainCommandsComponent(SirenePlugAudioProcessor& p)
-    :audioProcessor(p)
+    : audioProcessor(p)
 {
     // Master Volume (CC7 canal 16)
     masterVolumeLabel.setText("Master Vol (CC7 ch16)", juce::dontSendNotification);
@@ -33,7 +33,7 @@ MainCommandsComponent::MainCommandsComponent(SirenePlugAudioProcessor& p)
     // resetButton.setColour(juce::TextButton::buttonOnColourId , juce::Colours::grey);
     resetButton.setColour(juce::TextButton::textColourOffId , juce::Colours::black);
     resetButton.setButtonText ("Reset");
-    resetButton.onClick = [this]
+    resetButton.onClick = [this]()
     {
         std::cout << "Reset"<<std::endl;
         audioProcessor.myMidiInHandler -> resetSireneCh(1);
@@ -44,10 +44,35 @@ MainCommandsComponent::MainCommandsComponent(SirenePlugAudioProcessor& p)
         audioProcessor.myMidiInHandler -> resetSireneCh(6);
         audioProcessor.myMidiInHandler -> resetSireneCh(7);
     };
-    addAndMakeVisible (resetButton);
+    addAndMakeVisible(resetButton);
+
+    showResourcesButton.setColour(juce::TextButton::buttonColourId, juce::Colours::whitesmoke);
+    showResourcesButton.setColour(juce::TextButton::textColourOffId , juce::Colours::black);
+    showResourcesButton.setButtonText("Set resources directory");
+    showResourcesButton.onClick = [this]()
+    {
+        std::string resourcesPath = audioProcessor.mySynth->getResourcesPath();
+        std::cout << "current resources path : " << resourcesPath << std::endl;
+        // return;
+        fileChooser = std::make_unique<juce::FileChooser>(
+            "Select a file", juce::File(resourcesPath), ""
+        );
+        auto flags =
+            juce::FileBrowserComponent::openMode
+            | juce::FileBrowserComponent::canSelectDirectories;
+
+        fileChooser->launchAsync(flags, [this](const juce::FileChooser& chooser) {
+            // get the result to update resourcesPath
+            juce::File newResourcesPath = chooser.getResult();
+            std::cout << "new resources path : " << newResourcesPath.getFullPathName() << std::endl;
+        });
+    };
+#ifdef DEBUG
+    addAndMakeVisible(showResourcesButton);
+#endif
 
     // Démarrer le timer pour synchroniser l'UI avec les changements MIDI
-    startTimer(50); // 50ms = 20 Hz
+    startTimer(50); // 50 ms = 20 Hz
 }
 
 MainCommandsComponent::~MainCommandsComponent()
@@ -76,6 +101,8 @@ void MainCommandsComponent::resized()
     masterArea.removeFromLeft(80); // Espace après le reset button
     masterVolumeLabel.setBounds(masterArea.removeFromTop(15));
     masterVolumeSlider.setBounds(masterArea.removeFromTop(20));
+
+    showResourcesButton.setBounds(area.removeFromRight(220));
 }
 
 void MainCommandsComponent::sliderValueChanged(juce::Slider* slider)
