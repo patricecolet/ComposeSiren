@@ -40,9 +40,9 @@ foreach(FORMAT ${FORMATS})
   list(APPEND ALL_TARGETS "${BaseTargetName}_${FORMAT}")
 endforeach()
 
-add_custom_target(Packaging ALL DEPENDS ${ALL_TARGETS})
+add_custom_target(package DEPENDS ${ALL_TARGETS})
 add_custom_command(
-  TARGET Packaging POST_BUILD
+  TARGET package POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E echo "========== CREATING INSTALLER"
   COMMAND ${CMAKE_COMMAND}
     -B .
@@ -68,13 +68,29 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E echo "========== DMG CREATED"
 )
 
-if(${ENABLE_NOTARIZATION})
+# Meta-Target that acts as an "all/ALL_BUILD" target
+# as not all environments provide it by default like Ninja
+# (e.g. CLion / CI)
+add_custom_target(dist DEPENDS package)
+
+if(ENABLE_NOTARIZATION)
+  # fail fast if notarization profile has not been provided
+  if (NOT DEFINED APPLE_NOTARIZATION_KEYCHAIN_PROFILE OR
+      APPLE_NOTARIZATION_KEYCHAIN_PROFILE STREQUAL "")
+    message(FATAL_ERROR
+      "ENABLE_NOTARIZATION is true but APPLE_NOTARIZATION_KEYCHAIN_PROFILE
+      is not set. "
+      "Set -DAPPLE_NOTARIZATION_KEYCHAIN_PROFILE=<profile> in the command
+      or in the cmake config file"
+    )
+  endif()
   # notarize the generated dmg for painless distribution
-  add_custom_target(Notarization ALL DEPENDS Packaging)
+  add_custom_target(notarize DEPENDS package)
   add_custom_command(
-    TARGET Notarization POST_BUILD
+    TARGET notarize POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo "========== NOTARIZING DMG"
     COMMAND ${PACKAGING_PROJECT_SOURCE_DIR}/NotarizeDmg.sh
     COMMAND ${CMAKE_COMMAND} -E echo "========== DMG NOTARIZED"
   )
+  add_dependencies(dist notarize)
 endif()

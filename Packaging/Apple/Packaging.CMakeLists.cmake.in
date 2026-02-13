@@ -53,6 +53,17 @@ function(_sign_component_from_build_path BUILD_PATH)
   endif()
 endfunction()
 
+# TODO : call this for .app bundles before signature to prevent them from being relocated
+# PROBLEM : if user moved previous .app version to folder X, then new .app will be installed in folder X.
+# SOLUTION : call this function to always force .app to be installed in /Applications
+# see https://moonbase.sh/articles/how-to-make-macos-installers-for-juce-projects-with-pkgbuild-and-productbuild/
+
+function(_set_bundle_is_relocatable_to_no APP_PATH)
+    execute_process(COMMAND pkgbuild --analyze "${APP_PATH}" "${APP_PATH}.plist")
+    execute_process(COMMAND plutil -replace IsRelocatable -bool NO "${APP_PATH}.plist")
+
+endfunction()
+
 ################################################################################
 # install components
 
