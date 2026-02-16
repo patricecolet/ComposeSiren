@@ -1,0 +1,77 @@
+#!/bin/bash
+set -euo pipefail
+
+CPACK_DIR="@CPACK_PACKAGE_DIRECTORY@"
+FILE_NAME="@CPACK_PACKAGE_FILE_NAME@"
+
+PRODUCT_DIR="$CPACK_DIR/_CPack_Packages/Darwin/productbuild/$FILE_NAME"
+# the installer resources, not the ones to be installed :
+RESOURCES_DIR="$PRODUCT_DIR/Contents"
+PACKAGES_DIR="$RESOURCES_DIR/Packages"
+
+# CPack typically produces this, but be defensive:
+DIST_FILE=""
+if [[ -f "$PRODUCT_DIR/Contents/distribution.dist" ]]; then
+  DIST_FILE="$PRODUCT_DIR/Contents/distribution.dist"
+else
+  echo "ERROR: Could not find a Distribution file in $PRODUCT_DIR/Contents"
+  ls -la "$PRODUCT_DIR/Contents" || true
+  exit 1
+fi
+
+APP_PATH="@STANDALONE_APP_PATH@"
+if [[ ! -d "$APP_PATH" ]]; then
+  echo "ERROR: Standalone app bundle not found: $APP_PATH"
+  exit 1
+fi
+
+STANDALONE_COMPONENT_PKG="$PACKAGES_DIR/$FILE_NAME-Standalone.pkg"
+if [[ ! -f "$STANDALONE_COMPONENT_PKG" ]]; then
+  echo "ERROR: Expected Standalone component pkg not found: $STANDALONE_COMPONENT_PKG"
+  echo "Contents of $PACKAGES_DIR:"
+  ls -la "$PACKAGES_DIR" || true
+  exit 1
+fi
+
+TMP_ROOT="$(mktemp -d)"
+trap 'rm -rf "$TMP_ROOT"' EXIT
+
+mkdir -p "$TMP_ROOT/Applications"
+cp -R "$APP_PATH" "$TMP_ROOT/Applications/ComposeSiren.app"
+
+echo "Using app: $APP_PATH"
+echo "Patching component pkg: $STANDALONE_COMPONENT_PKG"
+
+echo "Creating plist with additional options..."
+
+PLIST_PATH="@PACKAGING_PROJECT_SOURCE_DIR@/BundleNotRelocatable.plist"
+plutil -lint "$PLIST_PATH"
+
+echo "Rebuilding standalone pkg with updated plist..."
+
+# Rebuild the Standalone component pkg in-place
+pkgbuild \
+  --root "$TMP_ROOT" \
+  --install-location "/" \
+  --component-plist "$PLIST_PATH" \
+  "$STANDALONE_COMPONENT_PKG"
+
+echo "Rebuilding final product pkg (productbuild)..."
+
+FINAL_PKG="$CPACK_DIR/$FILE_NAME.pkg"
+INSTALLER_ID="@APPLE_DEVELOPER_ID_INSTALLER@"
+
+if [[ -n "$INSTALLER_ID" ]]; then
+  productbuild \
+    --sign "$INSTALLER_ID" \
+    --distribution "$DIST_FILE" \
+    --package-path "$PACKAGES_DIR" \
+    --resources "$RESOURCES_DIR" \
+    "$FINAL_PKG"
+else
+  productbuild \
+    --distribution "$DIST_FILE" \
+    --package-path "$PACKAGES_DIR" \
+    --resources "$RESOURCES_DIR" \
+    "$FINAL_PKG"
+fi

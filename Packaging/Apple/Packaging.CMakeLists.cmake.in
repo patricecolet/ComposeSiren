@@ -60,12 +60,14 @@ endfunction()
 
 function(_set_bundle_is_relocatable_to_no APP_PATH)
     execute_process(COMMAND pkgbuild --analyze "${APP_PATH}" "${APP_PATH}.plist")
-    execute_process(COMMAND plutil -replace IsRelocatable -bool NO "${APP_PATH}.plist")
+    execute_process(COMMAND plutil -replace BundleIsRelocatable -bool NO "${APP_PATH}.plist")
 
 endfunction()
 
 ################################################################################
 # install components
+
+set(STANDALONE_APP_PATH "")
 
 foreach(FORMAT @FORMATS@)
   # if project is multi-config (-G Xcode, Visual Studio or Ninja Multi-Config)
@@ -77,6 +79,9 @@ foreach(FORMAT @FORMATS@)
         message("we have a ${CONFIG} build for ${FORMAT} target")
         if(${CONFIG} STREQUAL ${CMAKE_BUILD_TYPE})
           message(STATUS ">>>>> installing ${CONFIG} ${FORMAT} target from ${ARTEFACTS_DIR}")
+          if("${FORMAT}" STREQUAL "Standalone")
+              set(STANDALONE_APP_PATH "${ARTEFACTS_DIR}")
+          endif()
           _sign_component_from_build_path("${ARTEFACTS_DIR}")
           _install_component_from_build_path_and_format("${ARTEFACTS_DIR}" ${FORMAT})
         endif()
@@ -89,12 +94,17 @@ foreach(FORMAT @FORMATS@)
     file(READ "@CMAKE_CURRENT_BINARY_DIR@/@BaseTargetName@_${FORMAT}_path" ARTEFACTS_DIR)
     if(EXISTS "${ARTEFACTS_DIR}")
       message("we have a build for ${FORMAT} target !")
+      if("${FORMAT}" STREQUAL "Standalone")
+          set(STANDALONE_APP_PATH "${ARTEFACTS_DIR}")
+      endif()
       _sign_component_from_build_path("${ARTEFACTS_DIR}")
       _install_component_from_build_path_and_format("${ARTEFACTS_DIR}" ${FORMAT})
     endif()
 
   endif()
 endforeach()
+
+message("Standalone app path : ${STANDALONE_APP_PATH}")
 
 # install Resources
 
@@ -123,7 +133,7 @@ set(CPACK_COMPONENTS_ALL ${COMPONENTS_LIST})
 
 set(CPACK_PACKAGE_NAME @BaseTargetName@)
 set(CPACK_PACKAGE_VENDOR @VendorName@)
-set(CPACK_VERBATIM_VARIABLES TRUE)
+set(CPACK_VERBATIM_VARIABLES ON)
 set(CPACK_PACKAGE_VERSION_MAJOR @PROJECT_VERSION_MAJOR@)
 set(CPACK_PACKAGE_VERSION_MINOR @PROJECT_VERSION_MINOR@)
 set(CPACK_PACKAGE_VERSION_PATCH @PROJECT_VERSION_PATCH@)
@@ -131,7 +141,7 @@ set(CPACK_PACKAGE_DIRECTORY "${CMAKE_BINARY_DIR}/${PROJECT_NAME}_artefacts")
 set(CPACK_RESOURCE_FILE_LICENSE "@PACKAGING_RESOURCES_DIR@/License.txt")
 set(CPACK_RESOURCE_FILE_README "@PACKAGING_RESOURCES_DIR@/ReadMe.txt")
 set(CPACK_RESOURCE_FILE_WELCOME "@PACKAGING_RESOURCES_DIR@/Welcome.txt")
-set(CPACK_PACKAGE_RELOCATABLE "true")
+set(CPACK_PACKAGE_RELOCATABLE OFF)
 
 ################################################################################
 # productbuild specific settings
@@ -178,6 +188,18 @@ configure_file(
 configure_file(
   "${PACKAGING_SCRIPTS_DIR}/Uninstall.applescript.in"
   "${CMAKE_SOURCE_DIR}/Uninstall.applescript"
+)
+configure_file(
+  "${PACKAGING_SCRIPTS_DIR}/BundleNotRelocatable.plist.in"
+  "${CMAKE_SOURCE_DIR}/BundleNotRelocatable.plist"
+)
+configure_file(
+  "${PACKAGING_SCRIPTS_DIR}/FixStandaloneRelocatable.sh.in"
+  "${CMAKE_SOURCE_DIR}/FixStandaloneRelocatable.sh"
+  FILE_PERMISSIONS
+  OWNER_READ OWNER_WRITE OWNER_EXECUTE
+  GROUP_READ GROUP_EXECUTE
+  WORLD_READ WORLD_EXECUTE
 )
 configure_file(
   "${PACKAGING_SCRIPTS_DIR}/CreateDmg.sh.in"

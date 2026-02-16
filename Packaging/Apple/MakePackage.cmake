@@ -57,10 +57,16 @@ add_custom_command(
     WORKING_DIRECTORY ${PACKAGING_PROJECT_SOURCE_DIR}
   COMMAND ${CMAKE_COMMAND} -E echo "========== INSTALLER CREATED"
 
-  # clean build artefacts
-  COMMAND ${CMAKE_COMMAND} -E echo "========== REMOVING .app ARTEFACTS"
-  COMMAND ${CMAKE_COMMAND} -P ${PACKAGING_PROJECT_SOURCE_DIR}/RemoveAppBundles.cmake
-  COMMAND ${CMAKE_COMMAND} -E echo "========== .app ARTEFACTS REMOVED"
+  COMMAND ${CMAKE_COMMAND} -E echo "========== FIXING STANDALONE RELOCATABLE"
+  COMMAND ${PACKAGING_PROJECT_SOURCE_DIR}/FixStandaloneRelocatable.sh
+  COMMAND ${CMAKE_COMMAND} -E echo "========== STANDALONE RELOCATABLE FIXED"
+
+  # clean build artefacts (this was before we managed to disable app relocatability)
+  # this should be removed once we're sure it's not useful at all anymore,
+  # together with RemoveAppBundles.cmake.in
+  # COMMAND ${CMAKE_COMMAND} -E echo "========== REMOVING .app ARTEFACTS"
+  # COMMAND ${CMAKE_COMMAND} -P ${PACKAGING_PROJECT_SOURCE_DIR}/RemoveAppBundles.cmake
+  # COMMAND ${CMAKE_COMMAND} -E echo "========== .app ARTEFACTS REMOVED"
 
   # create dmg containing installer and uninstaller
   COMMAND ${CMAKE_COMMAND} -E echo "========== CREATING DMG"
