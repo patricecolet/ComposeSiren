@@ -21,9 +21,20 @@ mv \
   "$post_build_dir/dmgContent";
 
 # create uninstall app bundle from applescript
+# Note: osacompile crée des apps universelles par défaut, mais on s'assure
+# que l'architecture est correctement définie
 osacompile \
   -o "$post_build_dir/dmgContent/Uninstall@BaseTargetName@.app" \
   "@PACKAGING_PROJECT_SOURCE_DIR@/Uninstall.applescript";
+
+# Vérifier que l'app Uninstall est universelle (osacompile devrait le faire automatiquement)
+if [ -f "$post_build_dir/dmgContent/Uninstall@BaseTargetName@.app/Contents/MacOS/applet" ]; then
+  # Vérifier l'architecture
+  ARCH_INFO=$(lipo -info "$post_build_dir/dmgContent/Uninstall@BaseTargetName@.app/Contents/MacOS/applet" 2>&1)
+  if ! echo "$ARCH_INFO" | grep -q "arm64"; then
+    echo "WARNING: Uninstall app may not be universal"
+  fi
+fi
 
 codesign \
   -s "@APPLE_DEVELOPER_ID_APPLICATION@" \

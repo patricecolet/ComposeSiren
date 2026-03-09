@@ -16,7 +16,7 @@ install(
 # Install Resources
 install(
   DIRECTORY "${CMAKE_SOURCE_DIR}/Resources/"
-  DESTINATION "share/${BaseTargetName}/Resources"
+  DESTINATION "share/ComposeSiren/Resources"
   COMPONENT Standalone
   FILES_MATCHING PATTERN "data*"
 )

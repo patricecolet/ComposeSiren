@@ -168,6 +168,7 @@ endif()
 if(LINUX)
   target_compile_definitions(ComposeSiren_Common PUBLIC JUCE_USE_CURL=0)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  set_target_properties(ComposeSiren_Common PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 
 ################################################################################

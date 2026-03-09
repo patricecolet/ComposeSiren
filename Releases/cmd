@@ -1,0 +1,10 @@
+ % sudo /usr/sbin/installer \
+  -pkg "ComposeSiren_Orchestra-2.0.0-Darwin-universal_fixed-signed.pkg" \
+  -target /
+Password:
+installer: This package requires Rosetta 2 to be installed.
+                Please install Rosetta 2 and then try again.
+                    `sudo softwareupdate --install-rosetta`
+
+installer: Error - ComposeSiren_Orchestra ne peut pas être installé sur cet ordinateur.
+

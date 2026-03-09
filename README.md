@@ -23,7 +23,7 @@ ComposeSiren handles the seven-piece Siren Orchestra:
 ## 💻 System Requirements
 
 ### macOS
-- **macOS 13.0 (Ventura)** or later
+- **macOS 10.15 (Catalina)** or later
 - **Architecture**: Universal binary (Intel x86_64 + Apple Silicon arm64)
 - **Installation**: DMG package with signed and notarized installer
 

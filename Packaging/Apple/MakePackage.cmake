@@ -5,11 +5,17 @@
 # see : https://stackoverflow.com/a/64882742/3810717 and dig doc
 
 # List of all plugin targets (Orchestra + Solo)
-set(ALL_PLUGIN_TARGETS ${BaseTargetName})
-set(SOLO_MODELS "S1" "S3" "S4" "S5" "S7")
-foreach(MODEL ${SOLO_MODELS})
-  list(APPEND ALL_PLUGIN_TARGETS "ComposeSiren_${MODEL}")
-endforeach()
+# Option pour construire seulement Orchestra (sans Solo)
+option(BUILD_ONLY_ORCHESTRA "Build only Orchestra package without Solo models" OFF)
+if(BUILD_ONLY_ORCHESTRA)
+  set(ALL_PLUGIN_TARGETS ${BaseTargetName})
+else()
+  set(ALL_PLUGIN_TARGETS ${BaseTargetName})
+  set(SOLO_MODELS "S1" "S3" "S4" "S5" "S7")
+  foreach(MODEL ${SOLO_MODELS})
+    list(APPEND ALL_PLUGIN_TARGETS "ComposeSiren_${MODEL}")
+  endforeach()
+endif()
 
 foreach(PLUGIN_TARGET ${ALL_PLUGIN_TARGETS})
   foreach(FORMAT ${FORMATS})
@@ -69,6 +75,14 @@ endif()
 # CMAKE_SOURCE_DIR will be the source dir of the main project in the template
 # We need to pass it explicitly since the packaging subproject has its own CMAKE_SOURCE_DIR
 set(MAIN_CMAKE_SOURCE_DIR "${CMAKE_SOURCE_DIR}")
+# Pass PACKAGING_SCRIPTS_DIR so the template can find Distribution.xml.in
+set(PACKAGING_SCRIPTS_DIR_FOR_TEMPLATE "${PACKAGING_SCRIPTS_DIR}")
+# Pass version variables explicitly to ensure they're available in the template
+set(PROJECT_VERSION_MAJOR_FOR_TEMPLATE "${PROJECT_VERSION_MAJOR}")
+set(PROJECT_VERSION_MINOR_FOR_TEMPLATE "${PROJECT_VERSION_MINOR}")
+set(PROJECT_VERSION_PATCH_FOR_TEMPLATE "${PROJECT_VERSION_PATCH}")
+set(CMAKE_PROJECT_VERSION_FOR_TEMPLATE "${CMAKE_PROJECT_VERSION}")
+set(BUILD_ONLY_ORCHESTRA_FOR_TEMPLATE "${BUILD_ONLY_ORCHESTRA}")
 
 configure_file(
   ${PACKAGING_SCRIPTS_DIR}/Packaging.CMakeLists.cmake.in
@@ -102,6 +116,18 @@ add_custom_command(
     --config CPackConfig.cmake
     WORKING_DIRECTORY ${PACKAGING_PROJECT_SOURCE_DIR}
   COMMAND ${CMAKE_COMMAND} -E echo "========== INSTALLER CREATED"
+
+  # Corriger les PackageInfo des sous-packages AVANT de reconstruire le PKG final
+  # C'est crucial : les PackageInfo doivent avoir hostArchitectures="x86_64 arm64"
+  # Le PROJECT_NAME dans le packaging subproject est ${BaseTargetName}_Installer
+  COMMAND ${CMAKE_COMMAND} -E echo "========== FIXING PACKAGEINFO FORMAT IN SUB-PACKAGES"
+  COMMAND ${CMAKE_SOURCE_DIR}/scripts/fix_pkginfo_before_productbuild.sh ${PACKAGING_PROJECT_SOURCE_DIR}/${BaseTargetName}_Installer_artefacts ${BaseTargetName}_Installer
+  COMMAND ${CMAKE_COMMAND} -E echo "========== PACKAGEINFO FORMAT FIXED IN SUB-PACKAGES"
+  
+  # Reconstruire le PKG principal avec les PackageInfo corrigés
+  COMMAND ${CMAKE_COMMAND} -E echo "========== REBUILDING PKG WITH FIXED PACKAGEINFO"
+  COMMAND ${CMAKE_SOURCE_DIR}/scripts/rebuild_pkg_with_fixed_packageinfo.sh ${PACKAGING_PROJECT_SOURCE_DIR}/${BaseTargetName}_Installer_artefacts ${BaseTargetName}_Installer
+  COMMAND ${CMAKE_COMMAND} -E echo "========== PKG REBUILT WITH FIXED PACKAGEINFO"
 
   # clean build artefacts
   COMMAND ${CMAKE_COMMAND} -E echo "========== REMOVING .app ARTEFACTS"

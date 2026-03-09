@@ -1,0 +1,3 @@
+sudo /usr/sbin/installer \
+  -pkg "/chemin/vers/ComposeSiren_Orchestra-2.0.0-Darwin-signed.pkg" \
+  -target /

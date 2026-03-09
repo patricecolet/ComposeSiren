@@ -40,8 +40,25 @@ echo "========== notarize history"
 xcrun notarytool history --keychain-profile "$profile"
 
 echo "========== staple"
-stapler staple $submit_path
+xcrun stapler staple "$dmg"
+STAPLE_RESULT=$?
 
-# todo : verify signature and acceptance by the SIP system aka Gatekeeper
-echo "========== verify (TBD)"
-# ...
+# Verify that staple was successful
+echo "========== verify staple"
+xcrun stapler validate "$dmg"
+if [ $? -eq 0 ]; then
+    echo "✅ DMG notarisé et staplé avec succès"
+elif [ $STAPLE_RESULT -ne 0 ]; then
+    echo "⚠️  Attention : Le staple a échoué (code: $STAPLE_RESULT)"
+    echo "   Le DMG est notarisé mais pas staplé."
+    echo "   Vous pouvez essayer manuellement : xcrun stapler staple \"$dmg\""
+    echo "   Ou utiliser le DMG tel quel - il devrait fonctionner."
+    # Ne pas faire échouer le build si seule la notarisation a réussi
+    # Le DMG notarisé fonctionne même sans staple
+    exit 0
+else
+    echo "❌ Erreur : La validation du staple a échoué"
+    echo "   Le DMG est notarisé mais le staple n'est pas valide."
+    echo "   Vous pouvez essayer manuellement : xcrun stapler staple \"$dmg\""
+    exit 1
+fi

@@ -5,7 +5,7 @@ ComposeSiren is a professional audio plugin suite for music production.
 
 SYSTEM REQUIREMENTS
 ===================
-- macOS 13.0 (Ventura) or later
+- macOS 10.15 (Catalina) or later
 - Intel (x86_64) or Apple Silicon (arm64)
 - Universal binary (supports both architectures)
 

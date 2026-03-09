@@ -1,0 +1,37 @@
+# ComposeSiren – Build Linux ARM64 (Raspberry Pi) via Docker
+# Usage: ./scripts/build_linux_arm64_docker.sh
+#
+# Compile dans un conteneur Linux ARM64 (Debian Bookworm) pour correspondre
+# au Raspberry Pi OS. Sur Mac, Docker utilise QEMU pour l’émulation ARM64.
+# La compilation est plus rapide qu’un Pi natif grâce aux cœurs du Mac.
+
+FROM --platform=linux/arm64 debian:bookworm-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    git \
+    pkg-config \
+    libasound2-dev \
+    libfreetype6-dev \
+    libfontconfig1-dev \
+    libgl1-mesa-dev \
+    libglu1-mesa-dev \
+    libgtk-3-dev \
+    libwebkit2gtk-4.0-dev \
+    libcurl4-openssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+
+# Pas de rm -rf build : build incrémentale (réutilise build/ monté). Clean : rm -rf build avant run.
+CMD [ "/bin/bash", "-c", "\
+    git submodule update --init --recursive && \
+    cmake -B build -DCMAKE_BUILD_TYPE=Release && \
+    cmake --build build -j$(nproc) --target ComposeSiren_Orchestra_Standalone && \
+    ( cd build && cpack ) && \
+    echo '--- .deb ---' && \
+    ls -la build/Packaging/ComposeSiren_Orchestra_Installer_artefacts/*.deb 2>/dev/null || true \
+" ]

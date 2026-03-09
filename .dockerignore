@@ -1,0 +1,20 @@
+# Build artifacts (not needed for image build; used at run via volume mount)
+build
+build-*
+Release-Package
+Releases
+
+# Git
+.git
+.gitignore
+.gitmodules
+
+# Local / IDE
+.DS_Store
+.vscode
+*.swp
+*~
+
+# Config local (optional)
+LocalConfig.cmake
+MyConfig.cmake

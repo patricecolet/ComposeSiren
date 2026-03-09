@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<installer-gui-script minSpecVersion="1" hostArchitectures="x86_64 arm64">
+    <title>@CPACK_PACKAGE_NAME@</title>
+    <welcome file="@CPACK_RESOURCE_FILE_WELCOME@"/>
+    <readme file="@CPACK_RESOURCE_FILE_README@"/>
+    <license file="@CPACK_RESOURCE_FILE_LICENSE@"/>
+    <options allow-external-scripts="no" customize="allow" rootVolumeOnly="false"/>
+    <choices-outline>
+        <line choice="AUChoice"/>
+        <line choice="ResourcesChoice"/>
+        <line choice="StandaloneChoice"/>
+        <line choice="VST3Choice"/>
+    </choices-outline>
+    <choice id="AUChoice" title="AU Plugin" start_selected="true" start_enabled="true" start_visible="true">
+        <pkg-ref id="com.Mecanique;Vivante.@CPACK_PACKAGE_NAME@.AU"/>
+    </choice>
+    <pkg-ref id="com.Mecanique;Vivante.@CPACK_PACKAGE_NAME@.AU" version="@CPACK_PACKAGE_VERSION@" installKBytes="45162" auth="Admin" onConclusion="None" updateKBytes="0">#@CPACK_PACKAGE_FILE_NAME@-AU.pkg</pkg-ref>
+    <choice id="ResourcesChoice" title="Shared plugin data" start_selected="true" start_enabled="false" start_visible="true">
+        <pkg-ref id="com.Mecanique;Vivante.@CPACK_PACKAGE_NAME@.Resources"/>
+    </choice>
+    <pkg-ref id="com.Mecanique;Vivante.@CPACK_PACKAGE_NAME@.Resources" version="@CPACK_PACKAGE_VERSION@" installKBytes="589084" auth="Admin" onConclusion="None" updateKBytes="0">#@CPACK_PACKAGE_FILE_NAME@-Resources.pkg</pkg-ref>
+    <choice id="StandaloneChoice" title="Standalone Plugin" start_selected="true" start_enabled="true" start_visible="true">
+        <pkg-ref id="com.Mecanique;Vivante.@CPACK_PACKAGE_NAME@.Standalone"/>
+    </choice>
+    <pkg-ref id="com.Mecanique;Vivante.@CPACK_PACKAGE_NAME@.Standalone" version="@CPACK_PACKAGE_VERSION@" installKBytes="54215" auth="Admin" onConclusion="None" updateKBytes="0">#@CPACK_PACKAGE_FILE_NAME@-Standalone.pkg</pkg-ref>
+    <choice id="VST3Choice" title="VST3 Plugin" start_selected="true" start_enabled="true" start_visible="true">
+        <pkg-ref id="com.Mecanique;Vivante.@CPACK_PACKAGE_NAME@.VST3"/>
+    </choice>
+    <pkg-ref id="com.Mecanique;Vivante.@CPACK_PACKAGE_NAME@.VST3" version="@CPACK_PACKAGE_VERSION@" installKBytes="45921" auth="Admin" onConclusion="None" updateKBytes="0">#@CPACK_PACKAGE_FILE_NAME@-VST3.pkg</pkg-ref>
+    <pkg-ref id="com.Mecanique;Vivante.@CPACK_PACKAGE_NAME@.AU">
+        <bundle-version>
+            <bundle CFBundleShortVersionString="@CPACK_PACKAGE_VERSION@" CFBundleVersion="@CPACK_PACKAGE_VERSION@" id="com.mecaviv.ComposeSiren.Orchestra" path="Library/Audio/Plug-ins/Components/ComposeSiren Orchestra.component"/>
+            <bundle CFBundleShortVersionString="@CPACK_PACKAGE_VERSION@" CFBundleVersion="@CPACK_PACKAGE_VERSION@" id="com.mecaviv.ComposeSiren.S7" path="Library/Audio/Plug-ins/Components/ComposeSiren S7 Piccolo.component"/>
+            <bundle CFBundleShortVersionString="@CPACK_PACKAGE_VERSION@" CFBundleVersion="@CPACK_PACKAGE_VERSION@" id="com.mecaviv.ComposeSiren.S4" path="Library/Audio/Plug-ins/Components/ComposeSiren S4 Tenor.component"/>
+            <bundle CFBundleShortVersionString="@CPACK_PACKAGE_VERSION@" CFBundleVersion="@CPACK_PACKAGE_VERSION@" id="com.mecaviv.ComposeSiren.S3" path="Library/Audio/Plug-ins/Components/ComposeSiren S3 Bass.component"/>
+            <bundle CFBundleShortVersionString="@CPACK_PACKAGE_VERSION@" CFBundleVersion="@CPACK_PACKAGE_VERSION@" id="com.mecaviv.ComposeSiren.S5" path="Library/Audio/Plug-ins/Components/ComposeSiren S5 Soprano.component"/>
+            <bundle CFBundleShortVersionString="@CPACK_PACKAGE_VERSION@" CFBundleVersion="@CPACK_PACKAGE_VERSION@" id="com.mecaviv.ComposeSiren.S1" path="Library/Audio/Plug-ins/Components/ComposeSiren S1 Alto.component"/>
+        </bundle-version>
+    </pkg-ref>
+    <pkg-ref id="com.Mecanique;Vivante.@CPACK_PACKAGE_NAME@.Resources">
+        <bundle-version/>
+    </pkg-ref>
+    <pkg-ref id="com.Mecanique;Vivante.@CPACK_PACKAGE_NAME@.Standalone">
+        <bundle-version>
+            <bundle CFBundleShortVersionString="@CPACK_PACKAGE_VERSION@" CFBundleVersion="@CPACK_PACKAGE_VERSION@" id="com.mecaviv.ComposeSiren.Orchestra" path="Applications/@CPACK_PACKAGE_VENDOR@/ComposeSiren Orchestra.app"/>
+            <bundle CFBundleShortVersionString="@CPACK_PACKAGE_VERSION@" CFBundleVersion="@CPACK_PACKAGE_VERSION@" id="com.mecaviv.ComposeSiren.S7" path="Applications/@CPACK_PACKAGE_VENDOR@/ComposeSiren S7 Piccolo.app"/>
+            <bundle CFBundleShortVersionString="@CPACK_PACKAGE_VERSION@" CFBundleVersion="@CPACK_PACKAGE_VERSION@" id="com.mecaviv.ComposeSiren.S4" path="Applications/@CPACK_PACKAGE_VENDOR@/ComposeSiren S4 Tenor.app"/>
+            <bundle CFBundleShortVersionString="@CPACK_PACKAGE_VERSION@" CFBundleVersion="@CPACK_PACKAGE_VERSION@" id="com.mecaviv.ComposeSiren.S3" path="Applications/@CPACK_PACKAGE_VENDOR@/ComposeSiren S3 Bass.app"/>
+            <bundle CFBundleShortVersionString="@CPACK_PACKAGE_VERSION@" CFBundleVersion="@CPACK_PACKAGE_VERSION@" id="com.mecaviv.ComposeSiren.S5" path="Applications/@CPACK_PACKAGE_VENDOR@/ComposeSiren S5 Soprano.app"/>
+            <bundle CFBundleShortVersionString="@CPACK_PACKAGE_VERSION@" CFBundleVersion="@CPACK_PACKAGE_VERSION@" id="com.mecaviv.ComposeSiren.S1" path="Applications/@CPACK_PACKAGE_VENDOR@/ComposeSiren S1 Alto.app"/>
+        </bundle-version>
+    </pkg-ref>
+    <pkg-ref id="com.Mecanique;Vivante.@CPACK_PACKAGE_NAME@.VST3">
+        <bundle-version>
+            <bundle CFBundleShortVersionString="@CPACK_PACKAGE_VERSION@" CFBundleVersion="@CPACK_PACKAGE_VERSION@" id="com.mecaviv.ComposeSiren.Orchestra" path="Library/Audio/Plug-ins/VST3/ComposeSiren Orchestra.vst3"/>
+            <bundle CFBundleShortVersionString="@CPACK_PACKAGE_VERSION@" CFBundleVersion="@CPACK_PACKAGE_VERSION@" id="com.mecaviv.ComposeSiren.S7" path="Library/Audio/Plug-ins/VST3/ComposeSiren S7 Piccolo.vst3"/>
+            <bundle CFBundleShortVersionString="@CPACK_PACKAGE_VERSION@" CFBundleVersion="@CPACK_PACKAGE_VERSION@" id="com.mecaviv.ComposeSiren.S4" path="Library/Audio/Plug-ins/VST3/ComposeSiren S4 Tenor.vst3"/>
+            <bundle CFBundleShortVersionString="@CPACK_PACKAGE_VERSION@" CFBundleVersion="@CPACK_PACKAGE_VERSION@" id="com.mecaviv.ComposeSiren.S3" path="Library/Audio/Plug-ins/VST3/ComposeSiren S3 Bass.vst3"/>
+            <bundle CFBundleShortVersionString="@CPACK_PACKAGE_VERSION@" CFBundleVersion="@CPACK_PACKAGE_VERSION@" id="com.mecaviv.ComposeSiren.S5" path="Library/Audio/Plug-ins/VST3/ComposeSiren S5 Soprano.vst3"/>
+            <bundle CFBundleShortVersionString="@CPACK_PACKAGE_VERSION@" CFBundleVersion="@CPACK_PACKAGE_VERSION@" id="com.mecaviv.ComposeSiren.S1" path="Library/Audio/Plug-ins/VST3/ComposeSiren S1 Alto.vst3"/>
+        </bundle-version>
+    </pkg-ref>
+    <product version="@CPACK_PACKAGE_VERSION@"/>
+</installer-gui-script>
+

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION @CMAKE_MINIMUM_REQUIRED_VERSION@)
 set(CMAKE_CXX_STANDARD @CMAKE_CXX_STANDARD@)
 set(CMAKE_CXX_STANDARD_REQUIRED)
 set(CMAKE_OSX_ARCHITECTURES "@CMAKE_OSX_ARCHITECTURES@" CACHE INTERNAL "")
-project(@BaseTargetName@_Installer VERSION @CMAKE_PROJECT_VERSION@)
+project(@BaseTargetName@_Installer VERSION @CMAKE_PROJECT_VERSION_FOR_TEMPLATE@)
 
 ################################################################################
 # utilities
@@ -57,11 +57,14 @@ endfunction()
 # install components
 
 # List of all plugin targets (Orchestra + Solo)
+# Si BUILD_ONLY_ORCHESTRA est défini, ne construire que Orchestra
 set(ALL_PLUGIN_TARGETS "@BaseTargetName@")
-set(SOLO_MODELS "S1" "S3" "S4" "S5" "S7")
-foreach(MODEL ${SOLO_MODELS})
-  list(APPEND ALL_PLUGIN_TARGETS "ComposeSiren_${MODEL}")
-endforeach()
+if(NOT "@BUILD_ONLY_ORCHESTRA_FOR_TEMPLATE@" STREQUAL "ON")
+  set(SOLO_MODELS "S1" "S3" "S4" "S5" "S7")
+  foreach(MODEL ${SOLO_MODELS})
+    list(APPEND ALL_PLUGIN_TARGETS "ComposeSiren_${MODEL}")
+  endforeach()
+endif()
 
 foreach(PLUGIN_TARGET ${ALL_PLUGIN_TARGETS})
   foreach(FORMAT @FORMATS@)
@@ -129,9 +132,9 @@ set(CPACK_COMPONENTS_ALL ${COMPONENTS_LIST})
 set(CPACK_PACKAGE_NAME @BaseTargetName@)
 set(CPACK_PACKAGE_VENDOR @VendorName@)
 set(CPACK_VERBATIM_VARIABLES TRUE)
-set(CPACK_PACKAGE_VERSION_MAJOR @PROJECT_VERSION_MAJOR@)
-set(CPACK_PACKAGE_VERSION_MINOR @PROJECT_VERSION_MINOR@)
-set(CPACK_PACKAGE_VERSION_PATCH @PROJECT_VERSION_PATCH@)
+set(CPACK_PACKAGE_VERSION_MAJOR @PROJECT_VERSION_MAJOR_FOR_TEMPLATE@)
+set(CPACK_PACKAGE_VERSION_MINOR @PROJECT_VERSION_MINOR_FOR_TEMPLATE@)
+set(CPACK_PACKAGE_VERSION_PATCH @PROJECT_VERSION_PATCH_FOR_TEMPLATE@)
 set(CPACK_PACKAGE_DIRECTORY "${CMAKE_BINARY_DIR}/${PROJECT_NAME}_artefacts")
 set(CPACK_RESOURCE_FILE_LICENSE "@PACKAGING_RESOURCES_DIR@/License.txt")
 set(CPACK_RESOURCE_FILE_README "@PACKAGING_RESOURCES_DIR@/ReadMe.txt")
@@ -146,6 +149,18 @@ set(CPACK_GENERATOR "productbuild")
 set(CPACK_SET_DESTDIR ON) # because we install Standalone in /Applications/@VendorName@
 set(CPACK_INSTALL_PREFIX "/Library/Audio/Plug-ins") # used for relative paths
 set(CPACK_PACKAGE_FILE_NAME "@BaseTargetName@-@PROJECT_VERSION@-Darwin-universal")
+
+# Force timestamp for pkgbuild signing
+set(CPACK_PKGBUILD_TIMESTAMP ON)
+
+# Use custom Distribution template with hostArchitectures for universal binary support
+# CPack cherche CPack.distribution.dist.in dans CMAKE_MODULE_PATH
+# Le format avec ESPACES (x86_64 arm64) est celui recommandé par Apple pour Sonoma
+list(APPEND CMAKE_MODULE_PATH "@PACKAGING_SCRIPTS_DIR_FOR_TEMPLATE@")
+
+# Note: Les PackageInfo générés par pkgbuild peuvent utiliser des virgules,
+# mais le Distribution.xml principal (qui utilise des espaces) est le plus important
+# et devrait être correctement reconnu par macOS Sonoma
 
 # signing the installers :
 if (NOT "@APPLE_DEVELOPER_ID_INSTALLER@" STREQUAL "")

@@ -7,6 +7,7 @@ Guide complet pour compiler, déployer et utiliser ComposeSiren sur Raspberry Pi
 ## 📋 Table des matières
 
 - [Installation rapide](#installation-rapide)
+- [Compilation via Docker (Mac → ARM64)](#compilation-via-docker-mac--arm64)
 - [Prérequis système](#prérequis-système)
 - [Compilation](#compilation)
 - [Déploiement automatique](#déploiement-automatique)
@@ -18,15 +19,23 @@ Guide complet pour compiler, déployer et utiliser ComposeSiren sur Raspberry Pi
 
 ## 🚀 Installation rapide
 
-### Méthode 1 : Script automatique (recommandé)
+### Méthode 1 : Build Docker (Mac → Raspberry Pi, recommandé)
+
+Compile sur ton Mac dans un conteneur Linux ARM64. Plus rapide que de compiler sur le Pi.
 
 ```bash
-# 1. Cloner le repo (si pas déjà fait)
-cd ~
-git clone --recursive git@github.com:patricecolet/ComposeSiren.git ComposeSiren-fixed
-cd ComposeSiren-fixed
+cd /path/to/ComposeSiren-fixed
+./scripts/build_linux_arm64_docker.sh
+```
 
-# 2. Exécuter le script de déploiement
+Prérequis : Docker Desktop. Le script construit l’image, compile en mode headless (**Standalone** uniquement), puis écrit les artefacts dans `build/`. Tu peux copier l'exécutable et `Resources/` sur le Pi avec `scp`.
+
+Voir [Compilation via Docker](#compilation-via-docker-mac--arm64) pour les détails.
+
+### Méthode 2 : Script automatique sur le Pi
+
+```bash
+cd ~/ComposeSiren-fixed
 bash scripts/deploy-raspberry.sh
 ```
 
@@ -36,9 +45,36 @@ Le script fait tout automatiquement :
 - ✅ Compile (30-60 min)
 - ✅ Crée et installe le package .deb
 
-### Méthode 2 : Étapes manuelles
+### Méthode 3 : Étapes manuelles
 
 Voir la section [Compilation](#compilation) ci-dessous pour les détails.
+
+---
+
+## 🐳 Compilation via Docker (Mac → ARM64)
+
+Pour éviter la longue compilation sur le Raspberry Pi (surtout `juce_gui_extra.cpp`), tu peux compiler sur ton Mac dans un conteneur Docker Linux ARM64.
+
+**Prérequis** : Docker Desktop installé et démarré.
+
+```bash
+cd /path/to/ComposeSiren-fixed
+./scripts/build_linux_arm64_docker.sh
+```
+
+Le script :
+1. Construit l’image `composesiren-build:linux-arm64` (Debian Bookworm + deps JUCE).
+2. Monte le repo dans le conteneur, lance `cmake` et `cmake --build` en mode **headless** (cible **Standalone** uniquement).
+3. Écrit le binaire dans `build/ComposeSiren_Orchestra_artefacts/Release/Standalone/`.
+
+Ensuite, copie l'exécutable et les ressources sur le Pi :
+
+```bash
+scp "build/.../Standalone/ComposeSiren Orchestra" user@raspberry:~/
+scp -r Resources user@raspberry:~/ComposeSiren_Resources
+```
+
+Sur le Pi, lance le Standalone en headless (sans X11) : `./"ComposeSiren Orchestra"`.
 
 ---
 
