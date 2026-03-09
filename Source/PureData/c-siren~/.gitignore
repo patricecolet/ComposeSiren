@@ -1,0 +1,11 @@
+*.o
+*.so
+*.dylib
+*.dll
+*.pd_darwin
+*.pd_linux
+*.m_amd64
+*.l_amd64
+*.exe
+*.pre
+*.lst
