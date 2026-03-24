@@ -204,7 +204,7 @@ set(CPACK_GENERATOR "productbuild")
 
 set(CPACK_SET_DESTDIR ON) # because we install Standalone in /Applications
 set(CPACK_INSTALL_PREFIX "/Library/Audio/Plug-ins") # used for relative paths
-set(CPACK_PACKAGE_FILE_NAME "@BaseTargetName@-@PROJECT_VERSION@-Darwin-universal")
+set(CPACK_PACKAGE_FILE_NAME "@BaseTargetName@-@PROJECT_VERSION@@PROJECT_VERSION_SUFFIX@-Darwin-universal")
 
 # signing the installers :
 if (NOT "@APPLE_DEVELOPER_ID_INSTALLER@" STREQUAL "")
