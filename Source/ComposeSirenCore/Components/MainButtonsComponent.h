@@ -33,7 +33,7 @@ public:
         selectResourcesButton.setColour(juce::TextButton::textColourOffId , juce::Colours::whitesmoke);
         selectResourcesButton.setButtonText("Set resources directory");
         selectResourcesButton.addListener(this);
-#ifdef COMPOSESIREN_DEV_BUILD
+#if COMPOSESIREN_DEV_BUILD
         addAndMakeVisible(selectResourcesButton);
 #endif
     }
