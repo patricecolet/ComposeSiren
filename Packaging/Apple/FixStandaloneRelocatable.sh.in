@@ -37,14 +37,14 @@ TMP_ROOT="$(mktemp -d)"
 trap 'rm -rf "$TMP_ROOT"' EXIT
 
 mkdir -p "$TMP_ROOT/Applications"
-cp -R "$APP_PATH" "$TMP_ROOT/Applications/ComposeSiren.app"
+cp -R "$APP_PATH" "$TMP_ROOT/Applications/@PLUGIN_TARGET_NAME@.app"
 
 echo "Using app: $APP_PATH"
 echo "Patching component pkg: $STANDALONE_COMPONENT_PKG"
 
 echo "Creating plist with additional options..."
 
-PLIST_PATH="@PACKAGING_PROJECT_SOURCE_DIR@/BundleNotRelocatable.plist"
+PLIST_PATH="@PACKAGING_PROJECT_SOURCE_DIR@/@PLUGIN_TARGET_NAME@/BundleNotRelocatable.plist"
 plutil -lint "$PLIST_PATH"
 
 echo "Rebuilding standalone pkg with updated plist..."

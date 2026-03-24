@@ -3,10 +3,10 @@
 file(
   GLOB_RECURSE APPS
   LIST_DIRECTORIES true
-  @MAIN_BINARY_DIR@/*/@BaseTargetName@.app
+  @MAIN_BINARY_DIR@/*/@PLUGIN_TARGET_NAME@.app
 )
 
-list(FILTER APPS INCLUDE REGEX "^.*(/@BaseTargetName@.app)$")
+list(FILTER APPS INCLUDE REGEX "^.*(/@PLUGIN_TARGET_NAME@.app)$")
 
 foreach(APP ${APPS})
   message(STATUS ">>>>>>>>>> Deleting\n ${APP}")

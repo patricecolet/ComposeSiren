@@ -1,6 +1,17 @@
 ################################################################################
 # utilities
 
+# Optional multi-target support:
+if(NOT DEFINED PLUGIN_TARGETS OR "${PLUGIN_TARGETS}" STREQUAL "")
+  set(PLUGIN_TARGETS "${BaseTargetName}")
+endif()
+
+list(LENGTH PLUGIN_TARGETS PLUGIN_TARGETS_COUNT)
+set(USE_TARGET_FORMAT_COMPONENTS FALSE)
+if(PLUGIN_TARGETS_COUNT GREATER 1)
+  set(USE_TARGET_FORMAT_COMPONENTS TRUE)
+endif()
+
 function(_set_win32_install_folder_from_format FORMAT)
   if(${FORMAT} STREQUAL "Standalone")
 	  set(INSTALL_FOLDER "${BaseTargetName} ${PROJECT_VERSION}" PARENT_SCOPE)
@@ -11,13 +22,19 @@ function(_set_win32_install_folder_from_format FORMAT)
   endif()
 endfunction()
 
-function(_install_component_from_format FORMAT)
+function(_install_component_from_target_and_format PLUGIN_TARGET_NAME FORMAT)
   _set_win32_install_folder_from_format(${FORMAT})
 
+  if(USE_TARGET_FORMAT_COMPONENTS)
+    set(_component_name "${PLUGIN_TARGET_NAME}_${FORMAT}")
+  else()
+    set(_component_name "${FORMAT}")
+  endif()
+
   install(
-    TARGETS ${BaseTargetName}_${FORMAT}
+    TARGETS ${PLUGIN_TARGET_NAME}_${FORMAT}
     DESTINATION ${INSTALL_FOLDER}
-    COMPONENT ${FORMAT}
+    COMPONENT "${_component_name}"
   )
 endfunction()
 
@@ -28,10 +45,12 @@ endfunction()
 ################################################################################
 # sign and install the targets
 
-foreach(FORMAT ${FORMATS})
-  get_target_property(ARTEFACTS_DIR ${BaseTargetName}_${FORMAT} JUCE_PLUGIN_ARTEFACT_FILE)
-  _sign_component_from_format(${FORMAT})
-  _install_component_from_format(${FORMAT})
+foreach(PLUGIN_TARGET_NAME IN LISTS PLUGIN_TARGETS)
+  foreach(FORMAT ${FORMATS})
+    get_target_property(ARTEFACTS_DIR ${PLUGIN_TARGET_NAME}_${FORMAT} JUCE_PLUGIN_ARTEFACT_FILE)
+    _sign_component_from_format(${FORMAT})
+    _install_component_from_target_and_format(${PLUGIN_TARGET_NAME} ${FORMAT})
+  endforeach()
 endforeach()
 
 if(NOT "${PLUGIN_RESOURCES_DIR}" STREQUAL "")
@@ -51,7 +70,17 @@ set(PACKAGING_SCRIPTS_DIR "${CMAKE_SOURCE_DIR}/Packaging/Windows")
 
 # this defines the exact list of components we want to package
 # (without this some parts of JUCE get included too)
-set(COMPONENTS_LIST ${FORMATS})
+set(COMPONENTS_LIST "")
+
+if(USE_TARGET_FORMAT_COMPONENTS)
+  foreach(PLUGIN_TARGET_NAME IN LISTS PLUGIN_TARGETS)
+    foreach(FORMAT ${FORMATS})
+      list(APPEND COMPONENTS_LIST "${PLUGIN_TARGET_NAME}_${FORMAT}")
+    endforeach()
+  endforeach()
+else()
+  set(COMPONENTS_LIST ${FORMATS})
+endif()
 
 if(NOT "${PLUGIN_RESOURCES_DIR}" STREQUAL "")
   list(APPEND COMPONENTS_LIST "Resources")
@@ -145,9 +174,19 @@ set(CPACK_POST_BUILD_SCRIPTS ${CMAKE_BINARY_DIR}/CPackPostBuildScripts.cmake)
 
 include(CPack)
 
-foreach(FORMAT ${FORMATS})
-  cpack_add_component(${FORMAT} DISPLAY_NAME "${FORMAT} Plugin")
-endforeach()
+if(USE_TARGET_FORMAT_COMPONENTS)
+  foreach(PLUGIN_TARGET_NAME IN LISTS PLUGIN_TARGETS)
+    foreach(FORMAT ${FORMATS})
+      cpack_add_component("${PLUGIN_TARGET_NAME}_${FORMAT}"
+        DISPLAY_NAME "${PLUGIN_TARGET_NAME} (${FORMAT})"
+      )
+    endforeach()
+  endforeach()
+else()
+  foreach(FORMAT ${FORMATS})
+    cpack_add_component(${FORMAT} DISPLAY_NAME "${FORMAT} Plugin")
+  endforeach()
+endif()
 
 if(NOT "${PLUGIN_RESOURCES_DIR}" STREQUAL "")
   cpack_add_component("Resources" DISPLAY_NAME "Shared plugin data" REQUIRED)

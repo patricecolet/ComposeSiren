@@ -1,23 +1,39 @@
 -- only BaseTargetName and VendorName variables are needed for configuration
 
-set AU to "/Library/Audio/Plug-Ins/Components/@BaseTargetName@.component"
-set VST to "/Library/Audio/Plug-Ins/VST/@BaseTargetName@.vst"
-set VST3 to "/Library/Audio/Plug-Ins/VST3/@BaseTargetName@.vst3"
-set Standalone to "/Applications/@BaseTargetName@.app"
-set Resources to "/Library/Audio/Plug-Ins/@VendorName@"
-
 set which to choose from list {"All", "Global", "Local"} with title "delete" with prompt "Which files to delete ?"
 
+-- getting the list of targets
+set my text item delimiters to {";"}
+set theTargetNames to text items of "@PLUGIN_TARGETS@"
+
+-- generating the list of files to remove with absolute paths
+set itemsToRemove to {}
+repeat with theTargetName in theTargetNames
+    set AU to "/Library/Audio/Plug-Ins/Components/" & theTargetName & ".component"
+    set VST to "/Library/Audio/Plug-Ins/VST/" & theTargetName & ".vst"
+    set VST3 to "/Library/Audio/Plug-Ins/VST3/" & theTargetName & ".vst3"
+    set Standalone to "/Applications/" & theTargetName & ".app"
+
+    set itemsToRemove to itemsToRemove & {AU, VST, VST3, Standalone}
+end repeat
+
+set Resources to "/Library/Audio/Plug-Ins/@VendorName@"
+
+-- delete globally installed files
 if (which as string) is equal to "All" or (which as string) is equal to "Global" then
-  set itemsToRemove to {AU, VST, VST3, Standalone}
   repeat with i in itemsToRemove
 	  set o to do shell script "sudo rm -rf " & quoted form of i with administrator privileges
   end repeat
 end if
 
+-- delete locally installed files
 if (which as string) is equal to "All" or (which as string) is equal to "Local" then
-  set itemsToRemove to {"~" & AU, "~" & VST, "~" & VST3, "~" & Standalone}
+  set localItemsToRemove to {}
   repeat with i in itemsToRemove
+	  set localItemsToRemove to localItemsToRemove & {"~" & i}
+  end repeat
+
+  repeat with i in localItemsToRemove
 	  set o to do shell script "sudo rm -rf " & quoted form of i with administrator privileges
   end repeat
 end if

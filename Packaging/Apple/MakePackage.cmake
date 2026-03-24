@@ -4,23 +4,33 @@
 # generating an extra cmake project)
 # see : https://stackoverflow.com/a/64882742/3810717 and dig doc
 
-foreach(FORMAT ${FORMATS})
-  get_target_property(ARTEFACTS_DIR ${BaseTargetName}_${FORMAT} JUCE_PLUGIN_ARTEFACT_FILE)
-  if(CMAKE_CONFIGURATION_TYPES)
-    set(MULTI_CONFIG TRUE)
-    file(
-      GENERATE
-      OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${BaseTargetName}_${FORMAT}_$<CONFIG>_path"
-      CONTENT "${ARTEFACTS_DIR}"
-    )
-  else()
-    set(MULTI_CONFIG FALSE)
-    file(
-      GENERATE
-      OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${BaseTargetName}_${FORMAT}_path"
-      CONTENT "${ARTEFACTS_DIR}"
-    )
-  endif()
+# Optional multi-target support:
+# - If PLUGIN_TARGETS is not provided, we keep backward compatibility and
+#   package a single plugin target named BaseTargetName.
+if(NOT DEFINED PLUGIN_TARGETS OR "${PLUGIN_TARGETS}" STREQUAL "")
+  set(PLUGIN_TARGETS "${BaseTargetName}")
+endif()
+
+# Generate artefact path files for each target+format
+foreach(PLUGIN_TARGET_NAME IN LISTS PLUGIN_TARGETS)
+  foreach(FORMAT ${FORMATS})
+    get_target_property(ARTEFACTS_DIR ${PLUGIN_TARGET_NAME}_${FORMAT} JUCE_PLUGIN_ARTEFACT_FILE)
+    if(CMAKE_CONFIGURATION_TYPES)
+      set(MULTI_CONFIG TRUE)
+      file(
+        GENERATE
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TARGET_NAME}_${FORMAT}_$<CONFIG>_path"
+        CONTENT "${ARTEFACTS_DIR}"
+      )
+    else()
+      set(MULTI_CONFIG FALSE)
+      file(
+        GENERATE
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${PLUGIN_TARGET_NAME}_${FORMAT}_path"
+        CONTENT "${ARTEFACTS_DIR}"
+      )
+    endif()
+  endforeach()
 endforeach()
 
 # configure the cmake package subproject
@@ -36,8 +46,10 @@ configure_file(
 
 # wait until all targets are built, then build the package subproject
 set(ALL_TARGETS "")
-foreach(FORMAT ${FORMATS})
-  list(APPEND ALL_TARGETS "${BaseTargetName}_${FORMAT}")
+foreach(PLUGIN_TARGET_NAME IN LISTS PLUGIN_TARGETS)
+  foreach(FORMAT ${FORMATS})
+    list(APPEND ALL_TARGETS "${PLUGIN_TARGET_NAME}_${FORMAT}")
+  endforeach()
 endforeach()
 
 add_custom_target(package DEPENDS ${ALL_TARGETS})
@@ -58,7 +70,7 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E echo "========== INSTALLER CREATED"
 
   COMMAND ${CMAKE_COMMAND} -E echo "========== FIXING STANDALONE RELOCATABLE"
-  COMMAND ${PACKAGING_PROJECT_SOURCE_DIR}/FixStandaloneRelocatable.sh
+  COMMAND ${PACKAGING_PROJECT_SOURCE_DIR}/FixAllStandalonesRelocatable.sh
   COMMAND ${CMAKE_COMMAND} -E echo "========== STANDALONE RELOCATABLE FIXED"
 
   # clean build artefacts (this was before we managed to disable app relocatability)

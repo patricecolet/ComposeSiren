@@ -4,7 +4,7 @@
   <array>
     <dict>
       <key>RootRelativeBundlePath</key>
-      <string>Applications/@BaseTargetName@.app</string>
+      <string>Applications/@PLUGIN_TARGET_NAME@.app</string>
       <key>BundleIsRelocatable</key>
       <false/>
     </dict>

@@ -1,0 +1,14 @@
+#!/bin/bash
+
+PLUGIN_TARGETS="@PLUGIN_TARGETS@"
+
+ IFS=";" read -ra PLUGIN_TARGET_NAMES <<< "$PLUGIN_TARGETS"
+
+for PLUGIN_TARGET_NAME in $PLUGIN_TARGET_NAMES; do
+  source "@PACKAGING_PROJECT_SOURCE_DIR@/$PLUGIN_TARGET_NAME/FixStandaloneRelocatable.sh"
+done
+
+# robust alternative for semicolon-separated CMake list parsing
+# but, as we're using bash anyways ...
+# #!/bin/sh
+# echo "$1" | awk -F';' -v RS=';' -v ORS='\n' '1'

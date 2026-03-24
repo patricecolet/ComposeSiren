@@ -17,14 +17,25 @@ function(_set_apple_install_folder_from_format FORMAT)
   endif()
 endfunction()
 
-function(_install_component_from_build_path_and_format BUILD_PATH FORMAT)
+function(_install_component_from_build_path_and_format
+  BUILD_PATH
+  FORMAT
+  USE_TARGET_FORMAT_COMPONENTS
+  PLUGIN_TARGET_NAME
+)
   _set_apple_install_folder_from_format(${FORMAT})
+
+  if(USE_TARGET_FORMAT_COMPONENTS)
+    set(_component_name "${PLUGIN_TARGET_NAME}_${FORMAT}")
+  else()
+    set(_component_name "${FORMAT}")
+  endif()
 
   if(IS_DIRECTORY "${BUILD_PATH}")
     install(
       DIRECTORY "${BUILD_PATH}"
       DESTINATION "${INSTALL_FOLDER}"
-      COMPONENT ${FORMAT}
+      COMPONENT ${_component_name}
       # without this, forbidden to run the binaries on mac
       # (forbidden to explicitly set permissions on a directory)
       USE_SOURCE_PERMISSIONS
@@ -33,7 +44,7 @@ function(_install_component_from_build_path_and_format BUILD_PATH FORMAT)
     install(
       FILES "${BUILD_PATH}"
       DESTINATION "${INSTALL_FOLDER}"
-      COMPONENT ${FORMAT}
+      COMPONENT ${_component_name}
       # without this, forbidden to run the binaries on mac
       # (forbidden to explicitly set permissions on a directory)
       # USE_SOURCE_PERMISSIONS
@@ -58,53 +69,85 @@ endfunction()
 # SOLUTION : call this function to always force .app to be installed in /Applications
 # see https://moonbase.sh/articles/how-to-make-macos-installers-for-juce-projects-with-pkgbuild-and-productbuild/
 
-function(_set_bundle_is_relocatable_to_no APP_PATH)
-    execute_process(COMMAND pkgbuild --analyze "${APP_PATH}" "${APP_PATH}.plist")
-    execute_process(COMMAND plutil -replace BundleIsRelocatable -bool NO "${APP_PATH}.plist")
-
-endfunction()
+#function(_set_bundle_is_relocatable_to_no APP_PATH)
+#  execute_process(COMMAND pkgbuild --analyze "${APP_PATH}" "${APP_PATH}.plist")
+#  execute_process(COMMAND plutil -replace BundleIsRelocatable -bool NO "${APP_PATH}.plist")
+#endfunction()
 
 ################################################################################
 # install components
 
-set(STANDALONE_APP_PATH "")
+set(PLUGIN_TARGETS "@PLUGIN_TARGETS@")
+if("${PLUGIN_TARGETS}" STREQUAL "")
+  message(
+    FATAL_ERROR
+    "PLUGIN_TARGETS is empty. Regenerate this packaging project via Packaging/Apple/MakePackage.cmake."
+  )
+endif()
 
-foreach(FORMAT @FORMATS@)
-  # if project is multi-config (-G Xcode, Visual Studio or Ninja Multi-Config)
-  if(@MULTI_CONFIG@)
-    foreach(CONFIG @CMAKE_CONFIGURATION_TYPES@)
+# if we have more than 1 plugin, we have to prepend each component name with
+# its plugin name, otherwise we can simply use the format as a name
+list(LENGTH PLUGIN_TARGETS PLUGIN_TARGETS_COUNT)
+set(USE_TARGET_FORMAT_COMPONENTS FALSE)
+if(PLUGIN_TARGETS_COUNT GREATER 1)
+  set(USE_TARGET_FORMAT_COMPONENTS TRUE)
+else()
+  list(GET PLUGIN_TARGETS 0 _only_plugin_target_name)
+  set(PLUGIN_TARGET_NAME "${_only_plugin_target_name}")
+endif()
 
-      file(READ "@CMAKE_CURRENT_BINARY_DIR@/@BaseTargetName@_${FORMAT}_${CONFIG}_path" ARTEFACTS_DIR)
-      if(EXISTS "${ARTEFACTS_DIR}")
-        message("we have a ${CONFIG} build for ${FORMAT} target")
-        if(${CONFIG} STREQUAL ${CMAKE_BUILD_TYPE})
-          message(STATUS ">>>>> installing ${CONFIG} ${FORMAT} target from ${ARTEFACTS_DIR}")
-          if("${FORMAT}" STREQUAL "Standalone")
-              set(STANDALONE_APP_PATH "${ARTEFACTS_DIR}")
+#set(STANDALONE_APP_PATH "")
+# this is now a list where we store key / value pairs
+set(STANDALONE_APP_PATHS)
+
+foreach(PLUGIN_TARGET_NAME IN LISTS PLUGIN_TARGETS)
+  foreach(FORMAT @FORMATS@)
+    # if project is multi-config (-G Xcode, Visual Studio or Ninja Multi-Config)
+    if(@MULTI_CONFIG@)
+      foreach(CONFIG @CMAKE_CONFIGURATION_TYPES@)
+
+        file(READ "@CMAKE_CURRENT_BINARY_DIR@/${PLUGIN_TARGET_NAME}_${FORMAT}_${CONFIG}_path" ARTEFACTS_DIR)
+        if(EXISTS "${ARTEFACTS_DIR}")
+          message("we have a ${CONFIG} build for ${FORMAT} target")
+          if(${CONFIG} STREQUAL ${CMAKE_BUILD_TYPE})
+            message(STATUS ">>>>> installing ${CONFIG} ${FORMAT} target from ${ARTEFACTS_DIR}")
+            if("${FORMAT}" STREQUAL "Standalone")
+                # set(STANDALONE_APP_PATH "${ARTEFACTS_DIR}")
+                list(APPEND STANDALONE_APP_PATHS "${PLUGIN_TARGET_NAME}" "${ARTEFACTS_DIR}")
+            endif()
+            _sign_component_from_build_path("${ARTEFACTS_DIR}")
+            _install_component_from_build_path_and_format(
+              "${ARTEFACTS_DIR}"
+              ${FORMAT}
+              ${USE_TARGET_FORMAT_COMPONENTS}
+              ${PLUGIN_TARGET_NAME}
+            )
           endif()
-          _sign_component_from_build_path("${ARTEFACTS_DIR}")
-          _install_component_from_build_path_and_format("${ARTEFACTS_DIR}" ${FORMAT})
         endif()
+
+      endforeach()
+    # otherwise (e.g using -G Makefile or Ninja)
+    else()
+
+      file(READ "@CMAKE_CURRENT_BINARY_DIR@/${PLUGIN_TARGET_NAME}_${FORMAT}_path" ARTEFACTS_DIR)
+      if(EXISTS "${ARTEFACTS_DIR}")
+        message("we have a build for ${FORMAT} target !")
+        if("${FORMAT}" STREQUAL "Standalone")
+            # set(STANDALONE_APP_PATH "${ARTEFACTS_DIR}")
+            list(APPEND STANDALONE_APP_PATHS "${PLUGIN_TARGET_NAME}" "${ARTEFACTS_DIR}")
+        endif()
+        _sign_component_from_build_path("${ARTEFACTS_DIR}")
+        _install_component_from_build_path_and_format(
+          "${ARTEFACTS_DIR}"
+          ${FORMAT}
+          ${USE_TARGET_FORMAT_COMPONENTS}
+          ${PLUGIN_TARGET_NAME}
+        )
       endif()
 
-    endforeach()
-  # otherwise (e.g using -G Makefile or Ninja)
-  else()
-
-    file(READ "@CMAKE_CURRENT_BINARY_DIR@/@BaseTargetName@_${FORMAT}_path" ARTEFACTS_DIR)
-    if(EXISTS "${ARTEFACTS_DIR}")
-      message("we have a build for ${FORMAT} target !")
-      if("${FORMAT}" STREQUAL "Standalone")
-          set(STANDALONE_APP_PATH "${ARTEFACTS_DIR}")
-      endif()
-      _sign_component_from_build_path("${ARTEFACTS_DIR}")
-      _install_component_from_build_path_and_format("${ARTEFACTS_DIR}" ${FORMAT})
     endif()
-
-  endif()
+  endforeach()
 endforeach()
-
-message("Standalone app path : ${STANDALONE_APP_PATH}")
 
 # install Resources
 
@@ -123,13 +166,24 @@ endif()
 
 # this defines the exact list of components we want to package
 # (without this some parts of JUCE get included too)
-set(COMPONENTS_LIST @FORMATS@)
+set(COMPONENTS_LIST "")
+
+if(USE_TARGET_FORMAT_COMPONENTS)
+  foreach(PLUGIN_TARGET_NAME IN LISTS PLUGIN_TARGETS)
+    foreach(FORMAT @FORMATS@)
+      list(APPEND COMPONENTS_LIST "${PLUGIN_TARGET_NAME}_${FORMAT}")
+    endforeach()
+  endforeach()
+else()
+  set(COMPONENTS_LIST @FORMATS@)
+endif()
 
 if(NOT "@PLUGIN_RESOURCES_DIR@" STREQUAL "")
   list(APPEND COMPONENTS_LIST "Resources")
 endif()
 
 set(CPACK_COMPONENTS_ALL ${COMPONENTS_LIST})
+set(CPACK_COMPONENT_RESOURCES_REQUIRED ON)
 
 set(CPACK_PACKAGE_NAME @BaseTargetName@)
 set(CPACK_PACKAGE_VENDOR @VendorName@)
@@ -180,26 +234,64 @@ set(APPLE_NOTARIZATION_KEYCHAIN_PROFILE "@APPLE_NOTARIZATION_KEYCHAIN_PROFILE@")
 set(PACKAGING_SCRIPTS_DIR "@PACKAGING_SCRIPTS_DIR@")
 set(PACKAGING_PROJECT_SOURCE_DIR "@PACKAGING_PROJECT_SOURCE_DIR@")
 
+# helper function to retrieve path values stored in STANDALONE_APP_PATHS,
+# always preceded by their corresponding "key" PLUGIN_TARGET_NAME
+function(_get_pair_value_from_key DICTLIST KEY OUT_VAR)
+    list(FIND ${DICTLIST} ${KEY} index)
+    if(index EQUAL -1)
+        set(${OUT_VAR} "" PARENT_SCOPE) # Key not found
+    else()
+        math(EXPR value_index "${index} + 1")
+        list(GET ${DICTLIST} ${value_index} value)
+        set(${OUT_VAR} ${value} PARENT_SCOPE)
+    endif()
+endfunction()
+
+function(_configure_files_for_standalone PLUGIN_TARGET_NAME)
+    # we set tmp STANDALONE_APP_PATH var to be consumed by the
+    # FixStandaloneRelocatable.sh script generators
+    _get_pair_value_from_key(
+            STANDALONE_APP_PATHS
+            "${PLUGIN_TARGET_NAME}"
+            app_path
+    )
+    set(STANDALONE_APP_PATH ${app_path})
+
+    configure_file(
+            "${PACKAGING_SCRIPTS_DIR}/BundleNotRelocatable.plist.in"
+            "${CMAKE_SOURCE_DIR}/${PLUGIN_TARGET_NAME}/BundleNotRelocatable.plist"
+    )
+    configure_file(
+            "${PACKAGING_SCRIPTS_DIR}/FixStandaloneRelocatable.sh.in"
+            "${CMAKE_SOURCE_DIR}/${PLUGIN_TARGET_NAME}/FixStandaloneRelocatable.sh"
+            FILE_PERMISSIONS
+            OWNER_READ OWNER_WRITE OWNER_EXECUTE
+            GROUP_READ GROUP_EXECUTE
+            WORLD_READ WORLD_EXECUTE
+    )
+endfunction()
+
+if(USE_TARGET_FORMAT_COMPONENTS)
+  foreach(PLUGIN_TARGET_NAME IN LISTS PLUGIN_TARGETS)
+    foreach(FORMAT @FORMATS@)
+      _configure_files_for_standalone(${PLUGIN_TARGET_NAME})
+    endforeach()
+  endforeach()
+else()
+  _configure_files_for_standalone(${PLUGIN_TARGET_NAME})
+endif()
+
 configure_file(
-  "${PACKAGING_SCRIPTS_DIR}/RemoveAppBundles.cmake.in"
-  "${CMAKE_SOURCE_DIR}/RemoveAppBundles.cmake"
-  @ONLY
-)
-configure_file(
-  "${PACKAGING_SCRIPTS_DIR}/Uninstall.applescript.in"
-  "${CMAKE_SOURCE_DIR}/Uninstall.applescript"
-)
-configure_file(
-  "${PACKAGING_SCRIPTS_DIR}/BundleNotRelocatable.plist.in"
-  "${CMAKE_SOURCE_DIR}/BundleNotRelocatable.plist"
-)
-configure_file(
-  "${PACKAGING_SCRIPTS_DIR}/FixStandaloneRelocatable.sh.in"
-  "${CMAKE_SOURCE_DIR}/FixStandaloneRelocatable.sh"
+  "${PACKAGING_SCRIPTS_DIR}/FixAllStandalonesRelocatable.sh.in"
+  "${CMAKE_SOURCE_DIR}/FixAllStandalonesRelocatable.sh"
   FILE_PERMISSIONS
   OWNER_READ OWNER_WRITE OWNER_EXECUTE
   GROUP_READ GROUP_EXECUTE
   WORLD_READ WORLD_EXECUTE
+)
+configure_file(
+  "${PACKAGING_SCRIPTS_DIR}/Uninstall.applescript.in"
+  "${CMAKE_SOURCE_DIR}/Uninstall.applescript"
 )
 configure_file(
   "${PACKAGING_SCRIPTS_DIR}/CreateDmg.sh.in"
@@ -223,9 +315,19 @@ configure_file(
 
 include(CPack)
 
-foreach(FORMAT @FORMATS@)
-  cpack_add_component(${FORMAT} DISPLAY_NAME "${FORMAT} Plugin")
-endforeach()
+if(USE_TARGET_FORMAT_COMPONENTS)
+  foreach(PLUGIN_TARGET_NAME IN LISTS PLUGIN_TARGETS)
+    foreach(FORMAT @FORMATS@)
+      cpack_add_component("${PLUGIN_TARGET_NAME}_${FORMAT}"
+        DISPLAY_NAME "${PLUGIN_TARGET_NAME} (${FORMAT})"
+      )
+    endforeach()
+  endforeach()
+else()
+  foreach(FORMAT @FORMATS@)
+    cpack_add_component(${FORMAT} DISPLAY_NAME "${FORMAT} Plugin")
+  endforeach()
+endif()
 
 if(NOT "@PLUGIN_RESOURCES_DIR@" STREQUAL "")
   cpack_add_component("Resources" DISPLAY_NAME "Shared plugin data" REQUIRED)
