@@ -5,6 +5,9 @@ Thumbs.db
 # local vscode settings
 .vscode/
 
+# ignore JetBrains .idea/ folder as it contains personal info
+.idea/
+
 # libsamplerate tests
 Dependencies/libsamplerate/
 
