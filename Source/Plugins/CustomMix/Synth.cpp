@@ -12,7 +12,7 @@
 #define XSTRING(x) STRING(x)
 
 #include "Synth.h"
-#include "../../ComposeSirenCore/lib/definitions/parameterDefinitions.h"
+#include <lib/definitions/parameterDefinitions.h>
 
 #include <iostream>
 

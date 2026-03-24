@@ -11,7 +11,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 
 // #include <JuceHeader.h>
-// #include "../PluginProcessor.h"
+#include "../PluginProcessor.h"
 
 //==============================================================================
 // class MainCommandsComponent : main commands
@@ -21,16 +21,7 @@ class MainCommandsComponent :   public juce::Component,
                                 private juce::Timer
 {
 public:
-    // class Listener {
-    // public:
-    //     virtual ~Listener() = default;
-    //     virtual void onReset() = 0;
-    //     virtual void onShowResourcesDirectory() = 0;
-    //     virtual void onMasterVolumeSliderValueChanged(float v) = 0;
-    // };
-
-    // MainCommandsComponent(/*SirenePlugAudioProcessor&*/);
-    MainCommandsComponent(juce::AudioProcessorValueTreeState&);
+    MainCommandsComponent(SirenePlugAudioProcessor& p);
     ~MainCommandsComponent() override;
 
     void paint (juce::Graphics&) override;
@@ -39,11 +30,11 @@ public:
     void buttonClicked(juce::Button* button) override;
 
     // should be set from PluginEditor's timerCallback
-    void setMasterVolumeSliderValue();
+    // void setMasterVolumeSliderValue();
 
 private:
     void timerCallback() override;
-    // SirenePlugAudioProcessor& audioProcessor;
+    SirenePlugAudioProcessor& audioProcessor;
 
     juce::TextButton resetButton;
     juce::TextButton showResourcesButton;
@@ -53,8 +44,6 @@ private:
     juce::Slider masterVolumeSlider; // CC7 canal 16
 
     std::unique_ptr<juce::FileChooser> fileChooser;
-
-    juce::AudioProcessorValueTreeState& apvts;
 };
 
 #endif //COMPOSESIREN_MAINCOMMANDSCOMPONENT_H

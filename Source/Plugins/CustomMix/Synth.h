@@ -12,8 +12,8 @@
 
 #include <juce_dsp/juce_dsp.h>
 
-#include "../../ComposeSirenCore/lib/dsp/Sirene.h"
-#include "../../ComposeSirenCore/lib/dsp/mareverbe.h"
+#include <lib/dsp/Sirene.h>
+#include <lib/dsp/mareverbe.h>
 
 class Synth
 {

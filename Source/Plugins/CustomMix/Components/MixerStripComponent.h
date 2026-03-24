@@ -8,7 +8,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 // #include <JuceHeader.h>
-// #include "../PluginProcessor.h"
+#include "../PluginProcessor.h"
 
 //==============================================================================
 // Strip de mixage individuelle pour une sirène
@@ -17,14 +17,7 @@ class MixerStripComponent : public juce::Component,
                             private juce::Timer
 {
 public:
-    class Listener {
-    public:
-        virtual ~Listener() = default;
-        virtual void onMixerStripVolumeSliderValueChanged(int strip, float v) = 0;
-        virtual void onMixerStripPanSliderValueChanged(int strip, float v) = 0;
-    };
-
-    MixerStripComponent(/*SirenePlugAudioProcessor& p, */Listener* l, int sireneNum);
+    MixerStripComponent(SirenePlugAudioProcessor& p, int sireneNum);
     ~MixerStripComponent() override;
 
     void paint (juce::Graphics&) override;
@@ -32,7 +25,7 @@ public:
     void sliderValueChanged(juce::Slider* slider) override;
 
 private:
-    // SirenePlugAudioProcessor& audioProcessor;
+    SirenePlugAudioProcessor& audioProcessor;
     int sireneNumber;
 
     juce::Label nameLabel;
@@ -43,8 +36,6 @@ private:
 
     // LED Note On/Off
     bool ledState = false;
-
-    Listener* listener;
 
     void timerCallback();
 };

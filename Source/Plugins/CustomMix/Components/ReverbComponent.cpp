@@ -2,13 +2,12 @@
 // Created by joseph larralde on 24/01/2026.
 //
 
-#include "../../../ComposeSirenCore/Components/ReverbComponent.h"
+#include "ReverbComponent.h"
 
 //==============================================================================
 // ReverbComponent - Section de reverb
-ReverbComponent::ReverbComponent(/*SirenePlugAudioProcessor& p*/Listener* l)
-    : listener(l)
-    // : audioProcessor(p)
+ReverbComponent::ReverbComponent(SirenePlugAudioProcessor& p)
+    : audioProcessor(p)
 {
     // Titre
     titleLabel.setText("REVERB", juce::dontSendNotification);
@@ -19,8 +18,8 @@ ReverbComponent::ReverbComponent(/*SirenePlugAudioProcessor& p*/Listener* l)
 
     // Bouton d'activation
     enableButton.setButtonText("Enable (CC64 ch16)");
-    // enableButton.setToggleState(audioProcessor.mySynth->isReverbEnabled(), juce::dontSendNotification);
-    enableButton.setToggleState(true, juce::dontSendNotification);
+    enableButton.setToggleState(audioProcessor.mySynth->isReverbEnabled(), juce::dontSendNotification);
+    // enableButton.setToggleState(true, juce::dontSendNotification);
     enableButton.addListener(this);
     addAndMakeVisible(enableButton);
 
@@ -33,8 +32,8 @@ ReverbComponent::ReverbComponent(/*SirenePlugAudioProcessor& p*/Listener* l)
 
     roomSizeSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     roomSizeSlider.setRange(0.0, 1.0, 0.01);
-    // roomSizeSlider.setValue(audioProcessor.mySynth->reverb.getroomsize());
-    roomSizeSlider.setValue(0.5f);
+    roomSizeSlider.setValue(audioProcessor.mySynth->reverb.getroomsize());
+    // roomSizeSlider.setValue(0.5f);
     roomSizeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, 18);
     roomSizeSlider.setColour(juce::Slider::thumbColourId, juce::Colours::cyan);
     roomSizeSlider.setColour(juce::Slider::trackColourId, juce::Colours::darkblue);
@@ -51,11 +50,11 @@ ReverbComponent::ReverbComponent(/*SirenePlugAudioProcessor& p*/Listener* l)
     wetSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     wetSlider.setRange(0.0, 1.0, 0.01);
     // Calculer la valeur dry/wet actuelle depuis wet et dry
-    // float currentWet = audioProcessor.mySynth->reverb.getwet();
-    // float currentDry = audioProcessor.mySynth->reverb.getdry();
-    // float dryWetValue = currentWet / (currentWet + currentDry + 0.001f); // Éviter division par zéro
-    // wetSlider.setValue(dryWetValue);
-    wetSlider.setValue(0.5f);
+    float currentWet = audioProcessor.mySynth->reverb.getwet();
+    float currentDry = audioProcessor.mySynth->reverb.getdry();
+    float dryWetValue = currentWet / (currentWet + currentDry + 0.001f); // Éviter division par zéro
+    wetSlider.setValue(dryWetValue);
+    // wetSlider.setValue(0.5f);
     wetSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, 18);
     wetSlider.setColour(juce::Slider::thumbColourId, juce::Colours::green);
     wetSlider.setColour(juce::Slider::trackColourId, juce::Colours::darkgreen);
@@ -71,8 +70,8 @@ ReverbComponent::ReverbComponent(/*SirenePlugAudioProcessor& p*/Listener* l)
 
     dampSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     dampSlider.setRange(0.0, 1.0, 0.01);
-    // dampSlider.setValue(audioProcessor.mySynth->reverb.getdamp());
-    dampSlider.setValue(0.5f);
+    dampSlider.setValue(audioProcessor.mySynth->reverb.getdamp());
+    // dampSlider.setValue(0.5f);
     dampSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, 18);
     dampSlider.setColour(juce::Slider::thumbColourId, juce::Colours::orange);
     dampSlider.setColour(juce::Slider::trackColourId, juce::Colours::darkorange);
@@ -88,8 +87,8 @@ ReverbComponent::ReverbComponent(/*SirenePlugAudioProcessor& p*/Listener* l)
 
     widthSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     widthSlider.setRange(0.0, 1.0, 0.01);
-    // widthSlider.setValue(audioProcessor.mySynth->reverb.getwidth());
-    widthSlider.setValue(0.5f);
+    widthSlider.setValue(audioProcessor.mySynth->reverb.getwidth());
+    // widthSlider.setValue(0.5f);
     widthSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, 18);
     widthSlider.setColour(juce::Slider::thumbColourId, juce::Colours::violet);
     widthSlider.setColour(juce::Slider::trackColourId, juce::Colours::purple);
@@ -105,8 +104,8 @@ ReverbComponent::ReverbComponent(/*SirenePlugAudioProcessor& p*/Listener* l)
 
     highpassSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     highpassSlider.setRange(20.0, 2000.0, 1.0);
-    // highpassSlider.setValue(audioProcessor.mySynth->getReverbHighpass());
-    highpassSlider.setValue(20.0);
+    highpassSlider.setValue(audioProcessor.mySynth->getReverbHighpass());
+    // highpassSlider.setValue(20.0);
     highpassSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 18);
     highpassSlider.setTextValueSuffix(" Hz");
     highpassSlider.setColour(juce::Slider::thumbColourId, juce::Colours::gold);
@@ -124,8 +123,8 @@ ReverbComponent::ReverbComponent(/*SirenePlugAudioProcessor& p*/Listener* l)
 
     lowpassSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     lowpassSlider.setRange(2000.0, 20000.0, 1.0);
-    // lowpassSlider.setValue(audioProcessor.mySynth->getReverbLowpass());
-    lowpassSlider.setValue(20000.0);
+    lowpassSlider.setValue(audioProcessor.mySynth->getReverbLowpass());
+    // lowpassSlider.setValue(20000.0);
     lowpassSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 18);
     lowpassSlider.setTextValueSuffix(" Hz");
     lowpassSlider.setColour(juce::Slider::thumbColourId, juce::Colours::hotpink);
@@ -145,7 +144,7 @@ ReverbComponent::~ReverbComponent()
 
 void ReverbComponent::timerCallback()
 {
-    /*
+    //*
     // Synchroniser l'état Enable
     bool currentEnabled = audioProcessor.mySynth->isReverbEnabled();
     if (enableButton.getToggleState() != currentEnabled)
@@ -255,7 +254,7 @@ void ReverbComponent::resized()
 
 void ReverbComponent::sliderValueChanged(juce::Slider* slider)
 {
-    /*
+    //*
     if (slider == &roomSizeSlider)
     {
         audioProcessor.mySynth->reverb.setroomsize((float)roomSizeSlider.getValue());
@@ -288,7 +287,7 @@ void ReverbComponent::sliderValueChanged(juce::Slider* slider)
 
 void ReverbComponent::buttonClicked(juce::Button* button)
 {
-    /*
+    //*
     if (button == &enableButton)
     {
         audioProcessor.mySynth->setReverbEnabled(enableButton.getToggleState());

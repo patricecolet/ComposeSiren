@@ -2,13 +2,12 @@
 // Created by joseph larralde on 24/01/2026.
 //
 
-#include "../../../ComposeSirenCore/Components/MixerStripComponent.h"
+#include "MixerStripComponent.h"
 
 //==============================================================================
 // MixerStripComponent - Strip de mixage pour une sirène
-MixerStripComponent::MixerStripComponent(/*SirenePlugAudioProcessor& p,*/Listener* l, int sireneNum)
-    // : audioProcessor(p),
-    : listener(l),
+MixerStripComponent::MixerStripComponent(SirenePlugAudioProcessor& p, int sireneNum)
+    : audioProcessor(p),
       sireneNumber(sireneNum)
 {
     // Label du nom de la sirène
@@ -64,7 +63,7 @@ MixerStripComponent::~MixerStripComponent()
 
 void MixerStripComponent::timerCallback()
 {
-    /*
+    //*
     // Mettre à jour l'état de la LED
     bool newLedState = audioProcessor.myMidiInHandler->isNoteOn(sireneNumber);
     if (newLedState != ledState)
@@ -153,12 +152,10 @@ void MixerStripComponent::sliderValueChanged(juce::Slider* slider)
     if (slider == &volumeSlider)
     {
         // Master Volume CC70 - volume indépendant
-        // audioProcessor.mySynth->setMasterVolume(sireneNumber, (float)volumeSlider.getValue());
-        listener->onMixerStripVolumeSliderValueChanged(sireneNumber, (float)volumeSlider.getValue());
+        audioProcessor.mySynth->setMasterVolume(sireneNumber, (float)volumeSlider.getValue());
     }
     else if (slider == &panKnob)
     {
-        // audioProcessor.mySynth->setPan(sireneNumber, (float)panKnob.getValue() * 0.5f + 0.5f);
-        listener->onMixerStripPanSliderValueChanged(sireneNumber, (float)panKnob.getValue() * 0.5f + 0.5f);
+        audioProcessor.mySynth->setPan(sireneNumber, (float)panKnob.getValue() * 0.5f + 0.5f);
     }
 }

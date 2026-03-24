@@ -3,15 +3,12 @@
 //
 
 
-#include "../../../ComposeSirenCore/Components/MainCommandsComponent.h"
+#include "MainCommandsComponent.h"
 
 //=============================================================================
 // Component on the top of the main window
-// MainCommandsComponent::MainCommandsComponent(Listener* l/*SirenePlugAudioProcessor& p*/)
-MainCommandsComponent::MainCommandsComponent(juce::AudioProcessorValueTreeState& vts)
-    : apvts(vts)
-    // : listener(l)
-    // : audioProcessor(p)
+MainCommandsComponent::MainCommandsComponent(SirenePlugAudioProcessor& p)
+    : audioProcessor(p)
 {
     // Master Volume (CC7 canal 16)
     masterVolumeLabel.setText("Master Vol (CC7 ch16)", juce::dontSendNotification);
@@ -58,8 +55,8 @@ MainCommandsComponent::MainCommandsComponent(juce::AudioProcessorValueTreeState&
     showResourcesButton.setButtonText("Set resources directory");
     showResourcesButton.onClick = [this]()
     {
-        // std::string resourcesPath = audioProcessor.mySynth->getResourcesPath();
-        /*
+        std::string resourcesPath = audioProcessor.mySynth->getResourcesPath();
+        //*
         std::cout << "current resources path : " << resourcesPath << std::endl;
         // return;
         fileChooser = std::make_unique<juce::FileChooser>(
@@ -119,7 +116,7 @@ void MainCommandsComponent::sliderValueChanged(juce::Slider* slider)
     if (slider == &masterVolumeSlider)
     {
         int ccValue = static_cast<int>(masterVolumeSlider.getValue());
-        // audioProcessor.mySynth->setGlobalGain(ccValue);
+        audioProcessor.mySynth->setGlobalGain(ccValue);
     }
 }
 
@@ -129,7 +126,7 @@ void MainCommandsComponent::buttonClicked(juce::Button* button) {
 
 void MainCommandsComponent::timerCallback()
 {
-    /*
+    //*
     // Synchroniser Master Volume (CC7)
     float currentGain = audioProcessor.mySynth->getGlobalGain();
     float dB = 20.0f * std::log10(currentGain);

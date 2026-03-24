@@ -11,7 +11,7 @@
 
 #include "MixerStripComponent.h"
 #include "ReverbComponent.h"
-// #include "../PluginProcessor.h"
+#include "../PluginProcessor.h"
 
 //==============================================================================
 // Composant mixeur complet
@@ -20,14 +20,14 @@ class MixerComponent : public juce::Component
 public:
     class Listener {
     };
-    MixerComponent(/*SirenePlugAudioProcessor& p*/MixerStripComponent::Listener* msl, ReverbComponent::Listener* rl);
+    MixerComponent(SirenePlugAudioProcessor& p);
     ~MixerComponent() override;
 
     void paint (juce::Graphics&) override;
     void resized() override;
 
 private:
-    // SirenePlugAudioProcessor& audioProcessor;
+    SirenePlugAudioProcessor& audioProcessor;
 
     std::unique_ptr<MixerStripComponent> strips[7];
     std::unique_ptr<ReverbComponent> reverb;
