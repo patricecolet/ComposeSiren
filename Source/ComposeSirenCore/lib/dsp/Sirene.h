@@ -12,6 +12,8 @@
 
 #include <iostream>
 
+#include "lib/definitions/sirenProperties.h"
+
 //
 //  S1.h
 //  FourrerN
@@ -48,12 +50,15 @@ enum SireneSpeedSlideState {
 
 class Sirene {
 public:
-  Sirene(const std::string& str, const std::string& dataFolderPath);
+  // Sirene(const sirenCategory c = Alto, const std::string& dataFolderPath);
+  // Sirene(const std::string& str, const std::string& dataFolderPath);
+  Sirene(sirenId id, const std::string& dataFolderPath);
   ~Sirene();
 
 private:
+  std::shared_ptr<sirenData> data;
   // Pat added ------------------
-  std::string name;
+  // std::string name;
   int noteMidiCentMax;
   int noteMin;
   int pourcentClapetOff;
@@ -65,32 +70,28 @@ private:
   double deuxPieSampleRate;
 
 public:
-  void setnoteFromExt(int note);
   void setnote();
+  void setVelocite(int velo);
+  void setnoteFromExt(int note);
   SireneSpeedSlideState oujesuis();
   void changeQualite(int qualt);
   void set16ou8Bit(bool is);
-  void setVelocite(int velo);
   void setSampleRate(double newSampleRate);
   void setisCrossFade(int is);
 
-  // use :
-  // void readDataFromBinaryData(std::string sirenId);
-  // or :
   void readDataFromBinaryFile(
-    std::string dataFilePath,
-    std::string tabAmpFile,
-    std::string tabFreqFile,
-    std::string dureTabFile,
-    std::string vectorIntervalFile
+    const std::string& dataFilePath,
+    const std::string& tabAmpFile,
+    const std::string& tabFreqFile,
+    const std::string& dureTabFile,
+    const std::string& vectorIntervalFile
   );
-  // to fill tabAmp, tabFreq and dureTabs
 
 private:
     void setMidicent(int note);
 
 public:
-  inline float  calculwave() {
+  float  calculwave() {
     isChangementdenote = false;
     float wavefinal = 0.;
 
@@ -166,9 +167,18 @@ public:
   }
 
 private:
+  // conso memoire tabAmp / tabFreq :
+  // sizeof(float) * NOMBRE_DE_NOTE * MAX_TAB * MAX_Partiel = 32 * 80 * 1000 * 200
+  // 480 millions de bits = 60MB chacun
+  // pour dureTabs on a 32 * 240 / 8 = 960 B ~1kB
+  // et vectorInterval 32 * 392 / 8 = 1568 B ~1kB
+  // soit ~120MB par instance de sirene et ~240MB le temps de swapper entre deux modeles
+  // NB : in C++ 3D arrays memory layout is layer major order (then row, then column)
+  // like this : myArray[columns][rows][layers] (outermost dimension major order in general)
   float tabAmp[NOMBRE_DE_NOTE][MAX_TAB][MAX_Partiel];
   float tabFreq[NOMBRE_DE_NOTE][MAX_TAB][MAX_Partiel];
-  float dureTabs[NOMBRE_DE_NOTE][3]; // 0=dureTab en samples // 1=nombreMax de Tab // 2=FreqMoyenne
+  // dureTabs : 0 = dureTab en samples, 1 = nombreMax de Tab, 2 = FreqMoyenne
+  float dureTabs[NOMBRE_DE_NOTE][3];
   float vectorInterval[392];
 
   bool count8bit = true;

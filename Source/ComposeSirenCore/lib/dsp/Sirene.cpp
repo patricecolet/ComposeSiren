@@ -1,6 +1,6 @@
 
 #include "Sirene.h"
-#include <JuceHeader.h>
+// #include <JuceHeader.h>
 
 #include <iostream>
 
@@ -13,51 +13,68 @@
 #include <iterator>
 #include <algorithm>
 
+// we need this to ensure file loading will not fail if floats are not 32 bits,
+// although it's highly unlikely to happen on macos / windows and common linux distros
+#include <climits>
+static_assert(CHAR_BIT == 8 && sizeof(float) == 4, "require 8 bits bytes and 32 bits floats");
+// or is this enough ?
+// static_assert(sizeof(float) * CHAR_BIT == 32, "require 32 bits floats");
 
-Sirene::Sirene(const std::string& str, const std::string& dataFilePath) :
-name(str) {
+// Sirene::Sirene(const std::string& str, const std::string& dataFilePath) :
+// Sirene::Sirene(const sirenCategory& c, const std::string& dataFilePath) :
+Sirene::Sirene(sirenId id, const std::string& dataFilePath) :
+data(sirenPropertiesById.at(id)) {
   setSampleRate(44100.0);
   memset(&tabAmp, 0, sizeof(tabAmp));
   memset(&tabFreq, 0, sizeof(tabFreq));
   memset(&dureTabs, 0, sizeof(dureTabs));
   memset(&vectorInterval, 0, sizeof(vectorInterval));
 
-  std::string sireneNameForData(name);
+  // std::string sireneNameForData(name);
+  //
+  // if (name == "S2")
+  //   sireneNameForData = "S1"; // s2 has the same data files than s1
+  // else if (name == "S6")
+  //   sireneNameForData = "S5"; // s6 has the same data files than s5
+  //
+  // // S7 (Piccolo) utilise les données vectorInterval de S5
+  // std::string vectorIntervalSuffix = sireneNameForData;
+  // if (name == "S7") {
+  //   vectorIntervalSuffix = "S5";
+  // }
 
-  if (name == "S2")
-    sireneNameForData = "S1"; // s2 has the same data files than s1
-  else if (name == "S6")
-    sireneNameForData = "S5"; // s6 has the same data files than s5
+  // readDataFromBinaryFile(
+  //   dataFilePath,
+  //   "dataAmp" + sireneNameForData,
+  //   "dataFreq" + sireneNameForData,
+  //   "datadureTabs" + sireneNameForData,
+  //   "dataVectorInterval" + vectorIntervalSuffix
+  // );
 
-  // S7 (Piccolo) utilise les données vectorInterval de S5
-  std::string vectorIntervalSuffix = sireneNameForData;
-  if (name == "S7") {
-    vectorIntervalSuffix = "S5";
-  }
-
-  // both methods should end up loading data in the float arrays :
-
-  // veeeeeery slow to load, failed attempt :
-  // readDataFromBinaryData(sireneNameForData);
-
-  // we read from files instead, still slow but acceptable :
   readDataFromBinaryFile(
-    dataFilePath,
-    "dataAmp" + sireneNameForData,
-    "dataFreq" + sireneNameForData,
-    "datadureTabs" + sireneNameForData,
-    "dataVectorInterval" + vectorIntervalSuffix
+      dataFilePath,
+      data->resourceFileNames.amp,
+      data->resourceFileNames.freq,
+      data->resourceFileNames.dureTabs,
+      data->resourceFileNames.vectorInterval
   );
 
-  std::cout << "tabFreq[46][20][3] : " << std::fixed << std::setprecision(7) << tabFreq[46][20][3] << std::endl;
+  // std::cout << "tabFreq[46][20][3] : " << std::fixed << std::setprecision(7) << tabFreq[46][20][3] << std::endl;
 
-  if (name=="S1")      {noteMidiCentMax=7200; pourcentClapetOff=7;  noteMin=24; coeffPicolo=1.; inertiaFactorTweak = 24;}
-  else if (name=="S2") {noteMidiCentMax=7200; pourcentClapetOff=7;  noteMin=24; coeffPicolo=1.; inertiaFactorTweak = 24;}
-  else if (name=="S3") {noteMidiCentMax=6400; pourcentClapetOff=7;  noteMin=24; coeffPicolo=1.; inertiaFactorTweak = 12;}
-  else if (name=="S4") {noteMidiCentMax=6500; pourcentClapetOff=15; noteMin=24; coeffPicolo=1.; inertiaFactorTweak = 12;}
-  else if (name=="S5") {noteMidiCentMax=7900; pourcentClapetOff=7;  noteMin=36; coeffPicolo=1.; inertiaFactorTweak = 48;}
-  else if (name=="S6") {noteMidiCentMax=7900; pourcentClapetOff=7;  noteMin=36; coeffPicolo=1.; inertiaFactorTweak = 48;}
-  else if (name=="S7") {noteMidiCentMax=7900; pourcentClapetOff=7;  noteMin=36; coeffPicolo=2.; inertiaFactorTweak = 24;}
+  // This are now obtained from sirenCategoryData.synthConstants :
+  // if (name=="S1")      {noteMidiCentMax=7200; pourcentClapetOff=7;  noteMin=24; coeffPicolo=1.; inertiaFactorTweak = 24;}
+  // else if (name=="S2") {noteMidiCentMax=7200; pourcentClapetOff=7;  noteMin=24; coeffPicolo=1.; inertiaFactorTweak = 24;}
+  // else if (name=="S3") {noteMidiCentMax=6400; pourcentClapetOff=7;  noteMin=24; coeffPicolo=1.; inertiaFactorTweak = 12;}
+  // else if (name=="S4") {noteMidiCentMax=6500; pourcentClapetOff=15; noteMin=24; coeffPicolo=1.; inertiaFactorTweak = 12;}
+  // else if (name=="S5") {noteMidiCentMax=7900; pourcentClapetOff=7;  noteMin=36; coeffPicolo=1.; inertiaFactorTweak = 48;}
+  // else if (name=="S6") {noteMidiCentMax=7900; pourcentClapetOff=7;  noteMin=36; coeffPicolo=1.; inertiaFactorTweak = 48;}
+  // else if (name=="S7") {noteMidiCentMax=7900; pourcentClapetOff=7;  noteMin=36; coeffPicolo=2.; inertiaFactorTweak = 24;}
+
+  noteMidiCentMax = data->synthConstants.noteMidiCentMax;
+  pourcentClapetOff = data->synthConstants.pourcentClapetOff;
+  noteMin = data->synthConstants.noteMin;
+  coeffPicolo = data->synthConstants.coeffPicolo;
+  inertiaFactorTweak = data->synthConstants.inertiaFactorTweak;
 
   //pat
 }
@@ -74,19 +91,26 @@ void Sirene::setSampleRate(double newSampleRate) {
   }
 }
 
-void Sirene::readDataFromBinaryFile(std::string dataFilePath,
-                                    std::string tabAmpFile,
-                                    std::string tabFreqFile,
-                                    std::string dureTabFile,
-                                    std::string vectorIntervalFile) {
+void Sirene::readDataFromBinaryFile(const std::string& dataFilePath,
+                                    const std::string& tabAmpFile,
+                                    const std::string& tabFreqFile,
+                                    const std::string& dureTabFile,
+                                    const std::string& vectorIntervalFile) {
 
   std::ifstream myfile;
+  // todo: check that myfile.gcount() is the expected nb of bytes after read()
+  // or see : https://stackoverflow.com/a/2409527
+  // or :     https://stackoverflow.com/a/71592110
 
   // Read tabAmpFile
   myfile.open(dataFilePath + tabAmpFile, std::ios::binary);
   if (myfile.is_open())
   {
-    myfile.read(reinterpret_cast<char *>(tabAmp), sizeof tabAmp); // todo: check that input.gcount() is the number of bytes expected
+    myfile.read(reinterpret_cast<char *>(tabAmp), sizeof tabAmp);
+    if (myfile.gcount() != sizeof tabAmp) {
+      std::cout << "Warning: readDataFromBinaryFile: read " << myfile.gcount()
+      << " bytes instead of " << sizeof tabAmp << std::endl;
+    }
     myfile.close();
   }
   else std::cout <<  "Error. Binary file not found: " <<  dataFilePath + tabAmpFile << "\n";
@@ -95,7 +119,7 @@ void Sirene::readDataFromBinaryFile(std::string dataFilePath,
   myfile.open(dataFilePath + tabFreqFile, std::ios::binary);
   if (myfile.is_open())
   {
-    myfile.read(reinterpret_cast<char *>(tabFreq), sizeof tabFreq); // todo: check that input.gcount() is the number of bytes expected
+    myfile.read(reinterpret_cast<char *>(tabFreq), sizeof tabFreq);
     myfile.close();
   }
   else std::cout <<  "Error. Binary file not found.\n";
@@ -104,7 +128,7 @@ void Sirene::readDataFromBinaryFile(std::string dataFilePath,
   myfile.open(dataFilePath + dureTabFile, std::ios::binary);
   if (myfile.is_open())
   {
-    myfile.read(reinterpret_cast<char *>(dureTabs), sizeof dureTabs); // todo: check that input.gcount() is the number of bytes expected
+    myfile.read(reinterpret_cast<char *>(dureTabs), sizeof dureTabs);
     myfile.close();
   }
   else std::cout <<  "Error. Binary file not found.\n";
@@ -113,7 +137,7 @@ void Sirene::readDataFromBinaryFile(std::string dataFilePath,
   myfile.open(dataFilePath + vectorIntervalFile, std::ios::binary);
   if (myfile.is_open())
   {
-    myfile.read(reinterpret_cast<char *>(vectorInterval), sizeof vectorInterval); // todo: check that input.gcount() is the number of bytes expected
+    myfile.read(reinterpret_cast<char *>(vectorInterval), sizeof vectorInterval);
     myfile.close();
   }
   else std::cout <<  "Error. Binary file not found.\n";
@@ -298,7 +322,6 @@ void Sirene::set16ou8Bit(bool is) {
 }
 
 void Sirene::setVelocite(int velo) {
-  // printf("velo:%i\n",velo);
   ampMax = velo / 500.;
   ampvoulu = (velo / 500.) / (100. / (100 - pourcentClapetOff)) + (pourcentClapetOff / 100.);
 }
