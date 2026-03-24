@@ -43,7 +43,6 @@ target_sources(ComposeSirenCore
   lib/wrappers/SirenEnsemble.cpp
 
   Components/SirenStripComponent.cpp
-  Components/BasicKnobComponent.cpp
 )
 
 # ------------------------------------------------------------------------------
