@@ -10,9 +10,10 @@
 
 #pragma once
 
-#include "lib/dsp/Sirene.h"
-#include "lib/dsp/mareverbe.h"
-#include <JuceHeader.h>
+#include <juce_dsp/juce_dsp.h>
+
+#include "../../ComposeSirenCore/lib/dsp/Sirene.h"
+#include "../../ComposeSirenCore/lib/dsp/mareverbe.h"
 
 class Synth
 {
@@ -83,6 +84,8 @@ public:
     mareverbe reverb;
 
 private:
+
+    int vitesseToMidicent(int ch, float vitesse);
 
     //float volumeSynth;//1.;
     float PanS1;//0.25;

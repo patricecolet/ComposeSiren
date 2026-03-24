@@ -12,9 +12,8 @@
 #define XSTRING(x) STRING(x)
 
 #include "Synth.h"
+#include "../../ComposeSirenCore/lib/definitions/parameterDefinitions.h"
 
-#include "config.h"
-#include <JuceHeader.h>
 #include <iostream>
 
 Synth::Synth(){
@@ -50,13 +49,13 @@ Synth::Synth(){
     std::string dataFilePath = getResourcesPath();
     std::cout << dataFilePath << std::endl;
 
-    s1 = new Sirene("S1", dataFilePath);
-    s2 = new Sirene("S2", dataFilePath);
-    s3 = new Sirene("S3", dataFilePath);
-    s4 = new Sirene("S4", dataFilePath);
-    s5 = new Sirene("S5", dataFilePath);
-    s6 = new Sirene("S6", dataFilePath);
-    s7 = new Sirene("S7", dataFilePath);
+    s1 = new Sirene(S1, dataFilePath);
+    s2 = new Sirene(S2, dataFilePath);
+    s3 = new Sirene(S3, dataFilePath);
+    s4 = new Sirene(S4, dataFilePath);
+    s5 = new Sirene(S5, dataFilePath);
+    s6 = new Sirene(S6, dataFilePath);
+    s7 = new Sirene(S7, dataFilePath);
 }
 
 Synth::~Synth(){
@@ -85,7 +84,12 @@ std::string Synth::getResourcesPath() {
     // Déterminer le chemin des ressources selon le contexte
     std::string dataFilePath;
 
-#ifdef NDEBUG
+#if COMPOSESIREN_DEV_BUILD
+    std::string resourcesDirStr = XSTRING(COMPOSESIREN_DEV_RESOURCES_DIR);
+    std::cout << "resourcesDir : " << resourcesDirStr.c_str() << std::endl;
+    juce::File resourcesDir = juce::File(juce::String(resourcesDirStr));
+    dataFilePath = resourcesDir.getFullPathName().toStdString() + "/";
+#else
     // Pour les plugins (AU, VST, etc.), utiliser le chemin d'installation
     #if defined (_MSC_VER) // Windows
         dataFilePath = "C:\\Program Files\\Common Files\\Mecanique Vivante\\ComposeSiren\\Resources\\";
@@ -94,10 +98,6 @@ std::string Synth::getResourcesPath() {
     #else // We assume it's Linux
         dataFilePath = "/usr/share/ComposeSiren/Resources/";
     #endif
-#else
-    std::string projectSourceDir = XSTRING(PROJECT_SOURCE_DIR);
-    juce::File resourcesDir = juce::File(projectSourceDir).getChildFile("Resources");
-    dataFilePath = resourcesDir.getFullPathName().toStdString() + "/";
 #endif
 
     return dataFilePath;
@@ -317,6 +317,10 @@ void Synth::processReverbWithFilters(float* left, float* right, int numSamples){
         right[i] = dryRight[i] + wetRight[i];
     }
 }
+
+// void Synth::vitesseToMidicent(int ch, float vitesse) {
+//
+// }
 
 void Synth::setVitesse(int chanal, float vitesse){
     if(isWithSynthe){

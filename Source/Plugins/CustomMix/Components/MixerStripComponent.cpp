@@ -2,12 +2,14 @@
 // Created by joseph larralde on 24/01/2026.
 //
 
-#include "MixerStripComponent.h"
+#include "../../../ComposeSirenCore/Components/MixerStripComponent.h"
 
 //==============================================================================
 // MixerStripComponent - Strip de mixage pour une sirène
-MixerStripComponent::MixerStripComponent(SirenePlugAudioProcessor& p, int sireneNum)
-    : audioProcessor(p), sireneNumber(sireneNum)
+MixerStripComponent::MixerStripComponent(/*SirenePlugAudioProcessor& p,*/Listener* l, int sireneNum)
+    // : audioProcessor(p),
+    : listener(l),
+      sireneNumber(sireneNum)
 {
     // Label du nom de la sirène
     nameLabel.setText("S" + juce::String(sireneNumber), juce::dontSendNotification);
@@ -16,25 +18,27 @@ MixerStripComponent::MixerStripComponent(SirenePlugAudioProcessor& p, int sirene
     addAndMakeVisible(nameLabel);
 
     // Master Volume (CC70) - volume indépendant pour mixer
-    masterVolumeLabel.setText("Master (CC70)", juce::dontSendNotification);
-    masterVolumeLabel.setJustificationType(juce::Justification::centred);
-    masterVolumeLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    masterVolumeLabel.setFont(juce::Font(9.0f));
-    addAndMakeVisible(masterVolumeLabel);
+    volumeLabel.setText("Master (CC70)", juce::dontSendNotification);
+    volumeLabel.setJustificationType(juce::Justification::centred);
+    volumeLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+    volumeLabel.setFont(juce::FontOptions(9.0f));
+    addAndMakeVisible(volumeLabel);
 
-    masterVolumeSlider.setSliderStyle(juce::Slider::LinearVertical);
-    masterVolumeSlider.setRange(0.0, 1.0, 0.01);
-    //masterVolumeSlider.setValue(audioProcessor.mySynth->getMasterVolume(sireneNumber));
-    masterVolumeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
-    masterVolumeSlider.setColour(juce::Slider::thumbColourId, juce::Colours::lightblue);
-    masterVolumeSlider.setColour(juce::Slider::trackColourId, juce::Colours::blue);
-    masterVolumeSlider.addListener(this);
-    addAndMakeVisible(masterVolumeSlider);
+    volumeSlider.setSliderStyle(juce::Slider::LinearVertical);
+    volumeSlider.setRange(0.0, 1.0, 0.01);
+    //volumeSlider.setValue(audioProcessor.mySynth->getvolume(sireneNumber));
+    volumeSlider.setValue(1.f);
+    volumeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
+    volumeSlider.setColour(juce::Slider::thumbColourId, juce::Colours::lightblue);
+    volumeSlider.setColour(juce::Slider::trackColourId, juce::Colours::blue);
+    volumeSlider.addListener(this);
+    addAndMakeVisible(volumeSlider);
 
     // Knob de pan rotatif avec couleur pour meilleure visibilité
     panKnob.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     panKnob.setRange(-1.f, 1.f, 0.01);
-    panKnob.setValue(audioProcessor.mySynth->getPan(sireneNumber) * 2.f - 1.f); // Convertir de 0;1 à -1;1
+    // panKnob.setValue(audioProcessor.mySynth->getPan(sireneNumber) * 2.f - 1.f); // Convertir de 0;1 à -1;1
+    panKnob.setValue(0.f);
     panKnob.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
     panKnob.setColour(juce::Slider::rotarySliderFillColourId, juce::Colours::orange);
     panKnob.setColour(juce::Slider::thumbColourId, juce::Colours::yellow);
@@ -46,7 +50,7 @@ MixerStripComponent::MixerStripComponent(SirenePlugAudioProcessor& p, int sirene
     panLabel.setText("Pan (CC10)", juce::dontSendNotification);
     panLabel.setJustificationType(juce::Justification::centred);
     panLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    panLabel.setFont(juce::Font(9.0f));
+    panLabel.setFont(juce::FontOptions(9.0f));
     addAndMakeVisible(panLabel);
 
     // Démarrer le timer pour mettre à jour la LED (30 Hz)
@@ -60,6 +64,7 @@ MixerStripComponent::~MixerStripComponent()
 
 void MixerStripComponent::timerCallback()
 {
+    /*
     // Mettre à jour l'état de la LED
     bool newLedState = audioProcessor.myMidiInHandler->isNoteOn(sireneNumber);
     if (newLedState != ledState)
@@ -69,10 +74,10 @@ void MixerStripComponent::timerCallback()
     }
 
     // Mettre à jour le master volume CC70 si changé par MIDI
-    float currentMasterVolume = audioProcessor.mySynth->getMasterVolume(sireneNumber);
-    if (std::abs(masterVolumeSlider.getValue() - currentMasterVolume) > 0.01)
+    float currentvolume = audioProcessor.mySynth->getMasterVolume(sireneNumber);
+    if (std::abs(volumeSlider.getValue() - currentvolume) > 0.01)
     {
-        masterVolumeSlider.setValue(currentMasterVolume, juce::dontSendNotification);
+        volumeSlider.setValue(currentvolume, juce::dontSendNotification);
     }
 
     // Mettre à jour le Pan si changé par MIDI
@@ -82,6 +87,7 @@ void MixerStripComponent::timerCallback()
     {
         panKnob.setValue(panValue, juce::dontSendNotification);
     }
+    //*/
 }
 
 void MixerStripComponent::paint(juce::Graphics& g)
@@ -133,8 +139,8 @@ void MixerStripComponent::resized()
     area.removeFromTop(5);
 
     // Master Volume CC70
-    masterVolumeLabel.setBounds(area.removeFromTop(15));
-    masterVolumeSlider.setBounds(area.removeFromTop(130));
+    volumeLabel.setBounds(area.removeFromTop(15));
+    volumeSlider.setBounds(area.removeFromTop(130));
 
     area.removeFromTop(5);
     panLabel.setBounds(area.removeFromTop(15));
@@ -144,13 +150,15 @@ void MixerStripComponent::resized()
 
 void MixerStripComponent::sliderValueChanged(juce::Slider* slider)
 {
-    if (slider == &masterVolumeSlider)
+    if (slider == &volumeSlider)
     {
         // Master Volume CC70 - volume indépendant
-        audioProcessor.mySynth->setMasterVolume(sireneNumber, (float)masterVolumeSlider.getValue());
+        // audioProcessor.mySynth->setMasterVolume(sireneNumber, (float)volumeSlider.getValue());
+        listener->onMixerStripVolumeSliderValueChanged(sireneNumber, (float)volumeSlider.getValue());
     }
     else if (slider == &panKnob)
     {
-        audioProcessor.mySynth->setPan(sireneNumber, (float)panKnob.getValue() * 0.5f + 0.5f);
+        // audioProcessor.mySynth->setPan(sireneNumber, (float)panKnob.getValue() * 0.5f + 0.5f);
+        listener->onMixerStripPanSliderValueChanged(sireneNumber, (float)panKnob.getValue() * 0.5f + 0.5f);
     }
 }

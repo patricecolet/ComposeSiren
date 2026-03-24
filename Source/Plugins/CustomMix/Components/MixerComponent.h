@@ -5,24 +5,29 @@
 #ifndef COMPOSESIREN_MIXERCOMPONENT_H
 #define COMPOSESIREN_MIXERCOMPONENT_H
 
-#include <JuceHeader.h>
+// #include <juce_core/juce_core.h>
+// already includes juce_core which includes juce_graphics
+#include <juce_gui_basics/juce_gui_basics.h>
+
 #include "MixerStripComponent.h"
 #include "ReverbComponent.h"
-#include "../PluginProcessor.h"
+// #include "../PluginProcessor.h"
 
 //==============================================================================
 // Composant mixeur complet
 class MixerComponent : public juce::Component
 {
 public:
-    MixerComponent(SirenePlugAudioProcessor& p);
-    ~MixerComponent();
+    class Listener {
+    };
+    MixerComponent(/*SirenePlugAudioProcessor& p*/MixerStripComponent::Listener* msl, ReverbComponent::Listener* rl);
+    ~MixerComponent() override;
 
     void paint (juce::Graphics&) override;
     void resized() override;
 
 private:
-    SirenePlugAudioProcessor& audioProcessor;
+    // SirenePlugAudioProcessor& audioProcessor;
 
     std::unique_ptr<MixerStripComponent> strips[7];
     std::unique_ptr<ReverbComponent> reverb;

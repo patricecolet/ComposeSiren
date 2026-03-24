@@ -2,22 +2,22 @@
 // Created by joseph larralde on 24/01/2026.
 //
 
-#include "MixerComponent.h"
+#include "../../../ComposeSirenCore/Components/MixerComponent.h"
 
 //==============================================================================
 // MixerComponent - Mixeur complet
-MixerComponent::MixerComponent(SirenePlugAudioProcessor& p)
-    : audioProcessor(p)
+MixerComponent::MixerComponent(/*SirenePlugAudioProcessor& p*/MixerStripComponent::Listener* msl, ReverbComponent::Listener* rl)
+    // : audioProcessor(p)
 {
     // Créer les 7 strips
     for (int i = 0; i < 7; i++)
     {
-        strips[i] = std::make_unique<MixerStripComponent>(audioProcessor, i + 1);
+        strips[i] = std::make_unique<MixerStripComponent>(/*audioProcessor,*/msl, i + 1);
         addAndMakeVisible(strips[i].get());
     }
 
     // Créer la section reverb
-    reverb = std::make_unique<ReverbComponent>(audioProcessor);
+    reverb = std::make_unique<ReverbComponent>(/*audioProcessor*/rl);
     addAndMakeVisible(reverb.get());
 }
 

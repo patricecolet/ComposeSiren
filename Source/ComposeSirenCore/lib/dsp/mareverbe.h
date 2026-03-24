@@ -6,6 +6,10 @@
  *  Copyright 2010 __MyCompanyName__. All rights reserved.
  *
  */
+
+#ifndef _mareverbe_
+#define _mareverbe_
+
 #include "comb.h"
 #include "allpass.h"
 
@@ -151,3 +155,4 @@ private:
 	}
 };
 
+#endif // _mareverbe_

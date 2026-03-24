@@ -16,7 +16,7 @@
 using namespace std;
 
 MidiIn::MidiIn(const std::function<void(int,int)> onVelocityChanged,
-               const std::function<void(int, int)> onEnginePitchChanged
+               const std::function<void(int,float)> onEnginePitchChanged
                ) : onVelocityChanged(onVelocityChanged)
     , onEngineSpeedChanged(onEnginePitchChanged)
 
@@ -82,8 +82,7 @@ void MidiIn::JouerClic(int value){
 }
 
 
-void MidiIn::handleMIDIMessage2(int Ch, int value1, int value2){
-    // std::cout << "Message MIDI reçu: " << Ch << " " << value1 << " " << value2 << std::endl;
+void MidiIn::handleMIDIMessage2(int Ch, int value1, int value2) {
     if (Ch >= 144 && Ch < 160 ) {
         if (value2 != 0) {
             if (value2 == 200) {
@@ -91,7 +90,6 @@ void MidiIn::handleMIDIMessage2(int Ch, int value1, int value2){
             } else {
                 RealTimeStartNote(Ch - 143, value1, value2);
             }
-
         } else {
             RealTimeStopNote(Ch - 143, value1);
         }
@@ -105,7 +103,6 @@ void MidiIn::handleMIDIMessage2(int Ch, int value1, int value2){
 }
 
 void MidiIn::RealTimeStartNote(int Ch, int value1, int value2) {
-    // std::cout << "RealTimeStartNote: " << Ch << "-" << value1 << "-" << value2 << std::endl;
     if (Ch >= 1 && Ch < 8) {
         if (Ch == 1) countvibra = 0;
         if ((ControlCh[1][Ch] != 0 && ControlCh[9][Ch] != 0 && ControlCh[11][Ch] != 0 && value2 > 0 && velociteCh[Ch] == 0)
@@ -140,10 +137,9 @@ void MidiIn::RealTimeStopNote(int Ch, int note) {
 }
 
 void MidiIn::HandleControlChange(int Ch, int value1, int value2) {
-    // std::cout << "received control change" << std::endl;
     if (Ch < 9) {
         switch (value1) {
-            case 121: // Reset All Controllers (standard MIDI)^M
+            case 121: // Reset All Controllers (standard MIDI)
                 resetSireneCh(Ch);
                 break;
             case 1 : {
@@ -408,8 +404,6 @@ void MidiIn::STOnVariateurCh(int Ch){
 }
 
 void MidiIn::resetSireneCh(int Ch){
-
-    //std::cout << "Reset: "<< Ch << std::endl;
 
     noteonfinalCh[Ch]=0.0;
     ///////////////////////////////////////////////////****** Ferme les volets

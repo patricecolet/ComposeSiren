@@ -75,7 +75,7 @@ public:
   void setisCrossFade(int is);
 
   // use :
-  void readDataFromBinaryData(std::string sirenId);
+  // void readDataFromBinaryData(std::string sirenId);
   // or :
   void readDataFromBinaryFile(
     std::string dataFilePath,

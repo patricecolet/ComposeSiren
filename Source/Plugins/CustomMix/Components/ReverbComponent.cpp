@@ -2,23 +2,25 @@
 // Created by joseph larralde on 24/01/2026.
 //
 
-#include "ReverbComponent.h"
+#include "../../../ComposeSirenCore/Components/ReverbComponent.h"
 
 //==============================================================================
 // ReverbComponent - Section de reverb
-ReverbComponent::ReverbComponent(SirenePlugAudioProcessor& p)
-    : audioProcessor(p)
+ReverbComponent::ReverbComponent(/*SirenePlugAudioProcessor& p*/Listener* l)
+    : listener(l)
+    // : audioProcessor(p)
 {
     // Titre
     titleLabel.setText("REVERB", juce::dontSendNotification);
     titleLabel.setJustificationType(juce::Justification::centred);
     titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    titleLabel.setFont(juce::Font(16.0f, juce::Font::bold));
+    titleLabel.setFont(juce::FontOptions(16.0f, juce::Font::bold));
     addAndMakeVisible(titleLabel);
 
     // Bouton d'activation
     enableButton.setButtonText("Enable (CC64 ch16)");
-    enableButton.setToggleState(audioProcessor.mySynth->isReverbEnabled(), juce::dontSendNotification);
+    // enableButton.setToggleState(audioProcessor.mySynth->isReverbEnabled(), juce::dontSendNotification);
+    enableButton.setToggleState(true, juce::dontSendNotification);
     enableButton.addListener(this);
     addAndMakeVisible(enableButton);
 
@@ -26,12 +28,13 @@ ReverbComponent::ReverbComponent(SirenePlugAudioProcessor& p)
     roomSizeLabel.setText("Room (CC65)", juce::dontSendNotification);
     roomSizeLabel.setJustificationType(juce::Justification::centredLeft);
     roomSizeLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    roomSizeLabel.setFont(juce::Font(10.0f));
+    roomSizeLabel.setFont(juce::FontOptions(10.0f));
     addAndMakeVisible(roomSizeLabel);
 
     roomSizeSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     roomSizeSlider.setRange(0.0, 1.0, 0.01);
-    roomSizeSlider.setValue(audioProcessor.mySynth->reverb.getroomsize());
+    // roomSizeSlider.setValue(audioProcessor.mySynth->reverb.getroomsize());
+    roomSizeSlider.setValue(0.5f);
     roomSizeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, 18);
     roomSizeSlider.setColour(juce::Slider::thumbColourId, juce::Colours::cyan);
     roomSizeSlider.setColour(juce::Slider::trackColourId, juce::Colours::darkblue);
@@ -42,16 +45,17 @@ ReverbComponent::ReverbComponent(SirenePlugAudioProcessor& p)
     wetLabel.setText("Dry/Wet (CC66)", juce::dontSendNotification);
     wetLabel.setJustificationType(juce::Justification::centredLeft);
     wetLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    wetLabel.setFont(juce::Font(10.0f));
+    wetLabel.setFont(juce::FontOptions(10.0f));
     addAndMakeVisible(wetLabel);
 
     wetSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     wetSlider.setRange(0.0, 1.0, 0.01);
     // Calculer la valeur dry/wet actuelle depuis wet et dry
-    float currentWet = audioProcessor.mySynth->reverb.getwet();
-    float currentDry = audioProcessor.mySynth->reverb.getdry();
-    float dryWetValue = currentWet / (currentWet + currentDry + 0.001f); // Éviter division par zéro
-    wetSlider.setValue(dryWetValue);
+    // float currentWet = audioProcessor.mySynth->reverb.getwet();
+    // float currentDry = audioProcessor.mySynth->reverb.getdry();
+    // float dryWetValue = currentWet / (currentWet + currentDry + 0.001f); // Éviter division par zéro
+    // wetSlider.setValue(dryWetValue);
+    wetSlider.setValue(0.5f);
     wetSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, 18);
     wetSlider.setColour(juce::Slider::thumbColourId, juce::Colours::green);
     wetSlider.setColour(juce::Slider::trackColourId, juce::Colours::darkgreen);
@@ -62,12 +66,13 @@ ReverbComponent::ReverbComponent(SirenePlugAudioProcessor& p)
     dampLabel.setText("Damp (CC67)", juce::dontSendNotification);
     dampLabel.setJustificationType(juce::Justification::centredLeft);
     dampLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    dampLabel.setFont(juce::Font(10.0f));
+    dampLabel.setFont(juce::FontOptions(10.0f));
     addAndMakeVisible(dampLabel);
 
     dampSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     dampSlider.setRange(0.0, 1.0, 0.01);
-    dampSlider.setValue(audioProcessor.mySynth->reverb.getdamp());
+    // dampSlider.setValue(audioProcessor.mySynth->reverb.getdamp());
+    dampSlider.setValue(0.5f);
     dampSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, 18);
     dampSlider.setColour(juce::Slider::thumbColourId, juce::Colours::orange);
     dampSlider.setColour(juce::Slider::trackColourId, juce::Colours::darkorange);
@@ -78,12 +83,13 @@ ReverbComponent::ReverbComponent(SirenePlugAudioProcessor& p)
     widthLabel.setText("Width (CC70)", juce::dontSendNotification);
     widthLabel.setJustificationType(juce::Justification::centredLeft);
     widthLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    widthLabel.setFont(juce::Font(10.0f));
+    widthLabel.setFont(juce::FontOptions(10.0f));
     addAndMakeVisible(widthLabel);
 
     widthSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     widthSlider.setRange(0.0, 1.0, 0.01);
-    widthSlider.setValue(audioProcessor.mySynth->reverb.getwidth());
+    // widthSlider.setValue(audioProcessor.mySynth->reverb.getwidth());
+    widthSlider.setValue(0.5f);
     widthSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, 18);
     widthSlider.setColour(juce::Slider::thumbColourId, juce::Colours::violet);
     widthSlider.setColour(juce::Slider::trackColourId, juce::Colours::purple);
@@ -94,12 +100,13 @@ ReverbComponent::ReverbComponent(SirenePlugAudioProcessor& p)
     highpassLabel.setText("HPF (CC68)", juce::dontSendNotification);
     highpassLabel.setJustificationType(juce::Justification::centredLeft);
     highpassLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    highpassLabel.setFont(juce::Font(10.0f));
+    highpassLabel.setFont(juce::FontOptions(10.0f));
     addAndMakeVisible(highpassLabel);
 
     highpassSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     highpassSlider.setRange(20.0, 2000.0, 1.0);
-    highpassSlider.setValue(audioProcessor.mySynth->getReverbHighpass());
+    // highpassSlider.setValue(audioProcessor.mySynth->getReverbHighpass());
+    highpassSlider.setValue(20.0);
     highpassSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 18);
     highpassSlider.setTextValueSuffix(" Hz");
     highpassSlider.setColour(juce::Slider::thumbColourId, juce::Colours::gold);
@@ -112,12 +119,13 @@ ReverbComponent::ReverbComponent(SirenePlugAudioProcessor& p)
     lowpassLabel.setText("LPF (CC69)", juce::dontSendNotification);
     lowpassLabel.setJustificationType(juce::Justification::centredLeft);
     lowpassLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    lowpassLabel.setFont(juce::Font(10.0f));
+    lowpassLabel.setFont(juce::FontOptions(10.0f));
     addAndMakeVisible(lowpassLabel);
 
     lowpassSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     lowpassSlider.setRange(2000.0, 20000.0, 1.0);
-    lowpassSlider.setValue(audioProcessor.mySynth->getReverbLowpass());
+    // lowpassSlider.setValue(audioProcessor.mySynth->getReverbLowpass());
+    lowpassSlider.setValue(20000.0);
     lowpassSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 18);
     lowpassSlider.setTextValueSuffix(" Hz");
     lowpassSlider.setColour(juce::Slider::thumbColourId, juce::Colours::hotpink);
@@ -137,6 +145,7 @@ ReverbComponent::~ReverbComponent()
 
 void ReverbComponent::timerCallback()
 {
+    /*
     // Synchroniser l'état Enable
     bool currentEnabled = audioProcessor.mySynth->isReverbEnabled();
     if (enableButton.getToggleState() != currentEnabled)
@@ -186,6 +195,7 @@ void ReverbComponent::timerCallback()
     {
         lowpassSlider.setValue(currentLowpass, juce::dontSendNotification);
     }
+    //*/
 }
 
 void ReverbComponent::paint(juce::Graphics& g)
@@ -245,6 +255,7 @@ void ReverbComponent::resized()
 
 void ReverbComponent::sliderValueChanged(juce::Slider* slider)
 {
+    /*
     if (slider == &roomSizeSlider)
     {
         audioProcessor.mySynth->reverb.setroomsize((float)roomSizeSlider.getValue());
@@ -272,12 +283,15 @@ void ReverbComponent::sliderValueChanged(juce::Slider* slider)
     {
         audioProcessor.mySynth->setReverbLowpass((float)lowpassSlider.getValue());
     }
+    //*/
 }
 
 void ReverbComponent::buttonClicked(juce::Button* button)
 {
+    /*
     if (button == &enableButton)
     {
         audioProcessor.mySynth->setReverbEnabled(enableButton.getToggleState());
     }
+    //*/
 }

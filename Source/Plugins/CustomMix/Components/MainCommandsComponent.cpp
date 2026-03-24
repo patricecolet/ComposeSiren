@@ -2,24 +2,29 @@
 // Created by joseph larralde on 25/01/2026.
 //
 
-#include "MainCommandsComponent.h"
 
-//==============================================================================
+#include "../../../ComposeSirenCore/Components/MainCommandsComponent.h"
+
+//=============================================================================
 // Component on the top of the main window
-MainCommandsComponent::MainCommandsComponent(SirenePlugAudioProcessor& p)
-    : audioProcessor(p)
+// MainCommandsComponent::MainCommandsComponent(Listener* l/*SirenePlugAudioProcessor& p*/)
+MainCommandsComponent::MainCommandsComponent(juce::AudioProcessorValueTreeState& vts)
+    : apvts(vts)
+    // : listener(l)
+    // : audioProcessor(p)
 {
     // Master Volume (CC7 canal 16)
     masterVolumeLabel.setText("Master Vol (CC7 ch16)", juce::dontSendNotification);
     masterVolumeLabel.setJustificationType(juce::Justification::centredLeft);
     masterVolumeLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    masterVolumeLabel.setFont(juce::Font(11.0f));
+    masterVolumeLabel.setFont(juce::FontOptions(11.0f));
     addAndMakeVisible(masterVolumeLabel);
 
     masterVolumeSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     masterVolumeSlider.setRange(0.0, 127.0, 1.0);
     // Convertir le gain actuel en valeur CC (formule inverse de dbtorms)
-    float currentGain = audioProcessor.mySynth->getGlobalGain();
+    // float currentGain = audioProcessor.mySynth->getGlobalGain();
+    float currentGain = 1;
     float dB = 20.0f * std::log10(currentGain);
     int ccValue = static_cast<int>(dB + 100.0f);
     masterVolumeSlider.setValue(ccValue);
@@ -33,6 +38,7 @@ MainCommandsComponent::MainCommandsComponent(SirenePlugAudioProcessor& p)
     // resetButton.setColour(juce::TextButton::buttonOnColourId , juce::Colours::grey);
     resetButton.setColour(juce::TextButton::textColourOffId , juce::Colours::black);
     resetButton.setButtonText ("Reset");
+    /*
     resetButton.onClick = [this]()
     {
         std::cout << "Reset"<<std::endl;
@@ -44,6 +50,7 @@ MainCommandsComponent::MainCommandsComponent(SirenePlugAudioProcessor& p)
         audioProcessor.myMidiInHandler -> resetSireneCh(6);
         audioProcessor.myMidiInHandler -> resetSireneCh(7);
     };
+    */
     addAndMakeVisible(resetButton);
 
     showResourcesButton.setColour(juce::TextButton::buttonColourId, juce::Colours::whitesmoke);
@@ -51,7 +58,8 @@ MainCommandsComponent::MainCommandsComponent(SirenePlugAudioProcessor& p)
     showResourcesButton.setButtonText("Set resources directory");
     showResourcesButton.onClick = [this]()
     {
-        std::string resourcesPath = audioProcessor.mySynth->getResourcesPath();
+        // std::string resourcesPath = audioProcessor.mySynth->getResourcesPath();
+        /*
         std::cout << "current resources path : " << resourcesPath << std::endl;
         // return;
         fileChooser = std::make_unique<juce::FileChooser>(
@@ -66,6 +74,7 @@ MainCommandsComponent::MainCommandsComponent(SirenePlugAudioProcessor& p)
             juce::File newResourcesPath = chooser.getResult();
             std::cout << "new resources path : " << newResourcesPath.getFullPathName() << std::endl;
         });
+        //*/
     };
 #ifdef DEBUG
     addAndMakeVisible(showResourcesButton);
@@ -110,12 +119,17 @@ void MainCommandsComponent::sliderValueChanged(juce::Slider* slider)
     if (slider == &masterVolumeSlider)
     {
         int ccValue = static_cast<int>(masterVolumeSlider.getValue());
-        audioProcessor.mySynth->setGlobalGain(ccValue);
+        // audioProcessor.mySynth->setGlobalGain(ccValue);
     }
+}
+
+void MainCommandsComponent::buttonClicked(juce::Button* button) {
+
 }
 
 void MainCommandsComponent::timerCallback()
 {
+    /*
     // Synchroniser Master Volume (CC7)
     float currentGain = audioProcessor.mySynth->getGlobalGain();
     float dB = 20.0f * std::log10(currentGain);
@@ -124,4 +138,5 @@ void MainCommandsComponent::timerCallback()
     {
         masterVolumeSlider.setValue(ccValue, juce::dontSendNotification);
     }
+    //*/
 }

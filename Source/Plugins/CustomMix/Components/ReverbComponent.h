@@ -5,8 +5,9 @@
 #ifndef COMPOSESIREN_REVERBCOMPONENT_H
 #define COMPOSESIREN_REVERBCOMPONENT_H
 
-#include <JuceHeader.h>
-#include "../PluginProcessor.h"
+#include <juce_gui_basics/juce_gui_basics.h>
+// #include <JuceHeader.h>
+// #include "../PluginProcessor.h"
 
 //==============================================================================
 // Section de reverb
@@ -16,8 +17,19 @@ class ReverbComponent : public juce::Component,
                        private juce::Timer
 {
 public:
-    ReverbComponent(SirenePlugAudioProcessor& p);
-    ~ReverbComponent();
+    // class Listener {
+    // public:
+    //     virtual ~Listener() = default;
+    //     virtual void onReverbRoomsizeSliderValueChanged(float v) = 0;
+    //     virtual void onReverbDrywetSliderValueChanged(float v) = 0;
+    //     virtual void onReverbDampingSliderValueChanged(float v) = 0;
+    //     virtual void onReverbWidthSliderValueChanged(float v) = 0;
+    //     virtual void onReverbHighpassSliderValueChanged(float v) = 0;
+    //     virtual void onReverbLowpassSliderValueChanged(float v) = 0;
+    // };
+
+    ReverbComponent(/*SirenePlugAudioProcessor& p*/Listener* l);
+    ~ReverbComponent() override;
 
     void paint (juce::Graphics&) override;
     void resized() override;
@@ -26,7 +38,7 @@ public:
 
 private:
     void timerCallback() override;
-    SirenePlugAudioProcessor& audioProcessor;
+    // SirenePlugAudioProcessor& audioProcessor;
 
     juce::ToggleButton enableButton;
     juce::Slider roomSizeSlider;
@@ -43,6 +55,8 @@ private:
     juce::Label widthLabel;
     juce::Label highpassLabel;
     juce::Label lowpassLabel;
+
+    Listener* listener;
 };
 
 #endif //COMPOSESIREN_REVERBCOMPONENT_H

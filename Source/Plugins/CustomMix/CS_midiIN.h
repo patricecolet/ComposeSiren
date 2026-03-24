@@ -13,7 +13,7 @@ class MidiIn
 public:
   MidiIn(
           const std::function<void(int,int)> onVelocityChanged,
-          const std::function<void(int, int)> onEnginePitchChanged
+          const std::function<void(int,float)> onEnginePitchChanged
         );
   ~MidiIn();
 
@@ -99,6 +99,5 @@ private:
   int pitch_bend;
 
   const std::function<void(int,int)> onVelocityChanged;
-  
-  const std::function<void(int, int)> onEngineSpeedChanged;
+  const std::function<void(int,float)> onEngineSpeedChanged;
 };
