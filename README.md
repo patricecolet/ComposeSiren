@@ -1,38 +1,53 @@
 # ComposeSiren
 
-ComposeSiren is an audio plugin that synthesize sounds of sirens made by [Mécanique Vivante][1].
+ComposeSiren is a suite of audio and MIDI plugins that synthesize sounds of sirens made by [Mécanique Vivante][1]
+and provide automatable parameters from DAW hosts synchronized to MIDI input and output.
+The plugins allow to compose pieces for Mécanique Vivante's siren orchestra in studio by simulating them in real-time.
+The DAW projects can then be reused to directly play the pieces on the orchestra during live performances.
 
-The plugin allows to handle the seven-piece Siren Orchestra:
+The Siren Orchestra is composed of seven MIDI siren instruments :
 - two altos (called S1 and S2),
 - a bass (called S3),
 - a tenor (called S4),
 - two sopranos (called S5 and S6),
 - and a piccolo (called S7).
 
-It is currently available on two formats: VST3 and Audio Unit.
+There are actually two plugins:
+- **OneSiren**, a simple plugin with flexible MIDI routing parameters that can simulate any siren from the orchestra.
+- **SirenOrchestra**, a plugin that simulates the whole orchestra with its original fixed MIDI routing, and provides
+  additional controls such as panning and volume adjustment for each simulated siren, as well as an embedded reverberation module
+  and a master volume control.
+
+Both are currently available in two formats: VST3 and Audio Unit, and also exist as standalone applications.
 
 
 ### Development
 
-ComposeSiren is developed on top of the **JUCE** frameworks. You can find more infos about it there: http://www.juce.com.
+The ComposeSiren suite is developed on top of the **JUCE** frameworks. You can find more infos about it there: http://www.juce.com.
 
-ComposeSiren is built on macOS as a 64-bit VST3 and Audio Unit formats, and currently tested on [Ableton Live][4].
+The plugins are built on macOS as 64-bit VST3 and Audio Unit formats, and currently tested on [Reaper][6] and [Ableton Live][4].
+Upcoming windows versions are currently in the development pipeline.
 
 
-### Using the plugin
+### Using the plugins
 
-The vst3 plugin file is called **ComposeSiren.vst3**, and the Audio Unit plugin file called **ComposeSiren.component**.
+Download the latest installer for your OS from the [releases page][link] and run it. This will install the VST3 versions
+of both plugins (as well as their Audio Unit versions on MacOS), and the corresponding standalone applications.
+<!-- 
+The vst3 plugin files are respectively called **OneSiren.vst3** and **, and the Audio Unit plugin file called **ComposeSiren.component**.
 You can download the vst3 plugin as well as the Audio Unit plugin directly from the **Releases** menu (to the right of the list of files).
 You'll find [here][3] more info on how to use the plugins with Ableton Live.
+-->
 
-
+<!--
 ### Version history:
 
+- 1.5.0
 - 1.3.0 - Change default panning and volume
 - 1.2.0 - Audio Unit format added
 - 1.1.0 - Improved GUI
 - 1.0.0 - First version of the vst3 plugin
-
+-->
 
 [1]: https://www.mecanique-vivante.com/en/the-song-of-the-sirens/the-musical-siren
 [2]: https://minhaskamal.github.io/DownGit/#/home?url=https://github.com/patriceguyot/ComposeSiren/tree/master/Builds/MacOSX/ComposeSiren.vst3
@@ -89,3 +104,7 @@ At the moment the plugin is built :
 
 The resulting installer (built with `productbuild` on mac and `NSIS` on windows)
 is created in `build/Packaging/ComposeSiren_Installer_artefacts`
+
+NB :
+* download VS 2022 Community from [HERE](https://aka.ms/vs/17/release/vs_community.exe)
+  (more dl links [HERE](https://sharethis.zip/visual_studio/))
