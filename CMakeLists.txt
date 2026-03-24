@@ -34,7 +34,8 @@ endif()
 string(TIMESTAMP CURRENT_DATE "%Y-%m-%d")
 set(PROJECT_DESCRIPTION "ComposeSiren du ${CURRENT_DATE} sur commit ${GIT_HASH}")
 
-project(ComposeSiren VERSION 1.5.0 DESCRIPTION "${PROJECT_DESCRIPTION}")
+project(ComposeSiren VERSION 2.0.0 DESCRIPTION "${PROJECT_DESCRIPTION}")
+set(PROJECT_VERSION_SUFFIX "-alpha0") # just for building/packaging purpose
 set(BaseTargetName ${PROJECT_NAME})
 set(VendorName "Mecanique Vivante")
 set(PLUGIN_MANUFACTURER_CODE "McVv")
