@@ -1,0 +1,266 @@
+/*
+  ==============================================================================
+
+    CMSMidiKeyboardComponent.h
+    Created: 16 Aug 2021 11:03:34pm
+    Author:  Joseph Larralde
+
+  ==============================================================================
+*/
+
+#ifndef COMPOSESIREN_DBRANGES_MIDIKEYBOARDCOMPONENT_H
+#define COMPOSESIREN_DBRANGES_MIDIKEYBOARDCOMPONENT_H
+
+#include <juce_gui_basics/juce_gui_basics.h>
+#include "../lib/definitions/sirenProperties.h"
+#include "../lib/definitions/palette.h"
+#include "LookAndFeels.h"
+#include "VoiceManagerState.h"
+
+class MidiKeyboardLabelLookAndFeel : public juce::LookAndFeel_V3
+{
+public:
+    MidiKeyboardLabelLookAndFeel()
+    {
+        setColour(juce::Label::textColourId, juce::Colours::whitesmoke);
+    }
+};
+
+//==============================================================================
+// customized MidiKeyboardComponent class
+// owned by DbRangesMidiKeyboardComponent
+//==============================================================================
+
+class CustomMidiKeyboardComponent : public juce::MidiKeyboardComponent
+{
+public:
+    CustomMidiKeyboardComponent(juce::MidiKeyboardState& s,
+                                juce::MidiKeyboardComponent::Orientation o) :
+      juce::MidiKeyboardComponent(s, o)
+    {
+        // setBlackNoteLengthProportion(1.0f);
+    }
+
+    ~CustomMidiKeyboardComponent() override = default;
+
+    // TODO : override paint method for more control over final look and feel
+
+    void drawBlackNote(int /*midiNoteNumber*/,
+                       juce::Graphics& g, juce::Rectangle<float> area,
+                       bool isDown, bool isOver,
+                       const juce::Colour noteFillColour) override
+    {
+        juce::Colour c(noteFillColour);
+
+        if (isDown)  c = c.overlaidWith(findColour(keyDownOverlayColourId));
+        if (isOver)  c = c.overlaidWith(findColour(mouseOverKeyOverlayColourId));
+
+        g.setColour(c);
+        g.fillRect(area);
+
+        g.setColour(noteFillColour);
+        g.drawRect(area);
+    }
+
+    juce::Range<float> getKeyPosition(int midiNoteNumber) const
+    {
+        return juce::MidiKeyboardComponent::getKeyPosition(
+            midiNoteNumber,
+            getKeyWidth()
+        );
+    }
+
+    juce::String getWhiteNoteText(int midiNoteNumber) override
+    {
+        if (midiNoteNumber % 12 == 0)
+            return juce::MidiMessage::getMidiNoteName(
+                midiNoteNumber,
+                true,
+                true,
+                getOctaveForMiddleC() + 1
+            );
+
+        return {};
+    }
+private:
+    // see https://forum.juce.com/t/midikeyboardstate-is-not-threadsafe/40067
+    // seems that this fix didn't make it into juce 6.1.2
+    // (there should be updates in handleNoteOn, handleNoteOff and timerCallback
+    // too)
+    //std::atomic<bool> noPendingUpdates = { true };
+};
+
+//==============================================================================
+// our DbRangesMidiKeyboardComponent class
+//==============================================================================
+
+class DbRangesMidiKeyboardComponent : public juce::Component,
+                                      public VoiceManagerState::Listener
+{
+private:
+    MidiKeyboardLookAndFeel mklaf;
+    MidiKeyboardLabelLookAndFeel mkllaf;
+
+    CustomMidiKeyboardComponent keyboard;
+    VoiceManagerState& voiceManagerState;
+
+    juce::Rectangle<int> dbRangesBounds;
+
+    juce::Rectangle<int> lowDbRange;
+    juce::Label lowDbRangeLabel;
+    juce::Rectangle<int> midDbRange;
+    juce::Label midDbRangeLabel;
+    juce::Rectangle<int> highDbRange;
+    juce::Label highDbRangeLabel;
+
+    std::shared_ptr<sirenData> data;
+
+public:
+    DbRangesMidiKeyboardComponent(juce::MidiKeyboardState& s,
+                                  VoiceManagerState& vms,
+                                  const juce::String& name = "") :
+        Component(name),
+        keyboard(s, juce::MidiKeyboardComponent::horizontalKeyboard),
+        voiceManagerState(vms)
+    {
+        voiceManagerState.addListener(this);
+
+        //    keyboard.setEnabled(false);
+        keyboard.setAvailableRange(24, 95);
+        keyboard.setBlackNoteLengthProportion(0.5f);
+        keyboard.setScrollButtonsVisible(false);
+        // keyboard.setScrollButtonWidth(0);
+        keyboard.setLookAndFeel(&mklaf);
+        addAndMakeVisible(keyboard);
+
+        const juce::FontOptions f{10.0f, juce::Font::plain};
+
+        lowDbRangeLabel.setText("VOL 1", juce::dontSendNotification);
+        lowDbRangeLabel.setJustificationType(juce::Justification::centred);
+        lowDbRangeLabel.setFont(f);
+        lowDbRangeLabel.setLookAndFeel(&mkllaf);
+        addAndMakeVisible(lowDbRangeLabel);
+
+        midDbRangeLabel.setText("VOL 2", juce::dontSendNotification);
+        midDbRangeLabel.setJustificationType(juce::Justification::centred);
+        midDbRangeLabel.setFont(f);
+        midDbRangeLabel.setLookAndFeel(&mkllaf);
+        addAndMakeVisible(midDbRangeLabel);
+
+        highDbRangeLabel.setText("VOL 3", juce::dontSendNotification);
+        highDbRangeLabel.setJustificationType(juce::Justification::centred);
+        highDbRangeLabel.setFont(f);
+        highDbRangeLabel.setLookAndFeel(&mkllaf);
+        addAndMakeVisible(highDbRangeLabel);
+
+        // setCurrentChannel({.oneBased=1});
+        setCurrentSirenCategory(Alto);
+    }
+  
+    ~DbRangesMidiKeyboardComponent() override
+    {
+        voiceManagerState.removeListener(this);
+    }
+
+    // VoiceManagerState callback
+    void categoryChanged(sirenCategory category) override
+    {
+        setCurrentSirenCategory(category);
+    }
+
+    void setCurrentSirenCategory(sirenCategory c)
+    {
+        data = sirenPropertiesByCategory.at(c);
+        resized();
+        repaint();
+    }
+
+    void setCurrentChannel(OneBasedMidiChannel midiChannel)
+    {
+        // careful, could throw an out_of_bounds exception if midiChannel is invalid
+        if (sirenPropertiesByChannel.find(midiChannel) !=
+            sirenPropertiesByChannel.end())
+        {
+            data = sirenPropertiesByChannel.at(midiChannel);
+            keyboard.setMidiChannel(midiChannel.oneBased);
+            resized();
+            repaint();
+        }
+    }
+
+    void paint(juce::Graphics& g) override
+    {
+        g.setColour(juce::Colour(0x77ffffff));
+        g.drawRect(dbRangesBounds.toFloat(), 1.0f);
+
+        g.setColour(juce::Colour(mecaviv::Colours::MidiKeyboard::lowLevelRed));
+        g.fillRect(lowDbRange);
+
+        g.setColour(juce::Colour(mecaviv::Colours::MidiKeyboard::midLevelRed));
+        g.fillRect(midDbRange);
+
+        g.setColour(juce::Colour(mecaviv::Colours::MidiKeyboard::highLevelRed));
+        g.fillRect(highDbRange);
+    }
+
+    void paintOverChildren(juce::Graphics& g) override
+    {
+        const juce::Rectangle<float>
+        low = lowDbRange.toFloat(),
+        mid = midDbRange.toFloat(),
+        high = highDbRange.toFloat();
+
+        g.setColour(juce::Colour(mecaviv::Colours::MidiKeyboard::dbRangeSeparatorBlue));
+        const float top = static_cast<float>(keyboard.getBounds().getCentreY());
+        g.drawLine(juce::Line<float>(juce::Point<float>(low.getX(), top), low.getBottomLeft()), 2.0f);
+        g.drawLine(juce::Line<float>(juce::Point<float>(mid.getX(), top), mid.getBottomLeft()), 2.0f);
+        g.drawLine(juce::Line<float>(juce::Point<float>(high.getX(), top), high.getBottomLeft()), 2.0f);
+        g.drawLine(juce::Line<float>(juce::Point<float>(high.getRight(), top), high.getBottomRight()), 2.0f);
+    }
+
+    void resized() override
+    {
+        int spacer = 3;
+        auto bounds = getLocalBounds().reduced(spacer);
+        float keyboardHeightRatio = 0.7f;
+        int keyboardHeight = bounds.getHeight() * keyboardHeightRatio - 0.5 * spacer;
+        int dbRangesHeight = bounds.getHeight() * (1.0f - keyboardHeightRatio) - 0.5 * spacer;
+
+        auto keyboardBounds = bounds;
+        keyboardBounds.setHeight(keyboardHeight);
+        keyboardBounds.setLeft(keyboardBounds.getX() - 1);
+        keyboardBounds.setBottom(keyboardBounds.getBottom() + 1);
+
+        keyboard.setBounds(keyboardBounds);
+        keyboard.setKeyWidth(keyboardBounds.getWidth() / 42.0f);
+
+        dbRangesBounds = bounds;
+        dbRangesBounds.setHeight(dbRangesHeight);
+        dbRangesBounds = dbRangesBounds.withBottomY(bounds.getBottom());
+
+        //float minLeft = dbRangesBounds.getX() + 1 + 1.0f; // border + half blue line thickness;
+        //float maxRight = dbRangesBounds.getRight() - 1 - 1.0f; // same;
+
+        juce::Rectangle<int>* ranges[] = { &lowDbRange, &midDbRange, &highDbRange };
+        juce::Label* labels[] = { &lowDbRangeLabel, &midDbRangeLabel, &highDbRangeLabel };
+
+        for (auto i = 0; i < 3; ++i)
+        {
+            *(ranges[i]) = dbRangesBounds;
+            auto minMaxNote = data->velocityRanges[i];
+            auto [ min, max ] = minMaxNote;
+            /*
+            ranges[i]->setLeft(jmax(keyboard.getKeyPosition(min - 12).getStart() + spacer,
+                                  minLeft));
+            ranges[i]->setRight(jmin(keyboard.getKeyPosition(max - 12).getEnd() + spacer,
+                                   maxRight));
+            //*/
+            ranges[i]->setLeft(keyboard.getKeyPosition(min - 12).getStart() + spacer);
+            ranges[i]->setRight(keyboard.getKeyPosition(max - 12).getEnd() + spacer);
+            ranges[i]->reduce(0,1);
+            labels[i]->setBounds(*ranges[i]);
+        }
+    }
+};
+
+#endif  // COMPOSESIREN_DBRANGES_MIDIKEYBOARDCOMPONENT_H
