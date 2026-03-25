@@ -290,7 +290,7 @@ inline const std::vector<sirenData> sirenProperties = {
       , .category = Tenor
       , .resourceFileNames = {
           "dataAmpS4",
-          "dataFreqS3",
+          "dataFreqS4",
           "datadureTabsS4",
           "dataVectorIntervalS4"
         }
