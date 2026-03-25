@@ -34,12 +34,12 @@ OneSirenPluginProcessor::OneSirenPluginProcessor() :
     getResourcesPathFunction(getResourcesPathGetter())
 {
     vms.addListener(this);
+    // startTimer(1);
 }
 
 OneSirenPluginProcessor::~OneSirenPluginProcessor()
 {
     vms.removeListener(this);
-    std::cout << "processor destructor called" << std::endl;
     delete currentSiren.load();
     delete discardedSiren.load();
 }
@@ -123,6 +123,14 @@ void OneSirenPluginProcessor::midiOutputChanged(AnyOrOneBasedMidiChannel outch)
     router.setOutputMidiChannel(outch);
 }
 
+// void OneSirenPluginProcessor::timerCallback()
+// {
+//     if (sirenIsLoading.load(std::memory_order_acquire)) { return; }
+//     auto siren = currentSiren.load(std::memory_order_acquire);
+//     if (siren == nullptr) { return; }
+//     siren->update();
+// }
+
 //==============================================================================
 // PROCESS BLOCK
 //==============================================================================
@@ -133,6 +141,7 @@ void OneSirenPluginProcessor::setSirenId(sirenId id)
     // https://www.modernescpp.com/index.php/a-lock-free-stack-atomic-smart-pointer/
     sirenIsLoading.store(true, std::memory_order_release);
     auto* newSiren = new SirenVoice(id, getResourcesPath());
+    newSiren->setSampleRate(lastSampleRate);
     auto* oldSiren = currentSiren.exchange(newSiren, std::memory_order_acq_rel);
     // safe to delete the old Siren at the end of processBlock, the audio thread
     // might still be using it right now (think in terms of ownership horizon)
@@ -191,8 +200,8 @@ void OneSirenPluginProcessor::processBlock(juce::AudioBuffer<float>& audio,
     auto* lch = audio.getWritePointer(0);
     auto* rch = audio.getWritePointer(1);
 
-    MidiBufferIterator midiIt = midiIn.findNextSamplePosition(0);
-    MidiMessageMetadata metadata;
+    juce::MidiBufferIterator midiIt = midiIn.findNextSamplePosition(0);
+    juce::MidiMessageMetadata metadata;
     int nextPosition = -1;
     if (midiIt != midiIn.cend()) {
         metadata = *midiIt;
