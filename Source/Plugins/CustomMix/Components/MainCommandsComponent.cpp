@@ -35,7 +35,7 @@ MainCommandsComponent::MainCommandsComponent(SirenePlugAudioProcessor& p)
     // resetButton.setColour(juce::TextButton::buttonOnColourId , juce::Colours::grey);
     resetButton.setColour(juce::TextButton::textColourOffId , juce::Colours::black);
     resetButton.setButtonText ("Reset");
-    /*
+    //*
     resetButton.onClick = [this]()
     {
         std::cout << "Reset"<<std::endl;
@@ -47,7 +47,7 @@ MainCommandsComponent::MainCommandsComponent(SirenePlugAudioProcessor& p)
         audioProcessor.myMidiInHandler -> resetSireneCh(6);
         audioProcessor.myMidiInHandler -> resetSireneCh(7);
     };
-    */
+    //*/
     addAndMakeVisible(resetButton);
 
     showResourcesButton.setColour(juce::TextButton::buttonColourId, juce::Colours::whitesmoke);
