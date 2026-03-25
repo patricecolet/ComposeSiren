@@ -16,9 +16,13 @@ namespace controlStripLayout
 constexpr float spacerSize{2};
 constexpr float groupLabelHeight{16};
 constexpr float groupLabelFontSize{12};
-constexpr float sliderLabelHeight{14};
-constexpr float sliderLabelFontSize{12};
-constexpr float minSliderHeight{70};
+// constexpr float sliderLabelHeight{14};
+// constexpr float sliderLabelFontSize{12};
+// constexpr float minSliderHeight{70};
+// constexpr float minKnobSliderWidth{47};
+constexpr float sliderLabelHeight{28};
+constexpr float sliderLabelFontSize{11.5};
+constexpr float minSliderHeight{65};
 constexpr float minKnobSliderWidth{47};
 constexpr float minIncDecSliderWidth{70};
 }

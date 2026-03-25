@@ -11,6 +11,13 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     apvts(vts),
     currentCategory(Alto)
 {
+    auto appendCCNumber = [&](const std::string& s, const ParameterId id) -> std::string {
+        if (auto cc = std::get_if<CCParam>(&parameterDefinitionById.at(id)->data)) {
+            return s + std::string("\ncc") + std::to_string(cc->midiCCNumber) + "";
+        }
+        return s;
+    };
+
     // Titre
     // titleLabel.setText("Siren", juce::dontSendNotification);
     // titleLabel.setJustificationType(juce::Justification::centred);
@@ -84,9 +91,11 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     startGroup.addAndMakeVisible(pitchBend);
 
     // Pitch Bend Range --------------------------------------------------------
-    pitchBendRange.setNameText("Bend Range");
+    pitchBendRange.setNameText(
+        appendCCNumber("Bend Range", ParameterId::PitchBendRange)
+    );
+    // pitchBendRange.setNameText("Bend Range");
     // pitchBendRange.setRange(1, 36, 1);
-    pitchBendRange.setMinWidth(70);
     pitchBendRange.setSliderAttachment(vts,
                                        ParameterId::PitchBendRange,
                                        paramGroupId);
@@ -104,7 +113,6 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     // Transpose ---------------------------------------------------------------
     transpose.setNameText("Transpose");
     // transpose.setRange(-24, 24, 1);
-    transpose.setMinWidth(70);
     transpose.setSliderAttachment(vts,
                                   ParameterId::Transpose,
                                   paramGroupId);
@@ -120,7 +128,10 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     startGroup.addAndMakeVisible(transpose);
 
     // Portamento --------------------------------------------------------------
-    portamento.setNameText("Porta");
+    portamento.setNameText(
+        appendCCNumber("Porta", ParameterId::Portamento)
+    );
+    // portamento.setNameText("Porta");
     portamento.setSliderAttachment(vts,
                                    ParameterId::Portamento,
                                    paramGroupId);
@@ -132,7 +143,10 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     // Vib group knobs =========================================================
 
     // Speed -------------------------------------------------------------------
-    vibSpeed.setNameText("Speed");
+    vibSpeed.setNameText(
+        appendCCNumber("Speed", ParameterId::VibratoFrequency)
+    );
+    // vibSpeed.setNameText("Speed");
     vibSpeed.setSliderAttachment(vts,
                                  ParameterId::VibratoFrequency,
                                  paramGroupId);
@@ -142,7 +156,10 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     vibGroup.addAndMakeVisible(vibSpeed);
 
     // Depth -------------------------------------------------------------------
-    vibDepth.setNameText("Depth");
+    vibDepth.setNameText(
+       appendCCNumber("Depth", ParameterId::VibratoAmplitude)
+    );
+    // vibDepth.setNameText("Depth");
     vibDepth.setSliderAttachment(vts,
                                  ParameterId::VibratoAmplitude,
                                  paramGroupId);
@@ -153,7 +170,10 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
 
     // Evolve ------------------------------------------------------------------
     // Propagate ? or Evolve ? Drift ? Envelope ? Progress ? Rise ?
-    vibAccel.setNameText("Evolve");
+    vibAccel.setNameText(
+       appendCCNumber("Evolve", ParameterId::VibratoAcceleration)
+    );
+    // vibAccel.setNameText("Evolve");
     vibAccel.setSliderAttachment(vts,
                                  ParameterId::VibratoAcceleration,
                                  paramGroupId);
@@ -165,7 +185,10 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     // Trem group knobs ========================================================
 
     // Speed -------------------------------------------------------------------
-    tremSpeed.setNameText("Speed");
+    tremSpeed.setNameText(
+       appendCCNumber("Speed", ParameterId::TremoloFrequency)
+    );
+    // tremSpeed.setNameText("Speed");
     tremSpeed.setSliderAttachment(vts,
                                   ParameterId::TremoloFrequency,
                                   paramGroupId);
@@ -175,7 +198,10 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     tremGroup.addAndMakeVisible(tremSpeed);
 
     // Depth -------------------------------------------------------------------
-    tremDepth.setNameText("Depth");
+    tremDepth.setNameText(
+       appendCCNumber("Depth", ParameterId::TremoloAmplitude)
+    );
+    // tremDepth.setNameText("Depth");
     tremDepth.setSliderAttachment(vts,
                                   ParameterId::TremoloAmplitude,
                                   paramGroupId);
@@ -187,7 +213,10 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     // Env group knobs =========================================================
 
     // Attack ------------------------------------------------------------------
-    envAttack.setNameText("Attack");
+    envAttack.setNameText(
+       appendCCNumber("Attack", ParameterId::AttackDuration)
+    );
+    // envAttack.setNameText("Attack");
     envAttack.setSliderAttachment(vts,
                                   ParameterId::AttackDuration,
                                   paramGroupId);
@@ -197,7 +226,10 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     envGroup.addAndMakeVisible(envAttack);
 
     // Release -----------------------------------------------------------------
-    envRelease.setNameText("Release");
+    envRelease.setNameText(
+       appendCCNumber("Release", ParameterId::ReleaseDuration)
+    );
+    // envRelease.setNameText("Release");
     envRelease.setSliderAttachment(vts,
                                    ParameterId::ReleaseDuration,
                                    paramGroupId);
@@ -209,7 +241,10 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     // End group knobs =========================================================
 
     // Timbre ------------------------------------------------------------------
-    timbre.setNameText("Timbre");
+    timbre.setNameText(
+       appendCCNumber("Timbre", ParameterId::Timbre)
+    );
+    // timbre.setNameText("Timbre");
     timbre.setSliderAttachment(vts,
                                ParameterId::Timbre,
                                paramGroupId);
@@ -219,7 +254,10 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     endGroup.addAndMakeVisible(timbre);
 
     // Mute --------------------------------------------------------------------
-    mute.setNameText("Mute");
+    mute.setNameText(
+       appendCCNumber("Mute", ParameterId::Mute)
+    );
+    // mute.setNameText("Mute");
     mute.setSliderAttachment(vts,
                              ParameterId::Mute,
                              paramGroupId);
@@ -229,7 +267,10 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     endGroup.addAndMakeVisible(mute);
 
     // Volume ------------------------------------------------------------------
-    volume.setNameText("Volume");
+    volume.setNameText(
+       appendCCNumber("Volume", ParameterId::Volume)
+    );
+    // volume.setNameText("Volume");
     volume.setSliderAttachment(vts,
                                ParameterId::Volume,
                                paramGroupId);
