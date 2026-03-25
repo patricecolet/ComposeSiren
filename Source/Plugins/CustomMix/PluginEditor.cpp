@@ -6,9 +6,11 @@
   ==============================================================================
 */
 
+#define STRINGIFY(x) #x
+#define XSTRINGIFY(x) STRINGIFY(x)
+
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-#include "config.h"
 #include <iostream>
 #include <sstream>
 
@@ -24,9 +26,9 @@ HeadComponent::HeadComponent()
   std::stringstream versionText;
   versionText
       << "v"
-      << PROJECT_VERSION_MAJOR << "."
-      << PROJECT_VERSION_MINOR << "."
-      << PROJECT_VERSION_PATCH
+      << XSTRINGIFY(PROJECT_VERSION_MAJOR) << "."
+      << XSTRINGIFY(PROJECT_VERSION_MINOR) << "."
+      << XSTRINGIFY(PROJECT_VERSION_PATCH)
       ;
 
   auto concatenatedString = versionText.str();
@@ -37,7 +39,7 @@ HeadComponent::HeadComponent()
   labelPluginTitle.setJustificationType (juce::Justification::centredLeft);
   labelPluginTitle.setColour (juce::Label::textColourId, juce::Colours::whitesmoke);
 
-  std::string description = "custom-mix - " + std::string(PROJECT_DESCRIPTION);
+  std::string description = "custom-mix - " + std::string(XSTRINGIFY(PROJECT_DESCRIPTION));
   labelPluginSubTitle.setText(description, juce::dontSendNotification);
   labelPluginSubTitle.setFont (juce::FontOptions (12.0f, juce::Font::italic));
   labelPluginSubTitle.setJustificationType (juce::Justification::centredLeft);
