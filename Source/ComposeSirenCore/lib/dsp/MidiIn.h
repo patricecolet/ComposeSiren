@@ -86,13 +86,13 @@ private:
 	int countCreateRelease = 0;
 	int countCreateAttack = 0;
 
-	// valeur maxi de l'amplitude VFO en % de la vitesse correspondant ‡ une note
+	// valeur maxi de l'amplitude VFO en % de la vitesse correspondant a une note
 	// was #define constescursion 10
 	float constescursion = 10;
 
 	// those already were simple numbers
 	double sampleRate = 44100;
-	float incrementationVibrato = (512.0 / sampleRate) / 0.025;;
+	float incrementationVibrato = (512.0 / sampleRate) / 0.025;
 	int countTimerAudio = 0;
 	int countVibra = 0;
 	// int pitch_bend; // not used

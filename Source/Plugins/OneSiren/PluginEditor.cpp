@@ -38,9 +38,12 @@ OneSirenPluginEditor::~OneSirenPluginEditor()
 }
 //==============================================================================
 // AudioProcessorEditor
-void OneSirenPluginEditor::paint (juce::Graphics&)
+void OneSirenPluginEditor::paint (juce::Graphics& g)
 {
-    // nothing for now
+    g.setColour(juce::Colours::black);
+    g.fillRect(getLocalBounds().toFloat());
+    g.setColour(juce::Colour{mecaviv::Colours::darkTransparentBackground});
+    g.fillRect(getLocalBounds().toFloat());
 }
 
 void OneSirenPluginEditor::resized()

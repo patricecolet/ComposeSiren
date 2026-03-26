@@ -20,8 +20,8 @@ class MidiRouter
     AnyOrOneBasedMidiChannel outch;
     OneBasedMidiChannel defaultInputChannel = {.oneBased=1};
 
-    double sampleRate = 44100.0;
-    float emitRateHz = 50.0f;
+    // double sampleRate = 44100.0;
+    // float emitRateHz = 50.0f;
     // float emitPeriodMs = 1000.0f / emitRateHz;
     // int emitPeriodSamples
     //     = std::max(static_cast<int>(emitPeriodMs * 0.001 * sampleRate), 1);

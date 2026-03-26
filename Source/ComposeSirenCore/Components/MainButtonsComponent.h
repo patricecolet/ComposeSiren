@@ -6,6 +6,7 @@
 #define COMPOSESIREN_RESETCOMPONENT_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include "../lib/definitions/palette.h"
 
 class MainButtonsComponent : public juce::Component,
                              public juce::TextButton::Listener
@@ -21,7 +22,6 @@ public:
 
     MainButtonsComponent(Listener& l) : listener(l)
     {
-        auto darkTransBg = juce::Colour{0xff283541}.withAlpha(0.95f);
 
         resetButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkred);
         resetButton.setColour(juce::TextButton::textColourOffId , juce::Colours::whitesmoke);
@@ -29,7 +29,10 @@ public:
         resetButton.addListener(this);
         addAndMakeVisible(resetButton);
 
-        selectResourcesButton.setColour(juce::TextButton::buttonColourId, darkTransBg);
+        selectResourcesButton.setColour(
+            juce::TextButton::buttonColourId,
+            juce::Colour{mecaviv::Colours::darkTransparentBackground}
+        );
         selectResourcesButton.setColour(juce::TextButton::textColourOffId , juce::Colours::whitesmoke);
         selectResourcesButton.setButtonText("Set resources directory");
         selectResourcesButton.addListener(this);
@@ -42,8 +45,8 @@ public:
 
     void paint(juce::Graphics& g) override
     {
-        g.setColour(juce::Colour{0xff314159});
-        g.fillRect(getLocalBounds().toFloat());
+        // g.setColour(juce::Colour{0xff314159});
+        // g.fillRect(getLocalBounds().toFloat());
     }
 
     void resized() override

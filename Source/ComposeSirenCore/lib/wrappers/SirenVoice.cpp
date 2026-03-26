@@ -11,13 +11,15 @@ SirenVoice::SirenVoice(sirenId sid, const std::string& resourcesPath) :
 {
     data = sirenPropertiesById.at(id);
     siren = std::make_unique<Sirene>(id, resourcesPath);
+    // attempt to get rid of aliasing-like sounds in last note of soprano/piccolo
+    // siren->changeQualite(20);
 
     auto onVolumeChanged = [this](float v) { siren->setVelocite(v);    };
     auto onNoteChanged   = [this](float v) { siren->setnoteFromExt(v); };
 
     midiIn = std::make_unique<MidiIn>(id, onVolumeChanged, onNoteChanged);
     // midiIn->resetSirene();
-    setSampleRate(44100.0);
+    // setSampleRate(44100.0);
 }
 
 //==============================================================================
@@ -26,7 +28,8 @@ SirenVoice::SirenVoice(sirenId sid, const std::string& resourcesPath) :
 void SirenVoice::setSampleRate(double newSampleRate) {
     sampleRate = newSampleRate;
     // original 1kHz juce::Timer frequency for siren->setnote() callback
-    setNoteCallbackPeriodSamples = static_cast<int>(sampleRate * 0.001f);
+    float updateFrequency = 1000.0f;
+    setNoteCallbackPeriodSamples = static_cast<int>(sampleRate / updateFrequency);
     midiIn->setSampleRate(sampleRate);
     siren->setSampleRate(sampleRate);
 }
@@ -61,6 +64,9 @@ float SirenVoice::process() {
     // implement this with a counter
     // todo : try varying the block size and listen.
     //  does it really make any difference ? could it be called sample-wise ?
+    //  -> answer : both counters just modify the inertia of the rotor
+    //  (ie : scale portamento time by a certain amount)
+    //  these don't seem very critical, so let's keep them as they were.
     if (sampleCountForMidiInTimer % 512 == 0) {
         midiIn->timerAudio();
         sampleCountForMidiInTimer = 0;
