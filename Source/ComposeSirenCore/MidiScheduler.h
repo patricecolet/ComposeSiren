@@ -15,16 +15,13 @@ public:
         events[count++] = { msg, offset };
     }
 
-    void flush(juce::MidiBuffer& buffer, AnyOrOneBasedMidiChannel outch = AnyMidiChannel{}) {
-        if (auto* oc = std::get_if<OneBasedMidiChannel>(&outch)) {
-            for (int i = 0; i < count; ++i) {
-                events[i].msg.setChannel(oc->oneBased);
-                buffer.addEvent(events[i].msg, events[i].offset);
+    void flush(juce::MidiBuffer& buffer,
+               AnyOrOneBasedMidiChannel outch = AnyOrOneBasedMidiChannel::any()) {
+        for (int i = 0; i < count; ++i) {
+            if (!outch.isAny) {
+                events[i].msg.setChannel(outch.channel.oneBased);
             }
-        } else {
-            for (int i = 0; i < count; ++i) {
-                buffer.addEvent(events[i].msg, events[i].offset);
-            }
+            buffer.addEvent(events[i].msg, events[i].offset);
         }
         count = 0;
     }

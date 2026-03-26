@@ -49,8 +49,8 @@ public:
     MidiRouter(const parameterLayoutGroupData& layoutData,
                juce::AudioProcessorValueTreeState& vts,
                juce::MidiKeyboardState& kbs) :
-        inch(AnyMidiChannel{}),
-        outch(AnyMidiChannel{})
+        inch(AnyOrOneBasedMidiChannel::any()),
+        outch(AnyOrOneBasedMidiChannel::any())
     {
         noteBridge = std::make_unique<KeyboardMidiBridge>(layoutData,
                                                           vts,
@@ -87,7 +87,7 @@ public:
         return inch;
     }
 
-    void setInputMidiChannel(AnyOrOneBasedMidiChannel ch) {
+    void setInputMidiChannel(const AnyOrOneBasedMidiChannel& ch) {
         inch = ch;
         // flushPendingNoteEvents();
     }
@@ -96,12 +96,12 @@ public:
         return outch;
     }
 
-    void setOutputMidiChannel(AnyOrOneBasedMidiChannel ch) {
+    void setOutputMidiChannel(const AnyOrOneBasedMidiChannel& ch) {
         // flushPendingNoteEvents();
 
         std::function<int(int)> mapChannel = [](int c) { return c; };
-        if (auto* oc = std::get_if<OneBasedMidiChannel>(&ch)) {
-            mapChannel = [val = oc->oneBased](int) { return val; };
+        if (!ch.isAny) {
+            mapChannel = [val = ch.channel.oneBased](int) { return val; };
         }
 
         for (const auto& bridge : bridgeByCCNumber | std::views::values) {
@@ -130,8 +130,8 @@ public:
                        const juce::MidiMessage& msg,
                        int samplePosition)
     {
-        if (auto* ic = std::get_if<OneBasedMidiChannel>(&inch)) {
-            if (ic->oneBased != msg.getChannel()) { return; }
+        if (!inch.isAny && msg.getChannel() != inch.channel.oneBased) {
+            return;
         }
 
         if (msg.isController() && bridgeByCCNumber.contains(msg.getControllerNumber())) {

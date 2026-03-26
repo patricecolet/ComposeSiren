@@ -24,8 +24,8 @@ public:
 
     VoiceManagerState() :
         c(sirenCategory::Alto),
-        i(AnyMidiChannel{}),
-        o(AnyMidiChannel{})
+        i(AnyOrOneBasedMidiChannel::any()),
+        o(AnyOrOneBasedMidiChannel::any())
     {}
 
     ~VoiceManagerState() = default;

@@ -33,8 +33,28 @@ struct OneBasedMidiChannel {
     explicit operator ZeroBasedMidiChannel() const;
 };
 
-struct AnyMidiChannel {};
-using AnyOrOneBasedMidiChannel = std::variant<OneBasedMidiChannel, AnyMidiChannel>;
+struct AnyOrOneBasedMidiChannel {
+    bool isAny;
+    OneBasedMidiChannel channel;
+
+    AnyOrOneBasedMidiChannel(bool any, OneBasedMidiChannel c) :
+        isAny(any), channel({c.oneBased}) {}
+    AnyOrOneBasedMidiChannel() :
+        isAny(true), channel({.oneBased=1}) {}
+    AnyOrOneBasedMidiChannel(int c) :
+        isAny(false), channel({.oneBased=c}) {}
+    AnyOrOneBasedMidiChannel(const AnyOrOneBasedMidiChannel& other) = default;
+
+    static AnyOrOneBasedMidiChannel any() {
+        return { true, {1} };
+    }
+    static AnyOrOneBasedMidiChannel specific(const OneBasedMidiChannel& c) {
+        return { false, {c} };
+    }
+
+    bool operator==(const AnyOrOneBasedMidiChannel& other) const;
+    bool operator<(const AnyOrOneBasedMidiChannel& other) const;
+};
 
 // for (approximate) reference :
 // sources :

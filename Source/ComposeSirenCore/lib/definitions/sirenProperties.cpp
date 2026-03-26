@@ -9,6 +9,16 @@ OneBasedMidiChannel::operator ZeroBasedMidiChannel() const                    { 
 bool OneBasedMidiChannel::operator< (const OneBasedMidiChannel& other) const  { return this->oneBased < other.oneBased; }
 bool OneBasedMidiChannel::operator== (const OneBasedMidiChannel& other) const { return this->oneBased == other.oneBased; }
 
+bool AnyOrOneBasedMidiChannel::operator< (const AnyOrOneBasedMidiChannel& other) const {
+    return isAny < other.isAny
+           || (isAny == other.isAny && channel < other.channel);
+}
+
+bool AnyOrOneBasedMidiChannel::operator== (const AnyOrOneBasedMidiChannel& other) const {
+    return (isAny && other.isAny) // if isAny we have equality regardless of the channel
+           || (!isAny && !other.isAny && channel == other.channel);
+}
+
 std::map<int, std::tuple<int, int>> VelocityRanges::makeForCategory(const sirenCategory& c)
 {
     // std::cout << "making velocity ranges for category " << c << std::endl;

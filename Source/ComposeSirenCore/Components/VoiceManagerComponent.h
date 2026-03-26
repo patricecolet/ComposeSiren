@@ -47,8 +47,7 @@ class VoiceManagerComponent : public juce::Component,
         { 5, sirenCategory::Piccolo }
     };
 
-    const std::map<sirenCategory, int> indexByCategory = [this]()
-    {
+    const std::map<sirenCategory, int> indexByCategory = [this]() {
         std::map<sirenCategory, int> res;
         for (auto& p : categoryByIndex) {
             res[p.second] = p.first;
@@ -57,25 +56,20 @@ class VoiceManagerComponent : public juce::Component,
     }();
 
     const std::map<int, AnyOrOneBasedMidiChannel> channelByIndex{
-        { 1, OneBasedMidiChannel{.oneBased = 1} },
-        { 2, OneBasedMidiChannel{.oneBased = 2} },
-        { 3, OneBasedMidiChannel{.oneBased = 3} },
-        { 4, OneBasedMidiChannel{.oneBased = 4} },
-        { 5, OneBasedMidiChannel{.oneBased = 5} },
-        { 6, OneBasedMidiChannel{.oneBased = 6} },
-        { 7, OneBasedMidiChannel{.oneBased = 7} },
-        { 8, AnyMidiChannel{}                   }
+        { 1, AnyOrOneBasedMidiChannel::specific({1}) },
+        { 2, AnyOrOneBasedMidiChannel::specific({2}) },
+        { 3, AnyOrOneBasedMidiChannel::specific({3}) },
+        { 4, AnyOrOneBasedMidiChannel::specific({4}) },
+        { 5, AnyOrOneBasedMidiChannel::specific({5}) },
+        { 6, AnyOrOneBasedMidiChannel::specific({6}) },
+        { 7, AnyOrOneBasedMidiChannel::specific({7}) },
+        { 8, AnyOrOneBasedMidiChannel::any() },
     };
 
-    const std::map<AnyOrOneBasedMidiChannel, int> indexByChannel = [this]()
-    {
+    const std::map<AnyOrOneBasedMidiChannel, int> indexByChannel = [this]() {
         std::map<AnyOrOneBasedMidiChannel, int> res;
         for (auto& p : channelByIndex) {
-            if (auto* c = std::get_if<OneBasedMidiChannel>(&p.second)) {
-                res[OneBasedMidiChannel{c->oneBased}] = p.first;
-            } else {
-                res[AnyMidiChannel{}] = p.first;
-            }
+            res[p.second] = p.first;
         }
         return res;
     }();
@@ -86,7 +80,7 @@ class VoiceManagerComponent : public juce::Component,
 
     LabelLAF labelLAF;
     ComboBoxLookAndFeel comboLAF{
-        juce::Colour{0xff283541}.withAlpha(0.95f),
+        juce::Colour{mecaviv::Colours::darkTransparentBackground},
         juce::Colours::whitesmoke
     };
 
@@ -141,30 +135,19 @@ public:
             juce::dontSendNotification
         );
 
-        AnyOrOneBasedMidiChannel inChannel = voiceManagerState.getMidiInput();
-        if (auto* ic = std::get_if<OneBasedMidiChannel>(&inChannel)) {
-            inputChannel.setSelectedId(
-                ic->oneBased,
-                juce::dontSendNotification
-            );
-        } else {
-            inputChannel.setSelectedId(8);
-        }
+        inputChannel.setSelectedId(
+            indexByChannel.at(voiceManagerState.getMidiInput()),
+            juce::dontSendNotification
+        );
 
-        AnyOrOneBasedMidiChannel outChannel = voiceManagerState.getMidiOutput();
-        if (auto* oc = std::get_if<OneBasedMidiChannel>(&outChannel)) {
-            outputChannel.setSelectedId(
-                oc->oneBased,
-                juce::dontSendNotification
-            );
-        } else {
-            outputChannel.setSelectedId(8);
-        }
+        outputChannel.setSelectedId(
+            indexByChannel.at(voiceManagerState.getMidiOutput()),
+            juce::dontSendNotification
+        );
     }
 
     ~VoiceManagerComponent() override
     {
-        voiceManagerState.removeListener(this);
         for (auto* menu : menus) {
             menu->setLookAndFeel(nullptr);
             menu->removeListener(this);
