@@ -68,7 +68,8 @@ static void c_siren_tilde_note(t_c_siren_tilde* x, t_floatarg f_note, t_floatarg
   else x->engine->noteOff(note);
 }
 
-static void c_siren_tilde_cc(t_c_siren_tilde* x, t_floatarg f_cc, t_floatarg f_val) {
+// ctl <valeur> <numCTL> — valeur puis numéro de contrôleur (ComposeSiren)
+static void c_siren_tilde_ctl(t_c_siren_tilde* x, t_floatarg f_val, t_floatarg f_cc) {
   x->engine->controlChange(static_cast<int>(f_cc), static_cast<int>(f_val));
 }
 
@@ -151,7 +152,7 @@ extern "C" void c_siren_tilde_setup(void) {
 
   class_addmethod(c_siren_tilde_class, reinterpret_cast<t_method>(c_siren_tilde_dsp), gensym("dsp"), A_CANT, A_NULL);
   class_addmethod(c_siren_tilde_class, reinterpret_cast<t_method>(c_siren_tilde_note), gensym("note"), A_FLOAT, A_FLOAT, A_NULL);
-  class_addmethod(c_siren_tilde_class, reinterpret_cast<t_method>(c_siren_tilde_cc), gensym("cc"), A_FLOAT, A_FLOAT, A_NULL);
+  class_addmethod(c_siren_tilde_class, reinterpret_cast<t_method>(c_siren_tilde_ctl), gensym("ctl"), A_FLOAT, A_FLOAT, A_NULL);
   class_addmethod(c_siren_tilde_class, reinterpret_cast<t_method>(c_siren_tilde_bend), gensym("bend"), A_GIMME, A_NULL);
   class_addmethod(c_siren_tilde_class, reinterpret_cast<t_method>(c_siren_tilde_reset), gensym("reset"), A_NULL);
   class_addmethod(c_siren_tilde_class, reinterpret_cast<t_method>(c_siren_tilde_resources), gensym("resources"), A_SYMBOL, A_NULL);

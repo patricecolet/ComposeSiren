@@ -41,7 +41,7 @@ Optionnel: second argument = chemin explicite des ressources:
 ## Messages supportes
 
 - `note <pitch> <vel>`: note on/off (vel=0 => off)
-- `cc <num> <val>`: Control Change 0..127
+- `ctl <valeur> <numCTL>`: Control Change (valeur 0..127, puis numéro de contrôleur)
 - `bend <value14>`: pitch bend 14-bit (0..16383)
 - `bend <lsb> <msb>`: pitch bend en deux octets
 - `reset`: reset de l'etat interne
