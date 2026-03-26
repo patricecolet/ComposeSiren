@@ -153,13 +153,16 @@ public:
         highDbRangeLabel.setLookAndFeel(&mkllaf);
         addAndMakeVisible(highDbRangeLabel);
 
-        // setCurrentChannel({.oneBased=1});
-        setCurrentSirenCategory(Alto);
+        setCurrentSirenCategory(voiceManagerState.getSirenCategory());
     }
   
     ~DbRangesMidiKeyboardComponent() override
     {
         voiceManagerState.removeListener(this);
+        keyboard.setLookAndFeel(nullptr);
+        lowDbRangeLabel.setLookAndFeel(nullptr);
+        midDbRangeLabel.setLookAndFeel(nullptr);
+        highDbRangeLabel.setLookAndFeel(nullptr);
     }
 
     // VoiceManagerState callback

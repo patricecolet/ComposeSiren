@@ -22,31 +22,46 @@ public:
         virtual void midiOutputChanged(AnyOrOneBasedMidiChannel) {}
     };
 
-    VoiceManagerState() = default;
+    VoiceManagerState() :
+        c(sirenCategory::Alto),
+        i(AnyMidiChannel{}),
+        o(AnyMidiChannel{})
+    {}
+
     ~VoiceManagerState() = default;
 
     void addListener(Listener* listener)    { listeners.insert(listener); }
     void removeListener(Listener* listener) { listeners.erase(listener); }
 
+    [[nodiscard]] const sirenCategory& getSirenCategory() const { return c; }
+    [[nodiscard]] const AnyOrOneBasedMidiChannel& getMidiInput() const { return i; }
+    [[nodiscard]] const AnyOrOneBasedMidiChannel& getMidiOutput() const { return o; }
+
     void setSirenCategory(sirenCategory category) {
+        c = category;
         for (const auto listener : listeners) {
-            listener->categoryChanged(category);
+            listener->categoryChanged(c);
         }
     }
 
     void setMidiInput(AnyOrOneBasedMidiChannel inch) {
+        i = inch;
         for (const auto listener : listeners) {
-            listener->midiInputChanged(inch);
+            listener->midiInputChanged(i);
         }
     }
     void setMidiOutput(AnyOrOneBasedMidiChannel outch) {
+        o = outch;
         for (const auto listener : listeners) {
-            listener->midiOutputChanged(outch);
+            listener->midiOutputChanged(o);
         }
     }
 
 private:
     std::set<Listener*> listeners;
+    sirenCategory c;
+    AnyOrOneBasedMidiChannel i;
+    AnyOrOneBasedMidiChannel o;
 };
 
 #endif //COMPOSESIREN_VOICEMANAGERSTATE_H

@@ -16,7 +16,7 @@
 
 class OneSirenPluginProcessor :
     public juce::AudioProcessor,
-    // public juce::Timer,
+    public juce::Timer,
     public VoiceManagerState::Listener,
     public MainButtonsComponent::Listener
 {
@@ -59,7 +59,7 @@ public:
     void midiInputChanged(AnyOrOneBasedMidiChannel) override;
     void midiOutputChanged(AnyOrOneBasedMidiChannel) override;
 
-    // void timerCallback() override;
+    void timerCallback() override;
 
     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 

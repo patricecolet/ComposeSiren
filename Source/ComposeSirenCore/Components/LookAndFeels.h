@@ -335,6 +335,8 @@ public:
         setColour(juce::Slider::textBoxOutlineColourId, juce::Colour{0x00000000});
     }
 
+    ~KnobLAF() override = default;
+
     juce::Font getLabelFont(juce::Label &) override
     {
         return juce::FontOptions{12.0f, juce::Font::plain};
@@ -529,6 +531,8 @@ public:
           BinaryData::basicknoboutline_svgSize
         );
     }
+
+    ~KnobLAF2() override = default;
 
     juce::Font getLabelFont(juce::Label &) override
     {
@@ -760,6 +764,7 @@ class KnobLAF3 : public KnobLAF
 
 public:
     KnobLAF3() = default;
+    ~KnobLAF3() override = default;
 
     void drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height,
                             float sliderPos,
@@ -951,7 +956,7 @@ public:
     );
   }
 
-  ~KnobLookAndFeel() {}
+  ~KnobLookAndFeel() override = default;
 
   void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
                         float sliderPosProportional,

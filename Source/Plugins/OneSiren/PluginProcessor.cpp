@@ -34,6 +34,8 @@ OneSirenPluginProcessor::OneSirenPluginProcessor() :
     getResourcesPathFunction(getResourcesPathGetter())
 {
     vms.addListener(this);
+    const sirenCategory defaultSirenCategory = vms.getSirenCategory();
+    setSirenId(sirenPropertiesByCategory.at(defaultSirenCategory)->id);
     // startTimer(1);
 }
 
@@ -123,13 +125,13 @@ void OneSirenPluginProcessor::midiOutputChanged(AnyOrOneBasedMidiChannel outch)
     router.setOutputMidiChannel(outch);
 }
 
-// void OneSirenPluginProcessor::timerCallback()
-// {
-//     if (sirenIsLoading.load(std::memory_order_acquire)) { return; }
-//     auto siren = currentSiren.load(std::memory_order_acquire);
-//     if (siren == nullptr) { return; }
-//     siren->update();
-// }
+void OneSirenPluginProcessor::timerCallback()
+{
+    if (sirenIsLoading.load(std::memory_order_acquire)) { return; }
+    auto siren = currentSiren.load(std::memory_order_acquire);
+    if (siren == nullptr) { return; }
+    siren->update();
+}
 
 //==============================================================================
 // PROCESS BLOCK

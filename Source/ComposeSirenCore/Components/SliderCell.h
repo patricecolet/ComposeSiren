@@ -32,6 +32,12 @@ public:
         addAndMakeVisible(slider);
     }
 
+    ~SliderCell() override
+    {
+        attachment.reset();
+        slider.setLookAndFeel(nullptr);
+    }
+
     void setNameText(const juce::String& text) {
         nameLabel.setText(text, juce::dontSendNotification);
     }
