@@ -61,7 +61,7 @@ void OneSirenPluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlo
 void OneSirenPluginProcessor::releaseResources()
 {
     // playback stops, good place to release unused memory
-};
+}
 
 #ifndef JucePlugin_PreferredChannelConfigurations
 bool OneSirenPluginProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
@@ -105,7 +105,7 @@ std::string OneSirenPluginProcessor::getResourcesPath()
 void OneSirenPluginProcessor::selectedNewResourcesPath(const std::string& s)
 {
     getResourcesPathFunction = getResourcesPathGetter();
-    // todo : trigger reload of current siren to force updating resources
+    setSirenId(defaultSirenIdByCategory.at(vms.getSirenCategory()));
 }
 
 // VoiceManager callbacks :
@@ -413,5 +413,3 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new OneSirenPluginProcessor();
 }
-
-
