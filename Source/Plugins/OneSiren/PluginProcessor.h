@@ -17,8 +17,8 @@
 class OneSirenPluginProcessor :
     public juce::AudioProcessor,
     public juce::Timer,
-    public VoiceManagerState::Listener,
-    public MainButtonsComponent::Listener
+    public MainButtonsComponent::Listener,
+    public VoiceManagerState::Listener
 {
 public:
     //==========================================================================
@@ -32,20 +32,6 @@ public:
 #ifndef JucePlugin_PreferredChannelConfigurations
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
 #endif
-
-    // MidiKeyboardState::Listener callbacks (called from UI thread)
-    // must write note events atomically to be sent from processBlock
-    //--------------------------------------------------------------------------
-    // void handleNoteOn(juce::MidiKeyboardState* source,
-    //                   int channel, int noteNumber, float velocity) override;
-    // void handleNoteOff(juce::MidiKeyboardState* source,
-    //                    int channel, int noteNumber, float velocity) override;
-
-    // AudioProcessorValueTreeState::Listener callback (called from UI thread)
-    // writes cc events atomically to be sent from processBlock
-    //--------------------------------------------------------------------------
-    // void parameterChanged(const juce::String& parameterID,
-    //                       float newValue) override;
 
     // MainButtonsComponents::Listener callbacks
     //--------------------------------------------------------------------------
@@ -98,19 +84,6 @@ public:
 private:
     // void initialiseUiState();
     void setSirenId(sirenId id);
-    //==========================================================================
-    // int* midiMessageIntArray;
-    // int* getIntFromMidiMessage(const void* data, int size);
-    // => obsolete !
-    // instead, use :
-    // auto status = msg.getRawData()[0];
-    // auto data1  = msg.getRawData()[1];
-    // auto data2  = msg.getRawData()[2];
-    // (see https://forum.juce.com/t/reading-midi-input/44721/5)
-
-    // those are encapsulated in SirenVoice class now :
-    // MidiIn* myMidiInHandler;
-    // Synth* mySynth;
 
     // needed by DSP
     double lastSampleRate;
@@ -132,6 +105,5 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OneSirenPluginProcessor)
 };
-
 
 #endif //ONESIREN_PLUGINPROCESSOR_H

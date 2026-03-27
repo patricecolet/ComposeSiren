@@ -44,9 +44,4 @@ private:
 	int		bufidx;
 };
 
-
 #endif //_comb_
-
-//ends
-
-

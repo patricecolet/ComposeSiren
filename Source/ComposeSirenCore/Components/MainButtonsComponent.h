@@ -142,5 +142,4 @@ private:
     std::unique_ptr<juce::FileChooser> fileChooser;
 };
 
-
 #endif //COMPOSESIREN_RESETCOMPONENT_H

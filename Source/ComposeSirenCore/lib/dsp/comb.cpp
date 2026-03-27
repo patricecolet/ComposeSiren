@@ -44,7 +44,3 @@ float comb::getfeedback()
 {
 	return feedback;
 }
-
-// ends
-
-

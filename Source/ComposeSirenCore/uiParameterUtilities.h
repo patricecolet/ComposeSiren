@@ -61,5 +61,4 @@ std::map<AnyOrOneBasedMidiChannel, int> menuIndexByMidiChannel = []() {
     return res;
 }();
 
-
 #endif //COMPOSESIREN_UIPARAMETERUTILITIES_H

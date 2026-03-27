@@ -11,5 +11,4 @@ public:
     ~SirenEnsemble() = default;
 };
 
-
 #endif //COMPOSESIREN_SIREN_ENSEMBLE_H

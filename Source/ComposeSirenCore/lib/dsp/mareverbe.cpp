@@ -253,5 +253,3 @@ float mareverbe::getmode()
 	else
 		return 0;
 }
-
-

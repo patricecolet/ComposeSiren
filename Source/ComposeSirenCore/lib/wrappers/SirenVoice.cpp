@@ -93,6 +93,3 @@ float SirenVoice::process() {
 void SirenVoice::update() {
     siren->setnote();
 }
-
-
-

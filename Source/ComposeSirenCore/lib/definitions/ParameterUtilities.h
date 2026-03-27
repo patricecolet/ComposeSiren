@@ -166,4 +166,3 @@ static std::unique_ptr<juce::XmlElement> mergeXmlChildren(
 
 static void printXmlElement(juce::XmlElement& e, int indent = 0);
 */
-

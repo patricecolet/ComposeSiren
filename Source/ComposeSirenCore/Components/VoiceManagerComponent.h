@@ -295,5 +295,4 @@ private:
     }
 };
 
-
 #endif //COMPOSESIREN_VOICEMANAGERCOMPONENT_H

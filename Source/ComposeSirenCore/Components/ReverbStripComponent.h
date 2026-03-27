@@ -47,5 +47,4 @@ public:
     void resized() override;
 };
 
-
 #endif //COMPOSESIREN_REVERBSTRIPCOMPONENT_H

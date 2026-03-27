@@ -43,5 +43,4 @@ private:
     DbRangesMidiKeyboardComponent midiKeyboard;
 };
 
-
 #endif //ONESIREN_PLUGINEDITOR_H

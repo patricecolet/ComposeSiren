@@ -33,6 +33,4 @@ float allpass::getfeedback()
 	return feedback;
 }
 
-//ends
-
 

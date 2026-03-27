@@ -41,8 +41,4 @@ inline float allpass::process(float input)
 	return output;
 }
 
-#endif//_allpass
-
-//ends
-
-
+#endif //_allpass_
