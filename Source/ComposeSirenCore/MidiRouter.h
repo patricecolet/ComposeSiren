@@ -76,6 +76,9 @@ public:
                         defaultInputChannel,
                         ccNumber,
                         d->id == ParameterId::PitchBendRange
+                        || d->id == ParameterId::AllNoteOff
+                        || d->id == ParameterId::AllSoundOff
+                        || d->id == ParameterId::ResetAllController
                     );
             }
         }
