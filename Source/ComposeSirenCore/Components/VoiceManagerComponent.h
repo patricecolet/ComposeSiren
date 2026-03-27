@@ -7,8 +7,10 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "LookAndFeels.h"
-#include "lib/definitions/palette.h"
-#include "lib/definitions/sirenProperties.h"
+#include "../lib/definitions/palette.h"
+#include "../lib/definitions/sirenProperties.h"
+#include "../uiParameterUtilities.h"
+#include "../atomicUtilities.h"
 #include "VoiceManagerState.h"
 
 class LabelLAF : public juce::LookAndFeel_V2
@@ -30,7 +32,8 @@ public:
 
 
 class VoiceManagerComponent : public juce::Component,
-                              public juce::ComboBox::Listener
+                              public juce::ComboBox::Listener,
+                              public VoiceManagerState::Listener
 {
     juce::ComboBox category;
     juce::Label categoryLabel;
@@ -39,40 +42,15 @@ class VoiceManagerComponent : public juce::Component,
     juce::ComboBox outputChannel;
     juce::Label outputChannelLabel;
 
-    const std::map<int, sirenCategory> categoryByIndex{
-        { 1, sirenCategory::Bass    },
-        { 2, sirenCategory::Tenor   },
-        { 3, sirenCategory::Alto    },
-        { 4, sirenCategory::Soprano },
-        { 5, sirenCategory::Piccolo }
-    };
-
-    const std::map<sirenCategory, int> indexByCategory = [this]() {
-        std::map<sirenCategory, int> res;
-        for (auto& p : categoryByIndex) {
-            res[p.second] = p.first;
-        }
-        return res;
-    }();
-
-    const std::map<int, AnyOrOneBasedMidiChannel> channelByIndex{
-        { 1, AnyOrOneBasedMidiChannel::specific({1}) },
-        { 2, AnyOrOneBasedMidiChannel::specific({2}) },
-        { 3, AnyOrOneBasedMidiChannel::specific({3}) },
-        { 4, AnyOrOneBasedMidiChannel::specific({4}) },
-        { 5, AnyOrOneBasedMidiChannel::specific({5}) },
-        { 6, AnyOrOneBasedMidiChannel::specific({6}) },
-        { 7, AnyOrOneBasedMidiChannel::specific({7}) },
-        { 8, AnyOrOneBasedMidiChannel::any() },
-    };
-
-    const std::map<AnyOrOneBasedMidiChannel, int> indexByChannel = [this]() {
-        std::map<AnyOrOneBasedMidiChannel, int> res;
-        for (auto& p : channelByIndex) {
-            res[p.second] = p.first;
-        }
-        return res;
-    }();
+    // for use with ScopedGuards to avoid update echo
+    // from menus as we are a VoiceManagerState::Listener
+    // (probably overkill but makes no harm,
+    // can be safely removed if we don't care about
+    // executing callbacks twice or if (when) we prove we
+    // don't need to be a VoiceManagerState::Listener)
+    std::atomic<bool> updatingCategoryFromMenu;
+    std::atomic<bool> updatingInputChannelFromMenu;
+    std::atomic<bool> updatingOutputChannelFromMenu;
 
     std::vector<juce::ComboBox*> menus{
         &category, &inputChannel, &outputChannel
@@ -88,8 +66,13 @@ public:
     VoiceManagerComponent(VoiceManagerState& s) :
         voiceManagerState(s)
     {
+        voiceManagerState.addListener(this);
+        updatingCategoryFromMenu.store(false);
+        updatingInputChannelFromMenu.store(false);
+        updatingOutputChannelFromMenu.store(false);
+
         // categories ----------------------------------------------------------
-        for (auto& p : categoryByIndex) {
+        for (auto& p : sirenCategoryByMenuIndex) {
             category.addItem(sirenCategoriesData.at(p.second).name, p.first);
         }
 
@@ -99,11 +82,16 @@ public:
         addAndMakeVisible(&categoryLabel);
 
         // input channel -------------------------------------------------------
-        inputChannel.addItem("Any", 8);
-        for (int i = 1; i < 8; ++i) {
-            inputChannel.addItem(juce::String(i), i);
+        for (auto& p : menuIndexMidiChannelPairs) {
+            if (p.second.isAny) {
+                inputChannel.addItem("Any", p.first);
+            } else {
+                inputChannel.addItem(
+                    juce::String(p.second.channel.oneBased),
+                    p.first
+                );
+            }
         }
-        // inputChannel.setSelectedId(8);
 
         inputChannelLabel.setText("MIDI In", juce::dontSendNotification);
         // inputChannelLabel.setJustificationType(juce::Justification::right);
@@ -112,11 +100,16 @@ public:
         addAndMakeVisible(&inputChannelLabel);
 
         // output channel ------------------------------------------------------
-        outputChannel.addItem("Thru", 8);
-        for (int i = 1; i < 8; ++i) {
-            outputChannel.addItem(juce::String(i), i);
+        for (auto& p : menuIndexMidiChannelPairs) {
+            if (p.second.isAny) {
+                outputChannel.addItem("Thru", p.first);
+            } else {
+                outputChannel.addItem(
+                    juce::String(p.second.channel.oneBased),
+                    p.first
+                );
+            }
         }
-        // outputChannel.setSelectedId(8);
 
         outputChannelLabel.setText("MIDI Out", juce::dontSendNotification);
         // outputChannelLabel.setJustificationType(juce::Justification::right);
@@ -130,19 +123,15 @@ public:
             addAndMakeVisible(menu);
         }
 
-        category.setSelectedId(
-            indexByCategory.at(voiceManagerState.getSirenCategory()),
-            juce::dontSendNotification
+        // init menus from state :
+        VoiceManagerComponent::categoryChanged(
+            voiceManagerState.getSirenCategory()
         );
-
-        inputChannel.setSelectedId(
-            indexByChannel.at(voiceManagerState.getMidiInput()),
-            juce::dontSendNotification
+        VoiceManagerComponent::midiInputChanged(
+            voiceManagerState.getMidiInput()
         );
-
-        outputChannel.setSelectedId(
-            indexByChannel.at(voiceManagerState.getMidiOutput()),
-            juce::dontSendNotification
+        VoiceManagerComponent::midiOutputChanged(
+            voiceManagerState.getMidiOutput()
         );
     }
 
@@ -155,8 +144,33 @@ public:
         inputChannelLabel.setLookAndFeel(nullptr);
         outputChannelLabel.setLookAndFeel(nullptr);
         categoryLabel.setLookAndFeel(nullptr);
+        voiceManagerState.removeListener(this);
     }
 
+    // VoiceManagerState::Listener overrides -----------------------------------
+    void categoryChanged(sirenCategory cat) override {
+        if (updatingCategoryFromMenu.load()) { return; }
+        category.setSelectedId(
+            menuIndexBySirenCategory.at(cat),
+            juce::dontSendNotification
+        );
+    }
+    void midiInputChanged(AnyOrOneBasedMidiChannel ch) override {
+        if (updatingInputChannelFromMenu.load()) { return; }
+        inputChannel.setSelectedId(
+            menuIndexByMidiChannel.at(ch),
+            juce::dontSendNotification
+        );
+    }
+    void midiOutputChanged(AnyOrOneBasedMidiChannel ch) override {
+        if (updatingOutputChannelFromMenu.load()) { return; }
+        outputChannel.setSelectedId(
+            menuIndexByMidiChannel.at(ch),
+            juce::dontSendNotification
+        );
+    }
+
+    // juce::Component overrides -----------------------------------------------
     void paint(juce::Graphics& g) override {
         // g.setColour(juce::Colour{0xff314159});
         // g.fillRect(getLocalBounds().toFloat());
@@ -257,21 +271,25 @@ public:
 private:
     VoiceManagerState& voiceManagerState;
 
+    // juce::ComboBox::Listener ------------------------------------------------
     void comboBoxChanged(juce::ComboBox* comboBoxThatHasChanged) override {
         if (comboBoxThatHasChanged == &category) {
-            auto c = categoryByIndex.find(category.getSelectedId());
-            if (c != categoryByIndex.end()) {
-                voiceManagerState.setSirenCategory(c->second);
+            auto c = sirenCategoryByMenuIndex.find(category.getSelectedId());
+            if (c != sirenCategoryByMenuIndex.end()) {
+                ScopedGuard s(updatingCategoryFromMenu);
+                voiceManagerState.setSirenCategory(c->second, true);
             }
         } else if (comboBoxThatHasChanged == &inputChannel) {
-            auto i = channelByIndex.find(inputChannel.getSelectedId());
-            if (i != channelByIndex.end()) {
-                voiceManagerState.setMidiInput(i->second);
+            auto i = midiChannelByMenuIndex.find(inputChannel.getSelectedId());
+            if (i != midiChannelByMenuIndex.end()) {
+                ScopedGuard s(updatingInputChannelFromMenu);
+                voiceManagerState.setMidiInput(i->second, true);
             }
         } else if (comboBoxThatHasChanged == &outputChannel) {
-            auto o = channelByIndex.find(outputChannel.getSelectedId());
-            if (o != channelByIndex.end()) {
-                voiceManagerState.setMidiOutput(o->second);
+            auto o = midiChannelByMenuIndex.find(outputChannel.getSelectedId());
+            if (o != midiChannelByMenuIndex.end()) {
+                ScopedGuard s(updatingOutputChannelFromMenu);
+                voiceManagerState.setMidiOutput(o->second, true);
             }
         }
     }

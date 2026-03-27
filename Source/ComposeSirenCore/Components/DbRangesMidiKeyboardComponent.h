@@ -123,9 +123,12 @@ public:
         keyboard(s, juce::MidiKeyboardComponent::horizontalKeyboard),
         voiceManagerState(vms)
     {
-        voiceManagerState.addListener(this);
+        voiceManagerState.addListener(
+            VoiceManagerState::Listener::Key::category,
+            this
+        );
 
-        //    keyboard.setEnabled(false);
+        // keyboard.setEnabled(false);
         keyboard.setAvailableRange(24, 95);
         keyboard.setBlackNoteLengthProportion(0.5f);
         keyboard.setScrollButtonsVisible(false);
@@ -158,7 +161,11 @@ public:
   
     ~DbRangesMidiKeyboardComponent() override
     {
-        voiceManagerState.removeListener(this);
+        voiceManagerState.removeListener(
+            VoiceManagerState::Listener::Key::category,
+            this
+        );
+
         keyboard.setLookAndFeel(nullptr);
         lowDbRangeLabel.setLookAndFeel(nullptr);
         midDbRangeLabel.setLookAndFeel(nullptr);
