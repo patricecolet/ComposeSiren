@@ -11,8 +11,8 @@
 #include <apvtsUtilities.h>
 #include <lib/wrappers/SirenVoice.h>
 #include <Components/VoiceManagerState.h>
-
-#include "Components/MainButtonsComponent.h"
+#include <Components/MainButtonsComponent.h>
+// #include "UiState.h"
 
 class OneSirenPluginProcessor :
     public juce::AudioProcessor,
@@ -91,10 +91,12 @@ public:
     //==========================================================================
 
     juce::AudioProcessorValueTreeState& getAudioProcessorValueTreeState();
+    // UiState& getUiState();
     juce::MidiKeyboardState& getMidiKeyboardState();
     VoiceManagerState& getVoiceManagerState();
 
 private:
+    // void initialiseUiState();
     void setSirenId(sirenId id);
     //==========================================================================
     // int* midiMessageIntArray;
@@ -116,6 +118,7 @@ private:
 
     std::vector<parameterLayoutGroupData> parameterLayoutData;
     juce::AudioProcessorValueTreeState apvts;
+    // std::unique_ptr<UiState> uiState;
     juce::MidiKeyboardState midiKeyboardState;
     VoiceManagerState vms;
 

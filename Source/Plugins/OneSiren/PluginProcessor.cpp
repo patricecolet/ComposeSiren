@@ -133,6 +133,17 @@ void OneSirenPluginProcessor::timerCallback()
     siren->update();
 }
 
+// void OneSirenPluginProcessor::initialiseUiState()
+// {
+//     auto uiTree = apvts.state.getChildWithName("UISTATE");
+//     if (!uiTree.isValid())
+//     {
+//         uiTree = UiState::createDefaultState();
+//         apvts.state.addChild(uiTree, -1, nullptr);
+//     }
+//     uiState = std::make_unique<UiState>(uiTree);
+// }
+
 //==============================================================================
 // PROCESS BLOCK
 //==============================================================================
@@ -300,7 +311,7 @@ bool OneSirenPluginProcessor::isMidiEffect() const
 }
 
 //==============================================================================
-// We don't use program for now
+// We don't use programs for now
 //==============================================================================
 int OneSirenPluginProcessor::getNumPrograms()
 {
@@ -334,20 +345,58 @@ void OneSirenPluginProcessor::changeProgramName(int index,
 //==============================================================================
 void OneSirenPluginProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
-    // todo
+    juce::XmlElement xmlState("AllParameters");
+    xmlState.addChildElement(apvts.state.createXml().release());
+    xmlState.addChildElement(vms.toXml().release());
+    copyXmlToBinary(xmlState, destData);
 }
 
 void OneSirenPluginProcessor::setStateInformation(const void* data,
                                                   int sizeInBytes)
 {
-    // todo
+    auto xmlState(getXmlFromBinary(data, sizeInBytes));
+    if (xmlState != nullptr) {
+        if (xmlState->hasTagName("AllParameters")) {
+            juce::XmlElement* xmlSubState;
+
+            // ensure routing is restored before "one shot" parameters like
+            // PitchBendRange are sent via the plugin's midi output
+            xmlSubState = xmlState->getChildByName("VoiceManagerState");
+            if (xmlSubState != nullptr) {
+                vms.fromXml(*xmlSubState);
+            }
+
+            // now the apvts can trigger midi output messages which will be routed
+            // correctly
+            xmlSubState = xmlState->getChildByName(apvts.state.getType());
+            if (xmlSubState != nullptr) {
+                apvts.replaceState(juce::ValueTree::fromXml(*xmlSubState));
+            }
+        }
+    }
+
+    // If we integrate UiParameters as another valueTree in apvts : ------------
+    // if (xml != nullptr) {
+    //     auto tree = juce::ValueTree::fromXml(*xml);
+    //
+    //     if (tree.isValid()) {
+    //         apvts.replaceState(tree);
+    //         // initialiseUiState();
+    //     }
+    // }
 }
 
 juce::AudioProcessorValueTreeState&
-    OneSirenPluginProcessor::getAudioProcessorValueTreeState()
+OneSirenPluginProcessor::getAudioProcessorValueTreeState()
 {
     return apvts;
 }
+
+// UiState&
+// OneSirenPluginProcessor::getUiState()
+// {
+//     return *uiState;
+// }
 
 juce::MidiKeyboardState& OneSirenPluginProcessor::getMidiKeyboardState()
 {
