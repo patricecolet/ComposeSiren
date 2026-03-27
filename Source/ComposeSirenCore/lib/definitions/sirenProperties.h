@@ -258,6 +258,7 @@ struct VelocityRanges {
 struct sirenData {
     sirenId id = S1;
     sirenCategory category = Alto;
+    std::string name = sirenCategoriesData.at(category).name;
     sirenResourceFileNames resourceFileNames = {
         "dataAmpS1",
         "dataFreqS1",
@@ -375,6 +376,15 @@ sirenPropertiesByChannel = []() {
     std::map<OneBasedMidiChannel, std::shared_ptr<sirenData>> res;
     for (auto& p : sirenProperties) {
         res[p.oneBasedMidiChannel] = std::make_shared<sirenData>(p);
+    }
+    return res;
+}();
+
+inline const std::map<std::string, std::shared_ptr<sirenData>>
+sirenPropertiesByName = []() {
+    std::map<std::string, std::shared_ptr<sirenData>> res;
+    for (auto& p : sirenProperties) {
+        res[p.name] = std::make_shared<sirenData>(p);
     }
     return res;
 }();
