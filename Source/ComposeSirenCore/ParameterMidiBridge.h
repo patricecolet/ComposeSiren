@@ -213,7 +213,7 @@ private:
         }
         scheduler.schedule(
             juce::MidiMessage::controllerEvent(
-                e.channel,
+                mapChannel(e.channel),
                 ccNumber,
                 value
             ),
@@ -228,7 +228,7 @@ private:
         int value = static_cast<int>(e.value * 16383.0f);
         scheduler.schedule(
             juce::MidiMessage::pitchWheel(
-                e.channel,
+                mapChannel(e.channel),
                 value
             ),
             e.samplePosition
