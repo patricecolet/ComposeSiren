@@ -1,17 +1,17 @@
 # ComposeSiren
 
-ComposeSiren is a suite of audio and MIDI plugins that synthesize sounds of sirens made by [Mécanique Vivante][1]
-and provide automatable parameters from DAW hosts synchronized to MIDI input and output.
-The plugins allow to compose pieces for Mécanique Vivante's siren orchestra in studio by simulating them in real-time.
-The DAW projects can then be reused to directly play the pieces on the orchestra during live performances by controlling
-the siren with the MIDI outputs.
+ComposeSiren is a suite of audio and MIDI plugins that synthesize sounds of sirens made by [Mécanique Vivante][1].
+They also provide automatable parameters from DAW hosts synchronized to MIDI input and output.
+Theys allow to compose pieces for Mécanique Vivante's siren orchestra in studio by simulating them in real-time.
+The DAW projects can ultimately be reused to play the pieces on the orchestra during live performances by controlling
+the sirens from the DAW's MIDI output.
 
-The Siren Orchestra is composed of seven MIDI siren instruments :
+The orchestra is composed of seven MIDI siren instruments :
 - two altos (called S1 and S2),
 - a bass (called S3),
 - a tenor (called S4),
 - two sopranos (called S5 and S6),
-- and a piccolo (called S7).
+- a piccolo (called S7).
 
 There are actually two plugins:
 - **OneSiren**, a simple plugin with flexible MIDI routing parameters that can simulate any siren from the orchestra.
