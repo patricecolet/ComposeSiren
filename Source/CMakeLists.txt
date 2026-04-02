@@ -120,8 +120,7 @@ endfunction()
 # Add the plugin variant targets
 
 add_plugin_variant(OneSiren       "MvOS" "com.mecaviv.onesiren")
-
-#add_plugin_variant(SirenOrchestra "MvSO" "com.mecaviv.sirenorchestra")
+add_plugin_variant(SirenOrchestra "MvSO" "com.mecaviv.sirenorchestra")
 
 #add_plugin_variant(CustomMix      "MvCM" "com.mecaviv.custommix")
 #TARGET_SOURCES(CustomMix

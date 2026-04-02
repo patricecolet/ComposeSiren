@@ -40,8 +40,8 @@ set(BaseTargetName ${PROJECT_NAME})
 set(VendorName "Mecanique Vivante")
 set(PLUGIN_MANUFACTURER_CODE "McVv")
 
-set(PLUGIN_TARGETS OneSiren)
-#set(PLUGIN_TARGETS OneSiren SirenOrchestra)
+#set(PLUGIN_TARGETS OneSiren)
+set(PLUGIN_TARGETS OneSiren SirenOrchestra)
 #set(PLUGIN_TARGETS CustomMix)
 
 add_subdirectory(Dependencies/JUCE)
