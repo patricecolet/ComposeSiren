@@ -258,6 +258,7 @@ struct VelocityRanges {
 struct sirenData {
     sirenId id = S1;
     sirenCategory category = Alto;
+    // uint32_t colour = sirenCategoriesData.at(category).colour;
     std::string name = sirenCategoriesData.at(category).name;
     sirenResourceFileNames resourceFileNames = {
         "dataAmpS1",
@@ -269,6 +270,8 @@ struct sirenData {
     std::map<int, std::tuple<int, int>> velocityRanges = VelocityRanges::makeForCategory(category);
     OneBasedMidiChannel oneBasedMidiChannel = {.oneBased=1};
 };
+
+
 
 inline const std::vector<sirenData> sirenProperties = {
     {
@@ -396,4 +399,34 @@ defaultSirenIdByCategory = {
     { Tenor, S4 },
     { Soprano, S5 },
     { Piccolo, S7 },
+};
+
+inline const std::map<const std::string, sirenId> sirenIddByStrId = {
+    { "S1", S1 },
+    { "S2", S2 },
+    { "S3", S3 },
+    { "S4", S4 },
+    { "S5", S5 },
+    { "S6", S6 },
+    { "S7", S7 },
+};
+
+inline const std::map<sirenId, uint32_t> sirenColourById = {
+    { S1, mecaviv::Colours::SirenPalette::darkGreen },
+    { S2, mecaviv::Colours::SirenPalette::lightGreen },
+    { S3, mecaviv::Colours::SirenPalette::darkBlue },
+    { S4, mecaviv::Colours::SirenPalette::lightBlue },
+    { S5, mecaviv::Colours::SirenPalette::sunnyYellow },
+    { S6, mecaviv::Colours::SirenPalette::lightOrange},
+    { S7, mecaviv::Colours::SirenPalette::darkOrange }
+};
+
+inline const std::map<sirenId, const std::string> sirenTitleById = {
+    { S1, "Alto 1" },
+    { S2, "Alto 2" },
+    { S3, "Basse" },
+    { S4, "Tenor" },
+    { S5, "Soprano 1" },
+    { S6, "Soprano 2" },
+    { S7, "Piccolo" }
 };
