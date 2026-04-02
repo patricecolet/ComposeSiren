@@ -7,7 +7,7 @@
 //==============================================================================
 // ReverbComponent - Section de reverb
 SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts,
-                                         const std::string& paramGroupId) :
+                                         const parameterLayoutGroupData& paramGroupData) :
     apvts(vts),
     currentCategory(Alto)
 {
@@ -17,6 +17,12 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
         }
         return s;
     };
+
+    if (paramGroupData.juceParameterIds.contains(ParameterId::TrackPanning)
+        && paramGroupData.juceParameterIds.contains(ParameterId::TrackOutputGain))
+    {
+        hasTrackControls = true; // false by default
+    }
 
     // Titre
     // titleLabel.setText("Siren", juce::dontSendNotification);
@@ -54,10 +60,12 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     endGroup.setWrap(false);
     addAndMakeVisible(endGroup);
 
-    // masterGroup.setTitleText("Master");
-    // masterGroup.setGap(NBGAP);
-    // masterGroup.setWrap(false);
-    // addAndMakeVisible(masterGroup);
+    if (hasTrackControls) {
+        trackGroup.setTitleText("Master");
+        trackGroup.setGap(gap);
+        trackGroup.setWrap(false);
+        addAndMakeVisible(trackGroup);
+    }
 
     addAndMakeVisible(spacer1);
     addAndMakeVisible(spacer2);
@@ -65,7 +73,10 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     addAndMakeVisible(spacer4);
     addAndMakeVisible(spacer5);
     addAndMakeVisible(spacer6);
-    // addAndMakeVisible(spacer7);
+
+    if (hasTrackControls) {
+        addAndMakeVisible(spacer7);
+    }
 
     juce::Colour c1 = juce::Colours::whitesmoke;//juce::Colours::lightgoldenrodyellow;
     juce::Colour c2 = juce::Colours::whitesmoke;
@@ -83,7 +94,7 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     pitchBend.setNameText("Bend");
     pitchBend.setSliderAttachment(vts,
                                   ParameterId::PitchBend,
-                                  paramGroupId);
+                                  paramGroupData.id);
     juce::Slider& pbs = pitchBend.getSlider();
     pbs.setLookAndFeel(&knobLAF3);
     // pbs.addListener(this);
@@ -98,7 +109,7 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     // pitchBendRange.setRange(1, 36, 1);
     pitchBendRange.setSliderAttachment(vts,
                                        ParameterId::PitchBendRange,
-                                       paramGroupId);
+                                       paramGroupData.id);
     juce::Slider& pbrs = pitchBendRange.getSlider();
     pbrs.setSliderStyle(juce::Slider::IncDecButtons);
     pbrs.setIncDecButtonsMode(juce::Slider::incDecButtonsNotDraggable);
@@ -115,7 +126,7 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     // transpose.setRange(-24, 24, 1);
     transpose.setSliderAttachment(vts,
                                   ParameterId::Transpose,
-                                  paramGroupId);
+                                  paramGroupData.id);
     juce::Slider& ts = transpose.getSlider();
     ts.setSliderStyle(juce::Slider::IncDecButtons);
     ts.setIncDecButtonsMode(juce::Slider::incDecButtonsNotDraggable);
@@ -123,7 +134,7 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     ts.setNumDecimalPlacesToDisplay(0);
     ts.setTextBoxIsEditable(true);
     ts.setLookAndFeel(&incDecLAF);
-    ts.addListener(this);
+    // ts.addListener(this);
     setSliderFillColour(transpose, c1);
     startGroup.addAndMakeVisible(transpose);
 
@@ -134,7 +145,7 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     // portamento.setNameText("Porta");
     portamento.setSliderAttachment(vts,
                                    ParameterId::Portamento,
-                                   paramGroupId);
+                                   paramGroupData.id);
     // portamento.setRange(0.0, 1.0, 0.01);
     // portamento.getSlider().addListener(this);
     setSliderFillColour(portamento, c1);
@@ -149,7 +160,7 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     // vibSpeed.setNameText("Speed");
     vibSpeed.setSliderAttachment(vts,
                                  ParameterId::VibratoFrequency,
-                                 paramGroupId);
+                                 paramGroupData.id);
     // vibSpeed.setRange(0.0, 1.0, 0.01);
     // vibSpeed.getSlider().addListener(this);
     setSliderFillColour(vibSpeed, c2);
@@ -162,7 +173,7 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     // vibDepth.setNameText("Depth");
     vibDepth.setSliderAttachment(vts,
                                  ParameterId::VibratoAmplitude,
-                                 paramGroupId);
+                                 paramGroupData.id);
     // vibDepth.setRange(0.0, 1.0, 0.01);
     // vibDepth.getSlider().addListener(this);
     setSliderFillColour(vibDepth, c2);
@@ -176,7 +187,7 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     // vibAccel.setNameText("Evolve");
     vibAccel.setSliderAttachment(vts,
                                  ParameterId::VibratoAcceleration,
-                                 paramGroupId);
+                                 paramGroupData.id);
     // vibAccel.setRange(0.0, 1.0, 0.01);
     // vibAccel.getSlider().addListener(this);
     setSliderFillColour(vibAccel, c2);
@@ -191,7 +202,7 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     // tremSpeed.setNameText("Speed");
     tremSpeed.setSliderAttachment(vts,
                                   ParameterId::TremoloFrequency,
-                                  paramGroupId);
+                                  paramGroupData.id);
     // tremSpeed.setRange(0.0, 1.0, 0.01);
     // tremSpeed.getSlider().addListener(this);
     setSliderFillColour(tremSpeed, c3);
@@ -204,7 +215,7 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     // tremDepth.setNameText("Depth");
     tremDepth.setSliderAttachment(vts,
                                   ParameterId::TremoloAmplitude,
-                                  paramGroupId);
+                                  paramGroupData.id);
     // tremDepth.setRange(0.0, 1.0, 0.01);
     // tremDepth.getSlider().addListener(this);
     setSliderFillColour(tremDepth, c3);
@@ -219,7 +230,7 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     // envAttack.setNameText("Attack");
     envAttack.setSliderAttachment(vts,
                                   ParameterId::AttackDuration,
-                                  paramGroupId);
+                                  paramGroupData.id);
     // envAttack.setRange(0.0, 1.0, 0.01);
     // envAttack.getSlider().addListener(this);
     setSliderFillColour(envAttack, c4);
@@ -232,7 +243,7 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     // envRelease.setNameText("Release");
     envRelease.setSliderAttachment(vts,
                                    ParameterId::ReleaseDuration,
-                                   paramGroupId);
+                                   paramGroupData.id);
     // envRelease.setRange(0.0, 1.0, 0.01);
     // envRelease.getSlider().addListener(this);
     setSliderFillColour(envRelease, c4);
@@ -247,7 +258,7 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     // timbre.setNameText("Timbre");
     timbre.setSliderAttachment(vts,
                                ParameterId::Timbre,
-                               paramGroupId);
+                               paramGroupData.id);
     // timbre.setRange(0.0, 1.0, 0.01);
     // timbre.getSlider().addListener(this);
     setSliderFillColour(timbre, c5);
@@ -260,7 +271,7 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     // mute.setNameText("Mute");
     mute.setSliderAttachment(vts,
                              ParameterId::Mute,
-                             paramGroupId);
+                             paramGroupData.id);
     // mute.setRange(0.0, 1.0, 0.01);
     // mute.getSlider().addListener(this);
     setSliderFillColour(mute, c5);
@@ -273,11 +284,45 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     // volume.setNameText("Volume");
     volume.setSliderAttachment(vts,
                                ParameterId::Volume,
-                               paramGroupId);
+                               paramGroupData.id);
     // volume.setRange(0.0, 1.0, 0.01);
     // volume.getSlider().addListener(this);
     setSliderFillColour(volume, c5);
     endGroup.addAndMakeVisible(volume);
+
+    // track group knobs =======================================================
+
+    if (hasTrackControls) {
+        // Panning -------------------------------------------------------------
+        pan.setNameText(
+           appendCCNumber("Pan", ParameterId::TrackPanning)
+        );
+        juce::Slider& pans = pan.getSlider();
+        pans.setLookAndFeel(&knobLAF3);
+        // volume.setNameText("Volume");
+        pan.setSliderAttachment(vts,
+                                ParameterId::TrackPanning,
+                                paramGroupData.id);
+        // volume.setRange(0.0, 1.0, 0.01);
+        // volume.getSlider().addListener(this);
+        setSliderFillColour(pan, c5);
+        trackGroup.addAndMakeVisible(pan);
+
+        // Output gain ---------------------------------------------------------
+        outputGain.setNameText(
+           appendCCNumber("Gain", ParameterId::TrackOutputGain)
+        );
+        juce::Slider& outgains = outputGain.getSlider();
+        outgains.setLookAndFeel(&knobLAF2);
+        // volume.setNameText("Volume");
+        outputGain.setSliderAttachment(vts,
+                                       ParameterId::TrackOutputGain,
+                                       paramGroupData.id);
+        // volume.setRange(0.0, 1.0, 0.01);
+        // volume.getSlider().addListener(this);
+        setSliderFillColour(outputGain, c5);
+        trackGroup.addAndMakeVisible(outputGain);
+    }
 
     // Démarrer le timer pour synchroniser l'UI avec les changements MIDI
     // startTimer(50); // 50ms = 20 Hz
@@ -392,8 +437,13 @@ void SirenStripComponent::resized()
                                              .withMinWidth(endGroup.getMinWidth())
                                              .withHeight((float) area_height));
     root.items.add(juce::FlexItem(spacer6).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
-    // root.items.add(juce::FlexItem(masterGroup).withFlex(0).withMinWidth(103.0f).withHeight((float) area_height));
-    // root.items.add(juce::FlexItem(spacer7).withFlex(0,0).withWidth(spacerW).withHeight((float) area_height));
+
+    if (hasTrackControls) {
+        root.items.add(juce::FlexItem(trackGroup).withFlex(0)
+                                                 .withMinWidth(trackGroup.getMinWidth())
+                                                 .withHeight((float) area_height));
+        root.items.add(juce::FlexItem(spacer7).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
+    }
 
     root.performLayout(area.toFloat());
 
@@ -402,59 +452,59 @@ void SirenStripComponent::resized()
     tremGroup.resized();
     envGroup.resized();
     endGroup.resized();
-    // masterGroup.resized();
+
+    if (hasTrackControls) {
+        trackGroup.resized();
+    }
 }
 
-void SirenStripComponent::sliderValueChanged(juce::Slider* slider)
-{
-    if (portamento.compareSlider(slider))
-    {
-        //std::cout << "coucou !" <<std::endl;
-    }
-    else if (vibSpeed.compareSlider(slider))
-    {
-        //std::cout << "yeeeha !" <<std::endl;
-    }
-    /*
-    if (slider == &roomSizeSlider)
-    {
-        audioProcessor.mySynth->reverb.setroomsize((float)roomSizeSlider.getValue());
-    }
-    else if (slider == &wetSlider)
-    {
-        // Dry/Wet : 0=100% dry, 0.5=50/50, 1=100% wet
-        float dryWetValue = (float)wetSlider.getValue();
-        audioProcessor.mySynth->reverb.setwet(dryWetValue);
-        audioProcessor.mySynth->reverb.setdry(1.0f - dryWetValue);
-    }
-    else if (slider == &dampSlider)
-    {
-        audioProcessor.mySynth->reverb.setdamp((float)dampSlider.getValue());
-    }
-    else if (slider == &widthSlider)
-    {
-        audioProcessor.mySynth->reverb.setwidth((float)widthSlider.getValue());
-    }
-    else if (slider == &highpassSlider)
-    {
-        audioProcessor.mySynth->setReverbHighpass((float)highpassSlider.getValue());
-    }
-    else if (slider == &lowpassSlider)
-    {
-        audioProcessor.mySynth->setReverbLowpass((float)lowpassSlider.getValue());
-    }
-    //*/
-}
+// void SirenStripComponent::sliderValueChanged(juce::Slider* slider)
+// {
+//     if (portamento.compareSlider(slider))
+//     {
+//         //std::cout << "coucou !" <<std::endl;
+//     }
+//     else if (vibSpeed.compareSlider(slider))
+//     {
+//         //std::cout << "yeeeha !" <<std::endl;
+//     }
+//
+//     if (slider == &roomSizeSlider)
+//     {
+//         audioProcessor.mySynth->reverb.setroomsize((float)roomSizeSlider.getValue());
+//     }
+//     else if (slider == &wetSlider)
+//     {
+//         // Dry/Wet : 0=100% dry, 0.5=50/50, 1=100% wet
+//         float dryWetValue = (float)wetSlider.getValue();
+//         audioProcessor.mySynth->reverb.setwet(dryWetValue);
+//         audioProcessor.mySynth->reverb.setdry(1.0f - dryWetValue);
+//     }
+//     else if (slider == &dampSlider)
+//     {
+//         audioProcessor.mySynth->reverb.setdamp((float)dampSlider.getValue());
+//     }
+//     else if (slider == &widthSlider)
+//     {
+//         audioProcessor.mySynth->reverb.setwidth((float)widthSlider.getValue());
+//     }
+//     else if (slider == &highpassSlider)
+//     {
+//         audioProcessor.mySynth->setReverbHighpass((float)highpassSlider.getValue());
+//     }
+//     else if (slider == &lowpassSlider)
+//     {
+//         audioProcessor.mySynth->setReverbLowpass((float)lowpassSlider.getValue());
+//     }
+// }
 
-void SirenStripComponent::buttonClicked(juce::Button* button)
-{
-    /*
-    if (button == &enableButton)
-    {
-        audioProcessor.mySynth->setReverbEnabled(enableButton.getToggleState());
-    }
-    //*/
-}
+// void SirenStripComponent::buttonClicked(juce::Button* button)
+// {
+//     if (button == &enableButton)
+//     {
+//         audioProcessor.mySynth->setReverbEnabled(enableButton.getToggleState());
+//     }
+// }
 
 float SirenStripComponent::getMinWidth()
 {
@@ -471,6 +521,11 @@ float SirenStripComponent::getMinWidth()
     return mw;
 }
 
+// float SirenStripComponent::getMinHeight()
+// {
+//     return 80.0f;
+// }
+
 void SirenStripComponent::setShowTitle(bool s)
 {
     showTitle = s;
@@ -486,7 +541,9 @@ void SirenStripComponent::setShowGroupLabels(bool s)
     tremGroup.setShowLabel(s);
     envGroup.setShowLabel(s);
     endGroup.setShowLabel(s);
-    // masterGroup.setShowLabel(s);
+
+    if (hasTrackControls) { trackGroup.setShowLabel(s); }
+
     resized();
 }
 
@@ -507,17 +564,21 @@ void SirenStripComponent::setShowKnobLabels(bool s)
     timbre.setShowLabel(s);
     volume.setShowLabel(s);
     mute.setShowLabel(s);
-    // masterVolume.setShowLabel(s);
-    // pan.setShowLabel(s);
+
+    if (hasTrackControls) {
+        outputGain.setShowLabel(s);
+        pan.setShowLabel(s);
+    }
+
     resized();
 }
 
 void SirenStripComponent::setShowTextBox(bool s)
 {
-    pitchBend.setShowLabel(s);
+    pitchBend.setShowTextBox(s);
     // always show values for inc dec sliders
-    pitchBendRange.setShowLabel(true);
-    transpose.setShowLabel(true);
+    pitchBendRange.setShowTextBox(true);
+    transpose.setShowTextBox(true);
     portamento.setShowTextBox(s);
     vibSpeed.setShowTextBox(s);
     vibDepth.setShowTextBox(s);
@@ -530,8 +591,11 @@ void SirenStripComponent::setShowTextBox(bool s)
     volume.setShowTextBox(s);
     mute.setShowTextBox(s);
 
-    // masterVolume.setShowTextBox(false);
-    // pan.setShowTextBox(s);
+    if (hasTrackControls) {
+        outputGain.setShowTextBox(s);
+        pan.setShowTextBox(s);
+    }
+
     resized();
 }
 
@@ -543,7 +607,11 @@ void SirenStripComponent::setBackgroundColour(juce::Colour c)
     tremGroup.setBackgroundColour(c);
     envGroup.setBackgroundColour(c);
     endGroup.setBackgroundColour(c);
-    // masterGroup.setBackgroundColour(c);
+
+    if (hasTrackControls) {
+        trackGroup.setBackgroundColour(c);
+    }
+
     repaint();
 }
 

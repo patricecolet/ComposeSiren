@@ -10,8 +10,14 @@ OneSirenPluginEditor::OneSirenPluginEditor(OneSirenPluginProcessor& p) :
     audioProcessor(p),
     mainButtons(p),
     voiceManager(p.getVoiceManagerState()),
-    sirenStrip(p.getAudioProcessorValueTreeState(), "S"),
-    midiKeyboard(p.getMidiKeyboardState(), p.getVoiceManagerState())
+    sirenStrip(
+        p.getAudioProcessorValueTreeState(),
+        p.getParameterLayoutData()[0]
+    ),
+    midiKeyboard(
+        p.getMidiKeyboardState(),
+        p.getVoiceManagerState()
+    )
 {
     audioProcessor.getVoiceManagerState().addListener(this);
     addAndMakeVisible(mainButtons);

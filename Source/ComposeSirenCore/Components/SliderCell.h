@@ -78,9 +78,9 @@ public:
     bool compareSlider(juce::Slider* other) const { return &slider == other; }
 
     void setShowLabel(bool s) {
-        showLabel = s;
-        nameLabel.setVisible(s);
         slider.getProperties().set("compactTextBox", !s);
+        nameLabel.setVisible(s);
+        showLabel = s;
         resized();
     }
 
@@ -91,6 +91,7 @@ public:
             slider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
         }
         showTextBox = s;
+        resized();
     }
 
     void paint(juce::Graphics& g) override {

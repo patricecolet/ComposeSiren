@@ -5,7 +5,8 @@
 #ifndef ONESIREN_PLUGINPROCESSOR_H
 #define ONESIREN_PLUGINPROCESSOR_H
 
-#include <JuceHeader.h>
+// #include <JuceHeader.h>
+#include <juce_audio_processors/juce_audio_processors.h>
 #include <MidiRouter.h>
 #include <MidiScheduler.h>
 #include <apvtsUtilities.h>
@@ -45,6 +46,8 @@ public:
     void midiInputChanged(AnyOrOneBasedMidiChannel) override;
     void midiOutputChanged(AnyOrOneBasedMidiChannel) override;
 
+    // Timer callback (called from UI thread)
+    //--------------------------------------------------------------------------
     void timerCallback() override;
 
     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
@@ -76,6 +79,7 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
     //==========================================================================
 
+    const std::vector<parameterLayoutGroupData>& getParameterLayoutData() const;
     juce::AudioProcessorValueTreeState& getAudioProcessorValueTreeState();
     // UiState& getUiState();
     juce::MidiKeyboardState& getMidiKeyboardState();

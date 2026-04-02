@@ -386,6 +386,12 @@ void OneSirenPluginProcessor::setStateInformation(const void* data,
     // }
 }
 
+const std::vector<parameterLayoutGroupData>&
+OneSirenPluginProcessor::getParameterLayoutData() const
+{
+    return parameterLayoutData;
+}
+
 juce::AudioProcessorValueTreeState&
 OneSirenPluginProcessor::getAudioProcessorValueTreeState()
 {

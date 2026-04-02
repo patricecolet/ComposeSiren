@@ -8,27 +8,29 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "SliderCellGroup.h"
+#include "apvtsUtilities.h"
 #include "../lib/definitions/parameterDefinitions.h"
 
 //==============================================================================
 class SirenStripComponent : public juce::Component,
-                            public juce::Slider::Listener,
-                            public juce::Button::Listener,
+                            // public juce::Slider::Listener,
+                            // public juce::Button::Listener,
                             private juce::Timer
 {
 public:
     SirenStripComponent(juce::AudioProcessorValueTreeState& vts,
-                        const std::string& paramGroupId);
+                        const parameterLayoutGroupData& paramGroupData);
     ~SirenStripComponent() override;
 
     void setCurrentSiren(sirenCategory c);
 
     void paint(juce::Graphics&) override;
     void resized() override;
-    void sliderValueChanged(juce::Slider* slider) override;
-    void buttonClicked(juce::Button* button) override;
+    // void sliderValueChanged(juce::Slider* slider) override;
+    // void buttonClicked(juce::Button* button) override;
 
     float getMinWidth();
+    float getMinHeight();
     void setShowTitle(bool s);
     void setShowGroupLabels(bool s);
     void setShowKnobLabels(bool s);
@@ -36,8 +38,11 @@ public:
 
     void setBackgroundColour(juce::Colour c);
 
-private:
+protected:
     void timerCallback() override;
+
+    bool hasTrackControls = false;
+
     juce::AudioProcessorValueTreeState& apvts;
 
     sirenCategory currentCategory;
@@ -59,7 +64,7 @@ private:
     SliderCellGroup tremGroup;
     SliderCellGroup envGroup;
     SliderCellGroup endGroup;
-    // SliderCellGroup masterGroup {};
+    SliderCellGroup trackGroup;
 
     // Spacers between groups
     Spacer spacer1;
@@ -68,7 +73,7 @@ private:
     Spacer spacer4;
     Spacer spacer5;
     Spacer spacer6;
-    // Spacer spacer7;
+    Spacer spacer7;
 
     // Sliders (cells)
     const float ksw = controlStripLayout::minKnobSliderWidth;
@@ -95,8 +100,8 @@ private:
     SliderCell mute             {ksw,  sh, lh};
     SliderCell volume           {ksw,  sh, lh};
 
-    // SliderCell masterVolume {ksw, sh, lh};
-    // SliderCell pan          {ksw, sh, lh};
+    SliderCell outputGain       {ksw * 1.2f, sh, lh};
+    SliderCell pan              {ksw, sh, lh};
 };
 
 #endif //COMPOSESIREN_SIRENSTRIPCOMPONENT_H
