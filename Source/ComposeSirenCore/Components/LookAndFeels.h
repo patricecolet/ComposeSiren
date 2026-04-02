@@ -22,7 +22,7 @@ constexpr float groupLabelFontSize{12};
 // constexpr float minKnobSliderWidth{47};
 constexpr float sliderLabelHeight{28};
 constexpr float sliderLabelFontSize{11.5};
-constexpr float minSliderHeight{65};
+constexpr float minSliderHeight{62};
 constexpr float minKnobSliderWidth{47};
 constexpr float minIncDecSliderWidth{70};
 }
@@ -256,7 +256,7 @@ public:
         auto bounds = s.getLocalBounds();
         layout.sliderBounds = bounds.removeFromLeft(0.5f * bounds.getWidth())
                                     .withSizeKeepingCentre(bounds.getWidth(),
-                                                           juce::jmin(bounds.getHeight()*1.f, bounds.getWidth()*1.33f));
+                                                           juce::jmin(bounds.getHeight()*1.f, bounds.getWidth()*1.6f));
         bounds.removeFromRight(btnPadding);
         layout.textBoxBounds = bounds.withSizeKeepingCentre(bounds.getWidth(), fontSize * 1.66f);
         return layout;
@@ -348,12 +348,15 @@ public:
         if (s.getTextBoxPosition() == juce::Slider::NoTextBox)
             return layout;
 
-        const auto bounds = s.getLocalBounds();
-
         const bool compact = s.getProperties().getWithDefault("compactTextBox", false);
-        const int gap = compact ? 0 : -4; // <-- tweak this (0..4)
-
         const int tbH = layout.textBoxBounds.getHeight();
+
+        const auto bounds
+            = compact
+                ? s.getLocalBounds().withTrimmedTop(6)
+                : s.getLocalBounds();
+        const int gap = compact ? -2 : -4; // <-- tweak this (0..4)
+
 
         layout.textBoxBounds = layout.textBoxBounds
             .withX(bounds.getX())
@@ -545,12 +548,14 @@ public:
         if (s.getTextBoxPosition() == juce::Slider::NoTextBox)
             return layout;
 
-        const auto bounds = s.getLocalBounds();
-
-        const bool compact = (bool) s.getProperties().getWithDefault("compactTextBox", false);
-        const int gap = compact ? -6 : 2; // <-- tweak this (0..4)
-
+        const bool compact = s.getProperties().getWithDefault("compactTextBox", false);
         const int tbH = layout.textBoxBounds.getHeight();
+
+        const auto bounds
+            = compact
+                ? s.getLocalBounds().withTrimmedTop(6)
+                : s.getLocalBounds();
+        const int gap = compact ? -2 : -4; // <-- tweak this (0..4)
 
         layout.textBoxBounds = layout.textBoxBounds
             .withX(bounds.getX())
@@ -579,12 +584,13 @@ public:
 
         auto outline = slider.findColour(juce::Slider::rotarySliderOutlineColourId);
         // auto fill = slider.findColour (Slider::rotarySliderFillColourId);
-        auto fill = juce::Colour{0xaa393939};
+        // auto fill = juce::Colour{0xaa393939};
+        auto fill = juce::Colours::whitesmoke;
 
         auto bounds = juce::Rectangle<int> (x, y, width, height).toFloat().reduced(2);
         auto radius = juce::jmin (bounds.getWidth(), bounds.getHeight()) / 2.0f;
         // clip max knob size (but textbox below is still annoying) :
-        radius = juce::jmin(radius, 24.f);
+        radius = juce::jmin(radius, 22.f);
         auto arcRadius = myRatio * radius;
 
         float offset = (myRatio) * radius;
@@ -634,7 +640,7 @@ public:
             g.strokePath(
                 valueArc,
                 juce::PathStrokeType(
-                    4,
+                    3,
                     juce::PathStrokeType::curved,
                     juce::PathStrokeType::rounded
                 )
@@ -669,7 +675,8 @@ public:
         // being drawn outside of the shape to cast the shadow on
         // g.reduceClipRegion(ellipsis);
 
-        juce::DropShadow ds(juce::Colour{0xaa000000}, 3, {2, 2});
+        // juce::DropShadow ds(juce::Colour{0xaa000000}, 3, {2, 2});
+        juce::DropShadow ds(juce::Colours::black, 3, {2, 2});
         ds.drawForPath(g, shadowPath);
         //-----------------------------------------------------
 
@@ -696,7 +703,7 @@ public:
 
         //=====================================================================
 
-        auto thumbWidth = 5;//arcRadius * 0.25f;//lineW * 1.2f;
+        auto thumbWidth = 7;//arcRadius * 0.25f;//lineW * 1.2f;
         auto thumbHeight = thumbWidth;
         juce::Point<float> thumbPoint (bounds.getCentreX() + (arcRadius * 0.5f) * std::cos (toAngle - juce::MathConstants<float>::halfPi),
                                  bounds.getCentreY() + (arcRadius * 0.5f) * std::sin (toAngle - juce::MathConstants<float>::halfPi));
@@ -708,7 +715,7 @@ public:
         //                          bounds.getCentreY() * std::sin (toAngle - MathConstants<float>::halfPi));
 
         // g.setColour (slider.findColour (Slider::thumbColourId));
-        // g.setColour(Colour{0x99000000});
+        g.setColour(juce::Colour{0x99000000});
         // g.fillEllipse(Rectangle<float> (thumbWidth, thumbWidth).withCentre (thumbPoint));
 
         juce::AffineTransform transform;
@@ -726,7 +733,7 @@ public:
         );
         p.applyTransform(transform);
 
-        g.setColour(juce::Colour{0x99ffffff});
+        // g.setColour(juce::Colour{0x99ffffff});
         // g.setColour(juce::Colours::whitesmoke);
         g.fillPath(p);
         // g.setColour(Colour{0x66000000});
@@ -736,6 +743,7 @@ public:
             .rotation(rotation, markerPoint.x, markerPoint.y);
         //.translated(thumbWidth,thumbHeight);
         p.clear();
+        return;
         p.addRoundedRectangle(
             markerPoint.x - markerWidth * 0.5f,
             markerPoint.y - markerHeight * 0.5f,
