@@ -15,10 +15,10 @@ ReverbStripComponent::ReverbStripComponent(juce::AudioProcessorValueTreeState& v
     reverbGroup.setWrap(false);
     addAndMakeVisible(reverbGroup);
 
-    reverbGroup.setTitleText("Filter");
-    reverbGroup.setGap(gap);
-    reverbGroup.setWrap(false);
-    addAndMakeVisible(reverbGroup);
+    filterGroup.setTitleText("Filter");
+    filterGroup.setGap(gap);
+    filterGroup.setWrap(false);
+    addAndMakeVisible(filterGroup);
 
     addAndMakeVisible(spacer1);
     addAndMakeVisible(spacer2);
@@ -35,47 +35,47 @@ ReverbStripComponent::ReverbStripComponent(juce::AudioProcessorValueTreeState& v
 
     // --- reverb group knobs (horizontal) -------------------------------------
 
-    dryWet.setNameText("Dry/Wet");
+    dryWet.setNameText("DryWet");
     dryWet.setRange(0.0, 1.0, 0.01);
     juce::Slider& dws = dryWet.getSlider();
-    dws.addListener(this);
+    // dws.addListener(this);
     setSliderFillColour(dryWet, c1);
     reverbGroup.addAndMakeVisible(dryWet);
 
-    damping.setNameText("Damping");
+    damping.setNameText("Damp");
     damping.setRange(0.0, 1.0, 0.01);
     juce::Slider& ds = damping.getSlider();
-    ds.addListener(this);
+    // ds.addListener(this);
     setSliderFillColour(damping, c1);
     reverbGroup.addAndMakeVisible(damping);
 
-    roomSize.setNameText("Room Size");
+    roomSize.setNameText("Size");
     roomSize.setRange(0.0, 1.0, 0.01);
     juce::Slider& rss = roomSize.getSlider();
-    rss.addListener(this);
+    // rss.addListener(this);
     setSliderFillColour(roomSize, c1);
     reverbGroup.addAndMakeVisible(roomSize);
 
-    width.setNameText("width");
+    width.setNameText("Width");
     width.setRange(0.0, 1.0, 0.01);
     juce::Slider& ws = width.getSlider();
-    ws.addListener(this);
+    // ws.addListener(this);
     setSliderFillColour(width, c1);
     reverbGroup.addAndMakeVisible(width);
 
     // --- reverb group knobs (horizontal) -------------------------------------
 
-    lowCut.setNameText("Lowcut Freq");
+    lowCut.setNameText("LowCut");
     lowCut.setRange(0.0, 1.0, 0.01);
     juce::Slider& lcs = lowCut.getSlider();
-    lcs.addListener(this);
+    // lcs.addListener(this);
     setSliderFillColour(lowCut, c1);
     filterGroup.addAndMakeVisible(lowCut);
 
-    highCut.setNameText("Highcut Freq");
+    highCut.setNameText("HighCut");
     highCut.setRange(0.0, 1.0, 0.01);
     juce::Slider& hcs = highCut.getSlider();
-    hcs.addListener(this);
+    // hcs.addListener(this);
     setSliderFillColour(highCut, c1);
     filterGroup.addAndMakeVisible(highCut);
 }
@@ -116,7 +116,8 @@ void ReverbStripComponent::resized()
     juce::FlexBox root;
     root.flexDirection = juce::FlexBox::Direction::row;
     root.flexWrap = juce::FlexBox::Wrap::noWrap;
-    root.justifyContent = juce::FlexBox::JustifyContent::flexStart;
+    // root.justifyContent = juce::FlexBox::JustifyContent::flexStart;
+    root.justifyContent = juce::FlexBox::JustifyContent::center;
     root.alignItems = juce::FlexBox::AlignItems::center;
 
     const float spacerW = 2.0f;
@@ -138,4 +139,58 @@ void ReverbStripComponent::resized()
 
     reverbGroup.resized();
     filterGroup.resized();
+}
+
+void ReverbStripComponent::setShowTitle(bool s)
+{
+    showTitle = s;
+    titleLabel.setVisible(s);
+    resized();
+}
+
+void ReverbStripComponent::setShowGroupLabels(bool s)
+{
+    showGroupLabels = s;
+    reverbGroup.setShowLabel(s);
+    filterGroup.setShowLabel(s);
+
+    resized();
+}
+
+void ReverbStripComponent::setShowKnobLabels(bool s)
+{
+    showKnobLabels = s;
+    dryWet.setShowLabel(s);
+    damping.setShowLabel(s);
+    roomSize.setShowLabel(s);
+    width.setShowLabel(s);
+    lowCut.setShowLabel(s);
+    highCut.setShowLabel(s);
+
+    resized();
+}
+
+void ReverbStripComponent::setShowTextBox(bool s)
+{
+    showTextBox = s;
+    dryWet.setShowTextBox(s);
+    damping.setShowTextBox(s);
+    roomSize.setShowTextBox(s);
+    width.setShowTextBox(s);
+    lowCut.setShowTextBox(s);
+    highCut.setShowTextBox(s);
+    // always show values for inc dec sliders
+    // pitchBendRange.setShowTextBox(true);
+    // transpose.setShowTextBox(true);
+
+    resized();
+}
+
+void ReverbStripComponent::setBackgroundColour(juce::Colour c)
+{
+    backgroundColour = c;
+    reverbGroup.setBackgroundColour(c);
+    filterGroup.setBackgroundColour(c);
+
+    repaint();
 }

@@ -10,13 +10,20 @@
 #include "SliderCellGroup.h"
 #include "LookAndFeels.h"
 
-class ReverbStripComponent : public juce::Component,
-                             public juce::Slider::Listener,
-                             public juce::Button::Listener,
-                             private juce::Timer
+class ReverbStripComponent : public juce::Component//,
+                             // public juce::Slider::Listener,
+                             // public juce::Button::Listener,
+                             // private juce::Timer
 {
     juce::AudioProcessorValueTreeState& apvts;
 
+    juce::Label titleLabel;
+    bool showTitle = true;
+    bool showGroupLabels = true;
+    bool showKnobLabels = true;
+    bool showTextBox = true;
+
+    juce::Colour backgroundColour = juce::Colour(40, 40, 60);
     juce::ToggleButton reverbEnableButton;
 
     SliderCellGroup reverbGroup;
@@ -45,6 +52,13 @@ public:
     ~ReverbStripComponent() override = default;
     void paint(juce::Graphics&) override;
     void resized() override;
+
+    void setShowTitle(bool s);
+    void setShowGroupLabels(bool s);
+    void setShowKnobLabels(bool s);
+    void setShowTextBox(bool s);
+
+    void setBackgroundColour(juce::Colour c);
 };
 
 #endif //COMPOSESIREN_REVERBSTRIPCOMPONENT_H
