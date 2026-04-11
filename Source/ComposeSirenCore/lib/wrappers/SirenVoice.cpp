@@ -4,12 +4,11 @@
 
 #include "SirenVoice.h"
 
-SirenVoice::SirenVoice(sirenId sid, const std::string& resourcesPath) :
+SirenVoiceUnit::SirenVoiceUnit(sirenId sid, const std::string& resourcesPath) :
     id(sid),
     sampleCountForMidiInTimer(0),
     setNoteSampleCounter(0)
 {
-    data = sirenPropertiesById.at(id);
     siren = std::make_unique<Sirene>(id, resourcesPath);
     // attempt to get rid of aliasing-like sounds in last note of soprano/piccolo
     // siren->changeQualite(20);
@@ -18,14 +17,12 @@ SirenVoice::SirenVoice(sirenId sid, const std::string& resourcesPath) :
     auto onNoteChanged   = [this](float v) { siren->setnoteFromExt(v); };
 
     midiIn = std::make_unique<MidiIn>(id, onVolumeChanged, onNoteChanged);
-    // midiIn->resetSirene();
-    // setSampleRate(44100.0);
 }
 
 //==============================================================================
 // From CS_MidiIn :
 
-void SirenVoice::setSampleRate(double newSampleRate) {
+void SirenVoiceUnit::setSampleRate(double newSampleRate) {
     sampleRate = newSampleRate;
     // original 1kHz juce::Timer frequency for siren->setnote() callback
     float updateFrequency = 1000.0f;
@@ -34,7 +31,7 @@ void SirenVoice::setSampleRate(double newSampleRate) {
     siren->setSampleRate(sampleRate);
 }
 
-void SirenVoice::handleMidi(int status, int value1, int value2) {
+void SirenVoiceUnit::handleMidi(int status, int value1, int value2) {
     // ignore channel info.
     // detect note on, note off, cc and pitchwheel events.
 
@@ -54,11 +51,11 @@ void SirenVoice::handleMidi(int status, int value1, int value2) {
     }
 }
 
-void SirenVoice::stopSiren() {
+void SirenVoiceUnit::stopSiren() {
     midiIn->stopSirene();
 }
 
-float SirenVoice::process() {
+float SirenVoiceUnit::process() {
     // in original code, this timer updating dsp computations related to note slide, vibrato & tremolo is
     // only called once every block, and block is hardcoded to be 512
     // implement this with a counter
@@ -90,6 +87,77 @@ float SirenVoice::process() {
 //  is this frequency sensitive ?
 //  see the 512 samples period above for the execution of midiIn->timerAudio()
 //  are those kind of related -> try other values and listen to the difference
-void SirenVoice::update() {
+void SirenVoiceUnit::update() {
     siren->setnote();
+}
+
+// SIREN VOICE WRAPPER =========================================================
+
+SirenVoice::SirenVoice() :
+    lastSampleRate(44100.0), rawSiren(nullptr)
+{}
+
+SirenVoice::~SirenVoice()
+{
+    delete currentSiren.load();
+    delete discardedSiren.load();
+}
+
+void SirenVoice::setSirenId(
+    sirenId id,
+    const std::string& resourcesPath
+) {
+    sirenIsLoading.store(true, std::memory_order_release);
+    auto* newSiren = new SirenVoiceUnit(id, resourcesPath);
+    newSiren->setSampleRate(lastSampleRate);
+    auto* oldSiren = currentSiren.exchange(newSiren, std::memory_order_acq_rel);
+    // safe to delete the old Siren at the end of processBlock, the audio thread
+    // might still be using it right now (think in terms of ownership horizon)
+    // -> call deleteDiscarded at the end of processBlock !
+    discardedSiren.store(oldSiren, std::memory_order_release);
+    sirenIsLoading.store(false, std::memory_order_release);
+}
+
+bool SirenVoice::isSirenLoading() const
+{
+    return sirenIsLoading.load(std::memory_order_acquire);
+}
+
+bool SirenVoice::getRawSirenHandle(SirenVoiceUnit* target)
+{
+    rawSiren = currentSiren.load(std::memory_order_acquire);
+    target = rawSiren;
+    if (rawSiren == nullptr) { return false; }
+    return true;
+}
+
+void SirenVoice::deleteDiscarded()
+{
+    discardedSiren.exchange(nullptr, std::memory_order_release);
+}
+
+void SirenVoice::setSampleRate(double sampleRate)
+{
+    lastSampleRate = sampleRate;
+    if (getRawSirenHandle()) { rawSiren->setSampleRate(sampleRate); }
+}
+
+void SirenVoice::stop()
+{
+    if (getRawSirenHandle()) { rawSiren->stopSiren(); }
+}
+
+void SirenVoice::update()
+{
+    if (getRawSirenHandle()) { rawSiren->update(); }
+}
+
+void SirenVoice::handleMidi(int status, int value1, int value2)
+{
+    rawSiren->handleMidi(status, value1, value2);
+}
+
+float SirenVoice::process()
+{
+    return rawSiren->process();
 }
