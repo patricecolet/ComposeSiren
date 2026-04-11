@@ -42,20 +42,15 @@ OneSirenPluginProcessor::OneSirenPluginProcessor() :
 OneSirenPluginProcessor::~OneSirenPluginProcessor()
 {
     vms.removeListener(this);
-    delete currentSiren.load();
-    delete discardedSiren.load();
 }
 
 //==============================================================================
 void OneSirenPluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     lastSampleRate = sampleRate;
-    lastSamplesPerBlock = samplesPerBlock;
+    lastBlockSize = samplesPerBlock;
 
-    if (sirenIsLoading.load(std::memory_order_acquire)) { return; }
-    auto siren = currentSiren.load(std::memory_order_acquire);
-    if (siren == nullptr) { return; }
-    siren->setSampleRate(sampleRate);
+    siren.setSampleRate(sampleRate);
 }
 
 void OneSirenPluginProcessor::releaseResources()
@@ -91,10 +86,7 @@ bool OneSirenPluginProcessor::isBusesLayoutSupported(const BusesLayout& layouts)
 //--------------------------------------------------------------------------
 void OneSirenPluginProcessor::resetSiren()
 {
-    if (sirenIsLoading.load(std::memory_order_acquire)) { return; }
-    auto siren = currentSiren.load(std::memory_order_acquire);
-    if (siren == nullptr) { return; }
-    siren->stopSiren();
+    siren.stop();
 }
 
 std::string OneSirenPluginProcessor::getResourcesPath()
@@ -127,10 +119,7 @@ void OneSirenPluginProcessor::midiOutputChanged(AnyOrOneBasedMidiChannel outch)
 
 void OneSirenPluginProcessor::timerCallback()
 {
-    if (sirenIsLoading.load(std::memory_order_acquire)) { return; }
-    auto siren = currentSiren.load(std::memory_order_acquire);
-    if (siren == nullptr) { return; }
-    siren->update();
+    siren.update();
 }
 
 // void OneSirenPluginProcessor::initialiseUiState()
@@ -152,14 +141,16 @@ void OneSirenPluginProcessor::setSirenId(sirenId id)
 {
     // try to use shared_ptr instead, see :
     // https://www.modernescpp.com/index.php/a-lock-free-stack-atomic-smart-pointer/
-    sirenIsLoading.store(true, std::memory_order_release);
-    auto* newSiren = new SirenVoice(id, getResourcesPath());
-    newSiren->setSampleRate(lastSampleRate);
-    auto* oldSiren = currentSiren.exchange(newSiren, std::memory_order_acq_rel);
-    // safe to delete the old Siren at the end of processBlock, the audio thread
-    // might still be using it right now (think in terms of ownership horizon)
-    discardedSiren.store(oldSiren, std::memory_order_release);
-    sirenIsLoading.store(false, std::memory_order_release);
+    // sirenIsLoading.store(true, std::memory_order_release);
+    // auto* newSiren = new SirenVoice(id, getResourcesPath());
+    // newSiren->setSampleRate(lastSampleRate);
+    // auto* oldSiren = currentSiren.exchange(newSiren, std::memory_order_acq_rel);
+    // // safe to delete the old Siren at the end of processBlock, the audio thread
+    // // might still be using it right now (think in terms of ownership horizon)
+    // discardedSiren.store(oldSiren, std::memory_order_release);
+    // sirenIsLoading.store(false, std::memory_order_release);
+
+    siren.setSirenId(id, getResourcesPath());
     router.sendAllCurrentParameterValues();
 }
 
@@ -195,14 +186,9 @@ void OneSirenPluginProcessor::processBlock(juce::AudioBuffer<float>& audio,
 
     // AUDIO CONTROL / SYNTHESIS ///////////////////////////////////////////////
 
-    if (sirenIsLoading.load(std::memory_order_acquire)) {
-        audio.clear();
-        return;
-    }
-
-    auto siren = currentSiren.load(std::memory_order_acquire);
-
-    if (siren == nullptr) {
+    // SirenVoiceUnit* sirenUnit{nullptr};
+    // if (!siren.getRawSirenHandle(sirenUnit)) {
+    if (!siren.getRawSirenHandle()) {
         audio.clear();
         return;
     }
@@ -226,9 +212,9 @@ void OneSirenPluginProcessor::processBlock(juce::AudioBuffer<float>& audio,
     for (int i = 0; i < audio.getNumSamples(); ++i) {
         while (nextPosition == i) {
             auto msg = metadata.getMessage();
-            siren->handleMidi(msg.getRawData()[0],
-                              msg.getRawData()[1],
-                              msg.getRawData()[2]);
+            siren.handleMidi(msg.getRawData()[0],
+                             msg.getRawData()[1],
+                             msg.getRawData()[2]);
 
             ++midiIt;
             if (midiIt == midiIn.cend()) {
@@ -239,7 +225,7 @@ void OneSirenPluginProcessor::processBlock(juce::AudioBuffer<float>& audio,
             }
         }
 
-        float sample = siren->process();
+        float sample = siren.process();
         lch[i] = rch[i] = sample;
     }
 
@@ -249,15 +235,15 @@ void OneSirenPluginProcessor::processBlock(juce::AudioBuffer<float>& audio,
     while (midiIt != midiIn.cend()) {
         metadata = *midiIt;
         auto msg = metadata.getMessage();
-        siren->handleMidi(msg.getRawData()[0],
-                          msg.getRawData()[1],
-                          msg.getRawData()[2]);
+        siren.handleMidi(msg.getRawData()[0],
+                         msg.getRawData()[1],
+                         msg.getRawData()[2]);
         ++midiIt;
     }
 
-    // now we can safely delete the previous siren pointer
+    // we can now safely delete siren's previous internal SirenVoiceUnit pointer
     // (if it's already nullptr, delete will just do nothing)
-    delete discardedSiren.exchange(nullptr);
+    siren.deleteDiscarded();
 }
 
 //==============================================================================

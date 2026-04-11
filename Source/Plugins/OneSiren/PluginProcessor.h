@@ -91,7 +91,7 @@ private:
 
     // needed by DSP
     double lastSampleRate;
-    int lastSamplesPerBlock;
+    int lastBlockSize;
 
     std::vector<parameterLayoutGroupData> parameterLayoutData;
     juce::AudioProcessorValueTreeState apvts;
@@ -101,9 +101,7 @@ private:
 
     MidiRouter router;
     MidiScheduler scheduler;
-    std::atomic<SirenVoice*> currentSiren   { nullptr };
-    std::atomic<SirenVoice*> discardedSiren { nullptr };
-    std::atomic<bool> sirenIsLoading { false };
+    SirenVoice siren;
 
     std::function<std::string(void)> getResourcesPathFunction;
 
