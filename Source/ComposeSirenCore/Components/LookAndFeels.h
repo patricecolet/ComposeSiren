@@ -13,6 +13,9 @@
 
 namespace controlStripLayout
 {
+constexpr float titleAreaWidth{70};
+constexpr float titleFontSize{13};
+constexpr float cornerSize{12};
 constexpr float spacerSize{2};
 constexpr float groupLabelHeight{16};
 constexpr float groupLabelFontSize{12};
@@ -213,6 +216,32 @@ public:
                 juce::PathStrokeType::JointStyle::curved
             )
         );
+
+        // shadows :
+        juce::Path btnPath = p;
+
+        juce::Path maskPath;
+        maskPath.addRectangle(btnPath.getBounds().expanded(5.0f, 5.0f));
+        maskPath.addPath(btnPath);
+
+        juce::Path shadowPath;
+        shadowPath.addPath(btnPath);
+
+        // looks like we have to choose between drawing inner and outer shadows
+        // whatever order we use, only first DS is rendered
+        // todo : find out why !
+        maskPath.setUsingNonZeroWinding(false);
+        shadowPath.setUsingNonZeroWinding(true);
+        juce::DropShadow outerDs(juce::Colour{0x99000000}, 10, {3, 2});
+        g.reduceClipRegion(maskPath);
+        outerDs.drawForPath(g, shadowPath);
+
+        // this one will not be drawn as it comes last :(
+        // maskPath.setUsingNonZeroWinding(true);
+        // shadowPath.setUsingNonZeroWinding(false);
+        // juce::DropShadow innerDs(juce::Colour{0xff000000}, 2, {0, 0});
+        // g.reduceClipRegion(shadowPath);
+        // innerDs.drawForPath(g, maskPath);
     }
 
 private:
