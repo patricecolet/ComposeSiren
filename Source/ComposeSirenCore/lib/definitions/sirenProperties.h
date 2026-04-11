@@ -114,6 +114,7 @@ enum sirenId {
 
 const int MAX_FILE_NAME_LENGTH = 32;
 
+// constants for ../dsp/MidiIn and ../dsp/Sirene classes
 struct sirenCategorySynthConstants {
     int noteMin;
     int noteMidiCentMax;
@@ -132,16 +133,13 @@ struct sirenResourceFileNames {
 };
 
 struct sirenCategoryData {
-    // int id;
     std::string name;
-    uint32_t colour;
     std::tuple<int, int> minMaxNote = std::tuple(0, 0);
     // we get dbPerNote values from measures of the corresponding notes at maximum
     // velocity (127), all shutters open.
-    // found in "MESURE ACOUSTIQUE SIRENES.xlsx" file
+    // found in "Doc/MESURE ACOUSTIQUE SIRENES.xlsx" file
     std::vector<double> dbPerNote = { 0 }; // must be of length (maxNote - minNote) + 1
     sirenCategorySynthConstants synthConstants = { 0 };
-    // sirenCategoryResourceFileNames resourceFileNames = { "" };
 };
 
 inline const std::map<sirenCategory, sirenCategoryData> sirenCategoriesData = {
@@ -149,7 +147,6 @@ inline const std::map<sirenCategory, sirenCategoryData> sirenCategoriesData = {
         Bass,
         {
             "Bass",
-            mecaviv::Colours::SirenPalette::darkBlue,
             std::tuple(12, 65), // C0, F4
             {
                 70.90,72.40,72.90,74.50,75.80,77.20,78.00,80.20,80.50,82.50,82.70,84.70,
@@ -165,7 +162,6 @@ inline const std::map<sirenCategory, sirenCategoryData> sirenCategoriesData = {
         Tenor,
         {
             "Tenor",
-            mecaviv::Colours::SirenPalette::lightBlue,
             std::tuple(12, 67), // C0, G4
             {
                 77.50,79.10,80.00,81.50,82.40,83.30,85.40,85.90,87.90,88.80,89.00,91.50,
@@ -181,7 +177,6 @@ inline const std::map<sirenCategory, sirenCategoryData> sirenCategoriesData = {
         Alto,
         {
             "Alto",
-            mecaviv::Colours::SirenPalette::lightGreen,
             // here we only use measures from S1, as we don't have any measures from S2
             // we consider S1 and S2 are identical
             // (unlike S5 and S6, apparently. see below)
@@ -201,7 +196,6 @@ inline const std::map<sirenCategory, sirenCategoryData> sirenCategoriesData = {
         Soprano,
         {
             "Soprano",
-            mecaviv::Colours::SirenPalette::sunnyYellow,
             // looks like both soprano sirens (S5 and S6) don't have the exact same
             // ranges and levels. Are they different versions ?
             // if so we should probably create Soprano1 and Soprano2 categories ...
@@ -222,7 +216,6 @@ inline const std::map<sirenCategory, sirenCategoryData> sirenCategoriesData = {
         Piccolo,
         {
             "Piccolo",
-            mecaviv::Colours::SirenPalette::darkOrange,
             std::tuple(36, 82), // C2, A#5
             {
                 66.70,68.40,69.60,72.60,75.70,78.90,80.00,77.10,72.90,77.60,82.10,83.60,
@@ -258,7 +251,6 @@ struct VelocityRanges {
 struct sirenData {
     sirenId id = S1;
     sirenCategory category = Alto;
-    // uint32_t colour = sirenCategoriesData.at(category).colour;
     std::string name = sirenCategoriesData.at(category).name;
     sirenResourceFileNames resourceFileNames = {
         "dataAmpS1",
@@ -409,16 +401,6 @@ inline const std::map<const std::string, sirenId> sirenIddByStrId = {
     { "S5", S5 },
     { "S6", S6 },
     { "S7", S7 },
-};
-
-inline const std::map<sirenId, uint32_t> sirenColourById = {
-    { S1, mecaviv::Colours::SirenPalette::darkGreen },
-    { S2, mecaviv::Colours::SirenPalette::lightGreen },
-    { S3, mecaviv::Colours::SirenPalette::darkBlue },
-    { S4, mecaviv::Colours::SirenPalette::lightBlue },
-    { S5, mecaviv::Colours::SirenPalette::sunnyYellow },
-    { S6, mecaviv::Colours::SirenPalette::lightOrange},
-    { S7, mecaviv::Colours::SirenPalette::darkOrange }
 };
 
 inline const std::map<sirenId, const std::string> sirenTitleById = {
