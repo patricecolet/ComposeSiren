@@ -26,18 +26,21 @@ class ReverbStripComponent : public juce::Component//,
     juce::Colour backgroundColour = juce::Colour(40, 40, 60);
     juce::ToggleButton reverbEnableButton;
 
+    SliderCellGroup enableGroup;
     SliderCellGroup reverbGroup;
     SliderCellGroup filterGroup;
 
     const float ksw = controlStripLayout::minKnobSliderWidth;
     const float idsw = controlStripLayout::minIncDecSliderWidth;
-    const float sh = controlStripLayout::minSliderHeight;
-    const float lh = controlStripLayout::sliderLabelHeight;
+    const float sh = controlStripLayout::minSliderHeight * 0.85f;
+    const float lh = controlStripLayout::sliderLabelHeight * 0.75f;
+
+    SliderCell enable     {ksw, sh, lh};
 
     SliderCell dryWet     {ksw, sh, lh};
     SliderCell damping    {ksw, sh, lh};
     SliderCell roomSize   {ksw, sh, lh};
-    SliderCell width      {ksw, sh, lh};;
+    SliderCell width      {ksw, sh, lh};
 
     SliderCell lowCut     {ksw, sh, lh};
     SliderCell highCut    {ksw, sh, lh};

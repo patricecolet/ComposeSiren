@@ -9,6 +9,11 @@ ReverbStripComponent::ReverbStripComponent(juce::AudioProcessorValueTreeState& v
 {
     const float gap = controlStripLayout::spacerSize;
 
+    enableGroup.setTitleText("Enable");
+    enableGroup.setGap(gap);
+    enableGroup.setWrap(false);
+    addAndMakeVisible(&enableGroup);
+
     // Groups + spacers
     reverbGroup.setTitleText("Reverb");
     reverbGroup.setGap(gap);
@@ -32,6 +37,15 @@ ReverbStripComponent::ReverbStripComponent(juce::AudioProcessorValueTreeState& v
     auto setSliderFillColour = [&](SliderCell& sc, juce::Colour c) {
         sc.getSlider().setColour(juce::Slider::ColourIds::rotarySliderFillColourId, c);
     };
+
+    // --- reverb enable switch (horizontal) -----------------------------------
+
+    enable.setNameText("Enable");
+    enable.setRange(0.0, 1.0, 1.0);
+    juce::Slider& es = enable.getSlider();
+    // es.addListener(this);
+    setSliderFillColour(enable, c1);
+    enableGroup.addAndMakeVisible(enable);
 
     // --- reverb group knobs (horizontal) -------------------------------------
 
@@ -116,15 +130,15 @@ void ReverbStripComponent::resized()
     juce::FlexBox root;
     root.flexDirection = juce::FlexBox::Direction::row;
     root.flexWrap = juce::FlexBox::Wrap::noWrap;
-    // root.justifyContent = juce::FlexBox::JustifyContent::flexStart;
-    root.justifyContent = juce::FlexBox::JustifyContent::center;
+    root.justifyContent = juce::FlexBox::JustifyContent::flexEnd;
+    // root.justifyContent = juce::FlexBox::JustifyContent::center;
     root.alignItems = juce::FlexBox::AlignItems::center;
 
     const float spacerW = 2.0f;
     const float gap = controlStripLayout::spacerSize;
 
     // NB : withMinWidth is 52 for 1, 103 for 2, 154 for 3 etc
-    root.items.add(juce::FlexItem(spacer1).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
+    // root.items.add(juce::FlexItem(spacer1).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
     root.items.add(juce::FlexItem(spacer2).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
     root.items.add(juce::FlexItem(reverbGroup).withFlex(0,0)
                                              .withMinWidth(reverbGroup.getMinWidth())
@@ -191,6 +205,5 @@ void ReverbStripComponent::setBackgroundColour(juce::Colour c)
     backgroundColour = c;
     reverbGroup.setBackgroundColour(c);
     filterGroup.setBackgroundColour(c);
-
     repaint();
 }
