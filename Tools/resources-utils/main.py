@@ -45,19 +45,15 @@ def get_float_array_from_raw_data_file_path(path):
 
     return fdata
 
-def process_amp_data(amp_data):
-    fdata = np.resize(np.array(amp_data), (NOMBRE_DE_NOTES, MAX_TAB, MAX_PARTIELS))
-    return fdata # amp_data[0]
+def resize_amp_or_freq_data(amp_or_freq_data):
+    fdata = np.resize(np.array(amp_or_freq_data), (NOMBRE_DE_NOTES, MAX_TAB, MAX_PARTIELS))
+    return fdata # amp_or_freq_data[0]
 
-def process_freq_data(freq_data):
-    fdata = np.resize(np.array(freq_data), (NOMBRE_DE_NOTES, MAX_TAB, MAX_PARTIELS))
-    return fdata # freq_data[0]
-
-def process_duree_data(duree_data):
+def resize_duree_data(duree_data):
     fdata = np.resize(np.array(duree_data), (NOMBRE_DE_NOTES, 3))
     return fdata # duree_data[0]
 
-def process_vector_interval_data(vector_interval_data):
+def resize_vector_interval_data(vector_interval_data):
     fdata = np.resize(np.array(vector_interval_data), (392))
     return fdata # vector_interval_data[0]
 
@@ -74,20 +70,31 @@ It includes functions for creating file paths, reading binary data, and processi
 def main():
     print("Hello from resources-utils!")
 
-    for i in range(1, 2):
-        i = 1
-        amp_path = make_path_for("dataAmp", i)
-        freq_path = make_path_for("dataFreq", i)
-        duree_path = make_path_for("datadureTabs", i)
-        vector_interval_path = make_path_for("dataVectorInterval", i)
+    # for i in range(1, 2):
+    if True:
+        s = 1
 
+        amp_path = make_path_for("dataAmp", s)
         amp_data = get_float_array_from_raw_data_file_path(amp_path)
-        freq_data = get_float_array_from_raw_data_file_path(freq_path)
-        duree_data = get_float_array_from_raw_data_file_path(duree_path)
-        vector_interval_data = get_float_array_from_raw_data_file_path(vector_interval_path)
+        amp_data = resize_amp_or_freq_data(amp_data)
 
-    # resource_path = make_path_for("datadureTabs", 1)
-    # Read as binary to avoid UTF-8 decoding errors on non-text files
+        freq_path = make_path_for("dataFreq", s)
+        freq_data = get_float_array_from_raw_data_file_path(freq_path)
+        freq_data = resize_amp_or_freq_data(freq_data)
+
+        duree_path = make_path_for("datadureTabs", s)
+        duree_data = get_float_array_from_raw_data_file_path(duree_path)
+        duree_data = resize_duree_data(duree_data)
+
+        vector_interval_path = make_path_for("dataVectorInterval", s)
+        vector_interval_data = get_float_array_from_raw_data_file_path(vector_interval_path)
+        vector_interval_data = resize_vector_interval_data(vector_interval_data)
+
+    for idx in range(NOMBRE_DE_NOTES):
+        atable = amp_data[idx][]
+        ftab = freq_data[idx]
+        if duree_data[idx] == 0.0:
+            print(idx)
 
     fdata = duree_data
     count = 0
@@ -97,15 +104,15 @@ def main():
             break
         count = count + 1
 
-    print(f"{count} first concommitent null elements")
+    # print(f"{count} first concommitent null elements")
 
-        # for d in data:
-            # print(f"{(d):02x}", end="")
-        # print(len(data))
-        # print(len(fdata))
+    # for d in data:
+        # print(f"{(d):02x}", end="")
+    # print(len(data))
+    # print(len(fdata))
 
-        # tabAmp[NOMBRE_DE_NOTE][MAX_TAB][MAX_Partiel];
-        # unit_size = len(fdata) / (NOMBRE_DE_NOTES * MAX_TAB * MAX_PARTIELS)
+    # tabAmp[NOMBRE_DE_NOTE][MAX_TAB][MAX_Partiel];
+    # unit_size = len(fdata) / (NOMBRE_DE_NOTES * MAX_TAB * MAX_PARTIELS)
 
     theoretical = (NOMBRE_DE_NOTES * MAX_TAB * MAX_PARTIELS)
 
