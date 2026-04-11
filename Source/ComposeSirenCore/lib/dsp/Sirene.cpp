@@ -20,8 +20,6 @@ static_assert(CHAR_BIT == 8 && sizeof(float) == 4, "require 8 bits bytes and 32 
 // or is this enough ?
 // static_assert(sizeof(float) * CHAR_BIT == 32, "require 32 bits floats");
 
-// Sirene::Sirene(const std::string& str, const std::string& dataFilePath) :
-// Sirene::Sirene(const sirenCategory& c, const std::string& dataFilePath) :
 Sirene::Sirene(sirenId id, const std::string& dataFilePath) :
 data(sirenPropertiesById.at(id)) {
   setSampleRate(44100.0);
@@ -108,7 +106,7 @@ void Sirene::readDataFromBinaryFile(const std::string& dataFilePath,
   {
     myfile.read(reinterpret_cast<char *>(tabAmp), sizeof tabAmp);
     if (myfile.gcount() != sizeof tabAmp) {
-      std::cout << "Warning: readDataFromBinaryFile: read " << myfile.gcount()
+      std::cout << "Warning (" << tabAmpFile << ") : readDataFromBinaryFile: read " << myfile.gcount()
       << " bytes instead of " << sizeof tabAmp << std::endl;
     }
     myfile.close();
