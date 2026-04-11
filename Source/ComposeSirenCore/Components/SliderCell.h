@@ -96,7 +96,8 @@ public:
 
     void paint(juce::Graphics& g) override {
         g.setColour(juce::Colour{0x22ffffff});
-        g.fillRoundedRectangle(getLocalBounds().toFloat(), 12);
+        auto area = getLocalBounds();
+        g.fillRoundedRectangle(area.toFloat(), controlStripLayout::cornerSize);
     }
 
     void resized() override {

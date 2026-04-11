@@ -52,6 +52,10 @@ public:
         resized();
     }
 
+    const std::string getTitleText() const {
+        return groupLabel.getText().toStdString();
+    }
+
     void setGap(float g) { gap = g; resized(); }
     void setWrap(bool shouldWrap) { wrap = shouldWrap; resized(); }
     void setShowLabel(bool shouldShow) { showLabel = shouldShow; resized(); }
@@ -78,7 +82,7 @@ public:
     void paint(juce::Graphics& g) override {
         g.setColour(backgroundColour);
         auto area = getLocalBounds();
-        g.fillRoundedRectangle(area.toFloat(), 12);
+        g.fillRoundedRectangle(area.toFloat(), controlStripLayout::cornerSize);
     }
 
     void resized() override {
