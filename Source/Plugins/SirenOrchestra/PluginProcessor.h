@@ -13,6 +13,7 @@
 #include <apvtsUtilities.h>
 #include <atomicUtilities.h>
 #include <pathUtilities.h>
+#include <lib/dsp/mareverbe.h>
 #include <lib/wrappers/SirenVoice.h>
 
 class SirenOrchestraPluginProcessor :
@@ -97,6 +98,7 @@ public:
 private:
     // MidiIn* myMidiInHandler;
     // Synth* mySynth;
+    mareverbe reverb;
 
     // needed by DSP
     // needed by DSP
@@ -111,9 +113,10 @@ private:
 
     MidiRouter router;
     MidiScheduler scheduler;
-    std::atomic<SirenVoice*> currentSiren   { nullptr };
-    std::atomic<SirenVoice*> discardedSiren { nullptr };
-    std::atomic<bool> sirenIsLoading { false };
+    // std::atomic<SirenVoice*> currentSiren   { nullptr };
+    // std::atomic<SirenVoice*> discardedSiren { nullptr };
+    // std::atomic<bool> sirenIsLoading { false };
+    SirenVoice siren;
 
     std::function<std::string(void)> getResourcesPathFunction;
 
