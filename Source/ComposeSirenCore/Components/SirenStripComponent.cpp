@@ -7,10 +7,13 @@
 //==============================================================================
 // ReverbComponent - Section de reverb
 SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts,
-                                         const parameterLayoutGroupData& paramGroupData) :
+                                         const parameterLayoutGroupData& paramGroupData,
+                                         bool hasTitleArea) :
     apvts(vts),
-    currentCategory(Alto)
+    currentCategory(Alto),
+    hasTitle(hasTitleArea)
 {
+    // utility title formatter
     auto appendCCNumber = [&](const std::string& s, const ParameterId id) -> std::string {
         if (auto cc = std::get_if<CCParam>(&parameterDefinitionById.at(id)->data)) {
             return s + std::string("\ncc") + std::to_string(cc->midiCCNumber) + "";
@@ -24,14 +27,20 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
         hasTrackControls = true; // false by default
     }
 
-    // Titre
-    // titleLabel.setText("Siren", juce::dontSendNotification);
-    // titleLabel.setJustificationType(juce::Justification::centred);
-    // titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    // titleLabel.setFont(juce::FontOptions(16.0f, juce::Font::bold));
-    // addAndMakeVisible(titleLabel);
-
     const float gap = controlStripLayout::spacerSize;
+
+    if (hasTitle) {
+        addAndMakeVisible(spacer0);
+
+        titleLabel.setText(paramGroupData.name, juce::dontSendNotification);
+        titleLabel.setJustificationType(juce::Justification::centred);
+        titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+        titleLabel.setFont(juce::FontOptions(controlStripLayout::titleFontSize,
+                           juce::Font::bold));
+        addAndMakeVisible(titleLabel);
+    }
+
+    addAndMakeVisible(spacer1);
 
     // Groups + spacers
     startGroup.setTitleText("Pitch");
@@ -40,41 +49,42 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     startGroup.setWrap(false);
     addAndMakeVisible(startGroup);
 
+    addAndMakeVisible(spacer2);
+
     vibGroup.setTitleText("Vibrato");
     vibGroup.setGap(gap);
     vibGroup.setWrap(false);
     addAndMakeVisible(vibGroup);
+
+    addAndMakeVisible(spacer3);
 
     tremGroup.setTitleText("Tremolo");
     tremGroup.setGap(gap);
     tremGroup.setWrap(false);
     addAndMakeVisible(tremGroup);
 
+    addAndMakeVisible(spacer4);
+
     envGroup.setTitleText("Envelope");
     envGroup.setGap(gap);
     envGroup.setWrap(false);
     addAndMakeVisible(envGroup);
+
+    addAndMakeVisible(spacer5);
 
     endGroup.setTitleText(" ");
     endGroup.setGap(gap);
     endGroup.setWrap(false);
     addAndMakeVisible(endGroup);
 
+    addAndMakeVisible(spacer6);
+
     if (hasTrackControls) {
         trackGroup.setTitleText("Master");
         trackGroup.setGap(gap);
         trackGroup.setWrap(false);
         addAndMakeVisible(trackGroup);
-    }
 
-    addAndMakeVisible(spacer1);
-    addAndMakeVisible(spacer2);
-    addAndMakeVisible(spacer3);
-    addAndMakeVisible(spacer4);
-    addAndMakeVisible(spacer5);
-    addAndMakeVisible(spacer6);
-
-    if (hasTrackControls) {
         addAndMakeVisible(spacer7);
     }
 
@@ -340,11 +350,19 @@ void SirenStripComponent::setCurrentSiren(sirenCategory c)
 
 void SirenStripComponent::paint(juce::Graphics& g)
 {
-    auto area = getLocalBounds().reduced(2).toFloat();
+    // auto area = getLocalBounds().reduced(2).toFloat();
+    auto area = getLocalBounds().toFloat();
 
     // g.setColour(backgroundColour);
     g.setColour(juce::Colour{0xff314159});
     g.fillRoundedRectangle(area, 12);
+
+    if (hasTitle) {
+        area = area.removeFromLeft(controlStripLayout::titleAreaWidth);
+        area += { controlStripLayout::spacerSize, 0 };
+        g.setColour(backgroundColour);
+        g.fillRoundedRectangle(area, controlStripLayout::cornerSize);
+    }
 
     // This draws some kind of minimalistic 19" rack ears ----------------------
 
@@ -382,22 +400,7 @@ void SirenStripComponent::paint(juce::Graphics& g)
 void SirenStripComponent::resized()
 {
     auto area = getLocalBounds().reduced(0);
-
-    // int area_height;
-
-    // if (showKnobLabels) {
-    //     area_height = 88;
-    // } else {
-    //     area_height = 80;
-    // }
-    //
-    // if (!showGroupLabels) {
-    //     area_height -= 16;
-    // }
-    //
-    // if (!showTextBox) {
-    //     area_height -= 16;
-    // }
+    // auto titleArea = area.removeFromLeft(controlStripLayout::titleAreaWidth);
 
     const int area_height = area.getHeight();
 
@@ -411,28 +414,30 @@ void SirenStripComponent::resized()
     const float spacerW = 2.0f;
     const float gap = controlStripLayout::spacerSize;
 
-    // NB : withMinWidth is 52 for 1, 103 for 2, 154 for 3 etc
+    if (hasTitle) {
+        root.items.add(juce::FlexItem(spacer0).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
+        root.items.add(juce::FlexItem(titleLabel).withFlex(0,0)
+                                                 .withWidth(controlStripLayout::titleAreaWidth)
+                                                 .withHeight((float) area_height));
+    }
+
     root.items.add(juce::FlexItem(spacer1).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
     root.items.add(juce::FlexItem(startGroup).withFlex(0,0)
                                              .withMinWidth(startGroup.getMinWidth())
                                              .withHeight((float) area_height));
     root.items.add(juce::FlexItem(spacer2).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
-    // root.items.add(juce::FlexItem(vibGroup).withFlex(0,0).withMinWidth(160.0f).withHeight((float) area_height));
     root.items.add(juce::FlexItem(vibGroup).withFlex(0,0)
                                              .withMinWidth(vibGroup.getMinWidth())
                                              .withHeight((float) area_height));
     root.items.add(juce::FlexItem(spacer3).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
-    // root.items.add(juce::FlexItem(tremGroup).withFlex(0,0).withMinWidth(108.0f).withHeight((float) area_height));
     root.items.add(juce::FlexItem(tremGroup).withFlex(0,0)
                                              .withMinWidth(tremGroup.getMinWidth())
                                              .withHeight((float) area_height));
     root.items.add(juce::FlexItem(spacer4).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
-    // root.items.add(juce::FlexItem(envGroup).withFlex(0,0).withMinWidth(108.0f).withHeight((float) area_height));
     root.items.add(juce::FlexItem(envGroup).withFlex(0,0)
                                              .withMinWidth(envGroup.getMinWidth())
                                              .withHeight((float) area_height));
     root.items.add(juce::FlexItem(spacer5).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
-    // root.items.add(juce::FlexItem(endGroup).withFlex(0,0).withMinWidth(160.0f).withHeight((float) area_height));
     root.items.add(juce::FlexItem(endGroup).withFlex(0,0)
                                              .withMinWidth(endGroup.getMinWidth())
                                              .withHeight((float) area_height));
@@ -458,73 +463,38 @@ void SirenStripComponent::resized()
     }
 }
 
-// void SirenStripComponent::sliderValueChanged(juce::Slider* slider)
-// {
-//     if (portamento.compareSlider(slider))
-//     {
-//         //std::cout << "coucou !" <<std::endl;
-//     }
-//     else if (vibSpeed.compareSlider(slider))
-//     {
-//         //std::cout << "yeeeha !" <<std::endl;
-//     }
-//
-//     if (slider == &roomSizeSlider)
-//     {
-//         audioProcessor.mySynth->reverb.setroomsize((float)roomSizeSlider.getValue());
-//     }
-//     else if (slider == &wetSlider)
-//     {
-//         // Dry/Wet : 0=100% dry, 0.5=50/50, 1=100% wet
-//         float dryWetValue = (float)wetSlider.getValue();
-//         audioProcessor.mySynth->reverb.setwet(dryWetValue);
-//         audioProcessor.mySynth->reverb.setdry(1.0f - dryWetValue);
-//     }
-//     else if (slider == &dampSlider)
-//     {
-//         audioProcessor.mySynth->reverb.setdamp((float)dampSlider.getValue());
-//     }
-//     else if (slider == &widthSlider)
-//     {
-//         audioProcessor.mySynth->reverb.setwidth((float)widthSlider.getValue());
-//     }
-//     else if (slider == &highpassSlider)
-//     {
-//         audioProcessor.mySynth->setReverbHighpass((float)highpassSlider.getValue());
-//     }
-//     else if (slider == &lowpassSlider)
-//     {
-//         audioProcessor.mySynth->setReverbLowpass((float)lowpassSlider.getValue());
-//     }
-// }
-
-// void SirenStripComponent::buttonClicked(juce::Button* button)
-// {
-//     if (button == &enableButton)
-//     {
-//         audioProcessor.mySynth->setReverbEnabled(enableButton.getToggleState());
-//     }
-// }
-
 float SirenStripComponent::getMinWidth()
+{
+    return getTitleWidth()
+            + getParametersWidth();
+}
+
+float SirenStripComponent::getTitleWidth() const
+{
+    return controlStripLayout::spacerSize
+            + (hasTitle ? controlStripLayout::titleAreaWidth : 0);
+}
+
+float SirenStripComponent::getParametersWidth(bool sirenParametersOnly)
 {
     float mw = 0.0f;
 
     for (auto* c : getChildren()) {
         if (auto* group = dynamic_cast<SliderCellGroup*>(c)) {
+            if (sirenParametersOnly && group->getTitleText() == "Master") {
+                mw -= controlStripLayout::spacerSize;
+                continue;
+            }
             mw += group->getMinWidth();
         } else if (auto* spacer = dynamic_cast<Spacer*>(c)) {
             mw += controlStripLayout::spacerSize;
         }
     }
 
+    mw -= controlStripLayout::spacerSize; // always remove title spacer
+
     return mw;
 }
-
-// float SirenStripComponent::getMinHeight()
-// {
-//     return 80.0f;
-// }
 
 void SirenStripComponent::setShowTitle(bool s)
 {

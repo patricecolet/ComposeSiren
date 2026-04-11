@@ -13,24 +13,22 @@
 
 //==============================================================================
 class SirenStripComponent : public juce::Component,
-                            // public juce::Slider::Listener,
-                            // public juce::Button::Listener,
                             private juce::Timer
 {
 public:
     SirenStripComponent(juce::AudioProcessorValueTreeState& vts,
-                        const parameterLayoutGroupData& paramGroupData);
+                        const parameterLayoutGroupData& paramGroupData,
+                        bool hasTitleArea = false);
     ~SirenStripComponent() override;
 
     void setCurrentSiren(sirenCategory c);
 
     void paint(juce::Graphics&) override;
     void resized() override;
-    // void sliderValueChanged(juce::Slider* slider) override;
-    // void buttonClicked(juce::Button* button) override;
 
     float getMinWidth();
-    float getMinHeight();
+    float getTitleWidth() const;
+    float getParametersWidth(bool sirenParametersOnly = false);
     void setShowTitle(bool s);
     void setShowGroupLabels(bool s);
     void setShowKnobLabels(bool s);
@@ -41,8 +39,6 @@ public:
 protected:
     void timerCallback() override;
 
-    bool hasTrackControls = false;
-
     juce::AudioProcessorValueTreeState& apvts;
 
     sirenCategory currentCategory;
@@ -51,6 +47,9 @@ protected:
     bool showGroupLabels = true;
     bool showKnobLabels = true;
     bool showTextBox = true;
+
+    bool hasTrackControls = false;
+    bool hasTitle = false;
 
     IncDecLAF incDecLAF;
     KnobLAF2 knobLAF2;
@@ -67,6 +66,7 @@ protected:
     SliderCellGroup trackGroup;
 
     // Spacers between groups
+    Spacer spacer0;
     Spacer spacer1;
     Spacer spacer2;
     Spacer spacer3;
