@@ -3,6 +3,6 @@ juce_add_binary_data(${BaseTargetName}BinaryData
     basic-knob-bg-bw.svg
     basic-knob-indicator.svg
     basic-knob-outline.svg
-    boiserie.png
+    # boiserie.png
     Picto_Siren_40x37.png
 )

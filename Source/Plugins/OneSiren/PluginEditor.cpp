@@ -3,7 +3,9 @@
 //
 
 #include "PluginEditor.h"
-#include "lib/definitions/palette.h"
+
+#include <colourUtilities.h>
+#include <lib/definitions/palette.h>
 
 OneSirenPluginEditor::OneSirenPluginEditor(OneSirenPluginProcessor& p) :
     juce::AudioProcessorEditor(&p),
@@ -20,6 +22,8 @@ OneSirenPluginEditor::OneSirenPluginEditor(OneSirenPluginProcessor& p) :
     )
 {
     audioProcessor.getVoiceManagerState().addListener(this);
+    auto cat = audioProcessor.getVoiceManagerState().getSirenCategory();
+
     addAndMakeVisible(mainButtons);
     addAndMakeVisible(voiceManager);
 
@@ -28,7 +32,8 @@ OneSirenPluginEditor::OneSirenPluginEditor(OneSirenPluginProcessor& p) :
     sirenStrip.setShowKnobLabels(true);
     sirenStrip.setShowTextBox(true);
     sirenStrip.setBackgroundColour(
-        juce::Colour(mecaviv::Colours::SirenPalette::darkBlue)
+        sirenColourById.at(defaultSirenIdByCategory.at(cat))
+        // juce::Colour(mecaviv::Colours::SirenPalette::darkBlue)
     );
     addAndMakeVisible(sirenStrip);
     addAndMakeVisible(midiKeyboard);
@@ -63,7 +68,7 @@ void OneSirenPluginEditor::resized()
 
 void OneSirenPluginEditor::categoryChanged(sirenCategory c)
 {
-    // sirenStrip.setBackgroundColour(
-    //     juce::Colour(sirenCategoriesData.at(c).colour)
-    // );
+    sirenStrip.setBackgroundColour(
+        sirenColourById.at(defaultSirenIdByCategory.at(c))
+    );
 }
