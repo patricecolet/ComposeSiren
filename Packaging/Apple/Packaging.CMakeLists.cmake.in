@@ -247,7 +247,8 @@ function(_get_pair_value_from_key DICTLIST KEY OUT_VAR)
     endif()
 endfunction()
 
-function(_configure_files_for_standalone PLUGIN_TARGET_NAME)
+function(_configure_files_for_standalone PLUGIN_TARGET_NAME
+                                         USE_TARGET_FORMAT_COMPONENTS)
     # we set tmp STANDALONE_APP_PATH var to be consumed by the
     # FixStandaloneRelocatable.sh script generators
     _get_pair_value_from_key(
@@ -272,13 +273,17 @@ function(_configure_files_for_standalone PLUGIN_TARGET_NAME)
 endfunction()
 
 if(USE_TARGET_FORMAT_COMPONENTS)
-  foreach(PLUGIN_TARGET_NAME IN LISTS PLUGIN_TARGETS)
-    foreach(FORMAT @FORMATS@)
-      _configure_files_for_standalone(${PLUGIN_TARGET_NAME})
+    foreach(PLUGIN_TARGET_NAME IN LISTS PLUGIN_TARGETS)
+        _configure_files_for_standalone(
+            ${PLUGIN_TARGET_NAME}
+            USE_TARGET_FORMAT_COMPONENTS
+        )
     endforeach()
-  endforeach()
 else()
-  _configure_files_for_standalone(${PLUGIN_TARGET_NAME})
+    _configure_files_for_standalone(
+        ${PLUGIN_TARGET_NAME}
+        USE_TARGET_FORMAT_COMPONENTS
+  )
 endif()
 
 configure_file(

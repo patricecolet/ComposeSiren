@@ -9,6 +9,11 @@ PRODUCT_DIR="$CPACK_DIR/_CPack_Packages/Darwin/productbuild/$FILE_NAME"
 RESOURCES_DIR="$PRODUCT_DIR/Contents"
 PACKAGES_DIR="$RESOURCES_DIR/Packages"
 
+COMPONENT_PREFIX=""
+if [[ @USE_TARGET_FORMAT_COMPONENTS@ ]]; then
+  COMPONENT_PREFIX="@PLUGIN_TARGET_NAME@_"
+fi
+
 # CPack typically produces this, but be defensive:
 DIST_FILE=""
 if [[ -f "$PRODUCT_DIR/Contents/distribution.dist" ]]; then
@@ -25,7 +30,7 @@ if [[ ! -d "$APP_PATH" ]]; then
   exit 1
 fi
 
-STANDALONE_COMPONENT_PKG="$PACKAGES_DIR/$FILE_NAME-Standalone.pkg"
+STANDALONE_COMPONENT_PKG="$PACKAGES_DIR/$FILE_NAME-${COMPONENT_PREFIX}Standalone.pkg"
 if [[ ! -f "$STANDALONE_COMPONENT_PKG" ]]; then
   echo "ERROR: Expected Standalone component pkg not found: $STANDALONE_COMPONENT_PKG"
   echo "Contents of $PACKAGES_DIR:"
