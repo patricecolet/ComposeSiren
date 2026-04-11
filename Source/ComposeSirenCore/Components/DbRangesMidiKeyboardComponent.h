@@ -82,6 +82,92 @@ public:
 
         return {};
     }
+
+    /*
+     * copied from juce_audio_utils/gui/MidiKeyboardComponent
+     */
+    void drawWhiteNote(int midiNoteNumber,
+                       juce::Graphics& g,
+                       juce::Rectangle<float> area,
+                       bool isDown,
+                       bool isOver,
+                       juce::Colour lineColour,
+                       juce::Colour textColour) override
+    {
+        auto c = juce::Colours::transparentWhite;
+
+        if (isDown)  c = findColour (keyDownOverlayColourId);
+        if (isOver)  c = c.overlaidWith (findColour (mouseOverKeyOverlayColourId));
+
+        g.setColour (c);
+        g.fillRect (area);
+
+        const auto currentOrientation = getOrientation();
+
+        auto text = getWhiteNoteText (midiNoteNumber);
+
+        if (text.isNotEmpty())
+        {
+            auto fontHeight = juce::jmin (12.0f, getKeyWidth() * 0.9f);
+
+            g.setColour (textColour);
+            g.setFont (withDefaultMetrics (juce::FontOptions { fontHeight }).withHorizontalScale (0.8f));
+
+            switch (currentOrientation)
+            {
+                case horizontalKeyboard:
+                    g.drawText (
+                        text,
+                        area.withTrimmedLeft (1.0f).withTrimmedBottom (2.0f),
+                        juce::Justification::centredBottom,
+                        false
+                    );
+                    break;
+                case verticalKeyboardFacingLeft:
+                    g.drawText (
+                        text,
+                        area.reduced (2.0f),
+                        juce::Justification::centredLeft,
+                        false
+                    );
+                    break;
+                case verticalKeyboardFacingRight:
+                    g.drawText(
+                        text,
+                        area.reduced (2.0f),
+                        juce::Justification::centredRight,
+                        false
+                    );
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (! lineColour.isTransparent())
+        {
+            g.setColour (lineColour);
+
+            switch (currentOrientation)
+            {
+                case horizontalKeyboard:            g.fillRect (area.withWidth (1.0f)); break;
+                case verticalKeyboardFacingLeft:    g.fillRect (area.withHeight (1.0f)); break;
+                case verticalKeyboardFacingRight:   g.fillRect (area.removeFromBottom (1.0f)); break;
+                default: break;
+            }
+
+            if (midiNoteNumber == getRangeEnd())
+            {
+                switch (currentOrientation)
+                {
+                    case horizontalKeyboard:            g.fillRect (area.expanded (1.0f, 0).removeFromRight (1.0f)); break;
+                    case verticalKeyboardFacingLeft:    g.fillRect (area.expanded (0, 1.0f).removeFromBottom (1.0f)); break;
+                    case verticalKeyboardFacingRight:   g.fillRect (area.expanded (0, 1.0f).removeFromTop (1.0f)); break;
+                    default: break;
+                }
+            }
+        }
+    }
 private:
     // see https://forum.juce.com/t/midikeyboardstate-is-not-threadsafe/40067
     // seems that this fix didn't make it into juce 6.1.2
