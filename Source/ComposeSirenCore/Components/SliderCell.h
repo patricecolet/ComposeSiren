@@ -6,25 +6,19 @@
 #define COMPOSESIREN_SLIDERCELL_H
 
 #include "LookAndFeels.h"
+#include "GuiCell.h"
 #include "../lib/definitions/parameterDefinitions.h"
 
-class SliderCell : public juce::Component
+class SliderCell : public GuiCell
 {
-    using juceSliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
+    using juceSliderAttachment
+        = juce::AudioProcessorValueTreeState::SliderAttachment;
+
 public:
     SliderCell(float minw, float minh, float labelh) :
-        showLabel(true),
-        showTextBox(true),
-        minWidth(minw),
-        minHeight(minh),
-        labelHeight(labelh)
+        GuiCell(minw, minh, labelh),
+        showTextBox(true)
     {
-        nameLabel.setJustificationType(juce::Justification::centred);
-        nameLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-        nameLabel.setFont(juce::FontOptions(controlStripLayout::sliderLabelFontSize,
-                                            juce::Font::plain));
-        addAndMakeVisible(nameLabel);
-
         slider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
         slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 42, 16); // value at bottom
         slider.setNumDecimalPlacesToDisplay(2);
@@ -36,10 +30,6 @@ public:
     {
         attachment.reset();
         slider.setLookAndFeel(nullptr);
-    }
-
-    void setNameText(const juce::String& text) {
-        nameLabel.setText(text, juce::dontSendNotification);
     }
 
     void setRange(double min, double max, double step = 0.0) {
@@ -60,21 +50,13 @@ public:
 
     void setSliderAttachment(juce::AudioProcessorValueTreeState& vts,
                              ParameterId paramId, const std::string& groupId) {
-
         attachment = std::make_unique<juceSliderAttachment>(
             vts, ParameterIdGet::toJuceParameterId(groupId, paramId), slider
         );
     }
 
-    float getMinWidth() const { return minWidth; }
-    void setMinWidth(float w) { minWidth = w; }
-
-    float getMinHeight() const { return minHeight; }
-    void setMinHeight(float h) { minHeight = h; }
-
     juce::Slider& getSlider() { return slider; }
     const juce::Slider& getSlider() const { return slider; }
-
     bool compareSlider(juce::Slider* other) const { return &slider == other; }
 
     void setShowLabel(bool s) {
@@ -94,12 +76,6 @@ public:
         resized();
     }
 
-    void paint(juce::Graphics& g) override {
-        g.setColour(juce::Colour{0x22ffffff});
-        auto area = getLocalBounds();
-        g.fillRoundedRectangle(area.toFloat(), controlStripLayout::cornerSize);
-    }
-
     void resized() override {
         auto bounds = getLocalBounds();
 
@@ -111,7 +87,7 @@ public:
         juce::FlexBox fb;
         fb.flexDirection = juce::FlexBox::Direction::column;
         fb.justifyContent = juce::FlexBox::JustifyContent::center;
-        fb.alignContent = juce::FlexBox::AlignContent::center;
+        fb.alignContent = juce::FlexBox::AlignContent::flexEnd;
         fb.alignItems = juce::FlexBox::AlignItems::center;
 
         fb.items.add(juce::FlexItem(slider).withMinWidth(minWidth)
@@ -119,33 +95,15 @@ public:
                                            .withFlex(1));
 
         fb.performLayout(bounds.toFloat());
-
-        // auto area = getLocalBounds();
-        // const int labelH = 14;
-        // if (nameLabel.isVisible()) {
-        //     auto labelArea = area.removeFromTop(labelH);
-        //     nameLabel.setBounds(labelArea);
-        // } else {
-        //     nameLabel.setBounds(0, 0, 0, 0);
-        // }
-        // slider.setBounds(area.reduced(0,0));
     }
 
 private:
-    juce::Label nameLabel;
     juce::Slider slider;
     std::unique_ptr<juceSliderAttachment> attachment;
 
-    bool showLabel;
-    bool showTextBox;
-
-    // needed for flexbox style UI integration
-    float minWidth;
-    float minHeight;
-    float labelHeight;
-
     // default look and feel
     KnobLAF knobLAF;
+    bool showTextBox;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SliderCell)
 };

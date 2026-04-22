@@ -2,11 +2,11 @@
 // Created by joseph larralde on 07/03/2026.
 //
 
-#ifndef COMPOSESIREN_SLIDERGROUP_H
-#define COMPOSESIREN_SLIDERGROUP_H
+#ifndef COMPOSESIREN_GUICELLGROUP_H
+#define COMPOSESIREN_GUICELLGROUP_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "SliderCell.h"
+#include "GuiCell.h"
 
 /**
  * Just a Spacer utility class. Is it really useful though ? We should be
@@ -31,10 +31,10 @@ public:
  *  as the flexbox in juce is just a convenience to make layout creation code
  *  more elegant, and the spacers and dimensions are best defined statically.
  */
-class SliderCellGroup : public juce::Component
+class GuiCellGroup : public juce::Component
 {
 public:
-    explicit SliderCellGroup() :
+    explicit GuiCellGroup() :
         gap(0),
         wrap(false),
         showLabel(false),
@@ -61,6 +61,13 @@ public:
     void setShowLabel(bool shouldShow) { showLabel = shouldShow; resized(); }
     void setShowTextBox(bool shouldShow) { showTextBox = shouldShow; resized(); }
     void setBackgroundColour(juce::Colour c) { backgroundColour = c; repaint(); }
+    void setCellBackgroundColour(juce::Colour c) {
+        for (auto* child : getChildren()) {
+            if (auto* cell = dynamic_cast<GuiCell*>(child)) {
+                cell->setBackgroundColour(c);
+            }
+        }
+    }
     void setTextColour(juce::Colour c) {
         textColour = c;
         groupLabel.setColour(juce::Label::textColourId, c.withAlpha(0.95f));
@@ -71,7 +78,7 @@ public:
         float w = 0;
         for (auto* c : getChildren()) {
             // ignore group label component
-            if (const auto* cell = dynamic_cast<SliderCell*>(c)) {
+            if (const auto* cell = dynamic_cast<GuiCell*>(c)) {
                 w += cell->getMinWidth();
                 cnt++;
             }
@@ -107,7 +114,7 @@ public:
 
         for (auto* c : getChildren()) {
             // ignore group label component
-            if (auto* cell = dynamic_cast<SliderCell*>(c)) {
+            if (auto* cell = dynamic_cast<GuiCell*>(c)) {
                 float w = cell->getMinWidth();
                 // float h = cell->getMinHeight();
                 float h = bounds.getHeight() - gap;
@@ -140,7 +147,7 @@ private:
     juce::Colour backgroundColour = juce::Colour(40, 40, 60);
     juce::Colour textColour = juce::Colours::white.withAlpha(0.95f);
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SliderCellGroup)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(GuiCellGroup)
 };
 
-#endif //COMPOSESIREN_SLIDERGROUP_H
+#endif //COMPOSESIREN_GUICELLGROUP_H
