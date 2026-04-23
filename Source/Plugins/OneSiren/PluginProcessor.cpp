@@ -20,7 +20,7 @@ OneSirenPluginProcessor::OneSirenPluginProcessor() :
 #endif
     // will be initialized by prepareToPlay at startup anyway
     lastSampleRate(44100.0),
-    lastSamplesPerBlock(512),
+    lastBlockSize(512),
     parameterLayoutData(std::vector<parameterLayoutGroupData>{
           mkLayoutGroupData("S", "Siren", ParameterClass::SirenControl)
     }),

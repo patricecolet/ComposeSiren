@@ -17,6 +17,8 @@
 #include "LookAndFeels.h"
 #include "VoiceManagerState.h"
 
+
+
 class MidiKeyboardLabelLookAndFeel : public juce::LookAndFeel_V3
 {
 public:
@@ -96,8 +98,8 @@ public:
     {
         auto c = juce::Colours::transparentWhite;
 
-        if (isDown)  c = findColour (keyDownOverlayColourId);
-        if (isOver)  c = c.overlaidWith (findColour (mouseOverKeyOverlayColourId));
+        if (isDown)  c = findColour(keyDownOverlayColourId);
+        if (isOver)  c = c.overlaidWith(findColour(mouseOverKeyOverlayColourId));
 
         g.setColour (c);
         g.fillRect (area);

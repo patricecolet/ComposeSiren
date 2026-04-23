@@ -156,7 +156,6 @@ public:
         noteBridge->processBlock(scheduler, numSamples);
     }
 
-    // set shouldFlush true and flush from processBlock (?)
     void flushPendingNoteEvents() {
         // todo
     }

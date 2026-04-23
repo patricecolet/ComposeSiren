@@ -27,7 +27,6 @@ OneSirenPluginEditor::OneSirenPluginEditor(OneSirenPluginProcessor& p) :
     addAndMakeVisible(mainButtons);
     addAndMakeVisible(voiceManager);
 
-    sirenStrip.setShowTitle(true);
     sirenStrip.setShowGroupLabels(true);
     sirenStrip.setShowKnobLabels(true);
     sirenStrip.setShowTextBox(true);

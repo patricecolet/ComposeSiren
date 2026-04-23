@@ -406,7 +406,7 @@ inline const std::map<const std::string, sirenId> sirenIddByStrId = {
 inline const std::map<sirenId, const std::string> sirenTitleById = {
     { S1, "Alto 1" },
     { S2, "Alto 2" },
-    { S3, "Basse" },
+    { S3, "Bass" },
     { S4, "Tenor" },
     { S5, "Soprano 1" },
     { S6, "Soprano 2" },
