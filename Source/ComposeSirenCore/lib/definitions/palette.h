@@ -13,6 +13,7 @@ namespace mecaviv {
 
         static uint32_t orangeMecanique = 0xffff9900;
         static uint32_t darkTransparentBackground = 0xf2283541;
+        static uint32_t backgroundStripGrey = 0xff314159;
 
         namespace SirenPalette {
             static uint32_t darkBlue = 0xff4650c8;
