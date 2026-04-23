@@ -43,7 +43,9 @@ target_sources(ComposeSirenCore
   lib/wrappers/SirenEnsemble.cpp
 
   Components/SirenStripComponent.cpp
+  Components/SirenTrackComponent.cpp
   Components/ReverbStripComponent.cpp
+  Components/MasterVolumeComponent.cpp
 )
 
 # ------------------------------------------------------------------------------
