@@ -5,40 +5,12 @@
 #include "SirenStripComponent.h"
 
 //==============================================================================
-// ReverbComponent - Section de reverb
 SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts,
-                                         const parameterLayoutGroupData& paramGroupData,
-                                         bool hasTitleArea) :
+                                         const parameterLayoutGroupData& layerGroupData) :
     apvts(vts),
-    currentCategory(Alto),
-    hasTitle(hasTitleArea)
+    paramGroupData(layerGroupData)
 {
-    // utility title formatter
-    auto appendCCNumber = [&](const std::string& s, const ParameterId id) -> std::string {
-        if (auto cc = std::get_if<CCParam>(&parameterDefinitionById.at(id)->data)) {
-            return s + std::string("\ncc") + std::to_string(cc->midiCCNumber) + "";
-        }
-        return s;
-    };
-
-    if (paramGroupData.juceParameterIds.contains(ParameterId::TrackPanning)
-        && paramGroupData.juceParameterIds.contains(ParameterId::TrackOutputGain))
-    {
-        hasTrackControls = true; // false by default
-    }
-
     const float gap = controlStripLayout::spacerSize;
-
-    if (hasTitle) {
-        addAndMakeVisible(spacer0);
-
-        titleLabel.setText(paramGroupData.name, juce::dontSendNotification);
-        titleLabel.setJustificationType(juce::Justification::centred);
-        titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-        titleLabel.setFont(juce::FontOptions(controlStripLayout::titleFontSize,
-                           juce::Font::bold));
-        addAndMakeVisible(titleLabel);
-    }
 
     addAndMakeVisible(spacer1);
 
@@ -79,24 +51,11 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
 
     addAndMakeVisible(spacer6);
 
-    if (hasTrackControls) {
-        trackGroup.setTitleText("Master");
-        trackGroup.setGap(gap);
-        trackGroup.setWrap(false);
-        addAndMakeVisible(trackGroup);
-
-        addAndMakeVisible(spacer7);
-    }
-
     juce::Colour c1 = juce::Colours::whitesmoke;//juce::Colours::lightgoldenrodyellow;
     juce::Colour c2 = juce::Colours::whitesmoke;
     juce::Colour c3 = c1;
     juce::Colour c4 = c2;
     juce::Colour c5 = c3;
-
-    auto setSliderFillColour = [&](SliderCell& sc, juce::Colour c) {
-        sc.getSlider().setColour(juce::Slider::ColourIds::rotarySliderFillColourId, c);
-    };
 
     // start group knobs =======================================================
 
@@ -106,7 +65,7 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
                                   ParameterId::PitchBend,
                                   paramGroupData.id);
     juce::Slider& pbs = pitchBend.getSlider();
-    pbs.setLookAndFeel(&knobLAF3);
+    pbs.setLookAndFeel(&centredKnobLAF);
     // pbs.addListener(this);
     setSliderFillColour(pitchBend, c1);
     startGroup.addAndMakeVisible(pitchBend);
@@ -300,69 +259,18 @@ SirenStripComponent::SirenStripComponent(juce::AudioProcessorValueTreeState& vts
     setSliderFillColour(volume, c5);
     endGroup.addAndMakeVisible(volume);
 
-    // track group knobs =======================================================
-
-    if (hasTrackControls) {
-        // Panning -------------------------------------------------------------
-        pan.setNameText(
-           appendCCNumber("Pan", ParameterId::TrackPanning)
-        );
-        juce::Slider& pans = pan.getSlider();
-        pans.setLookAndFeel(&knobLAF3);
-        // volume.setNameText("Volume");
-        pan.setSliderAttachment(vts,
-                                ParameterId::TrackPanning,
-                                paramGroupData.id);
-        // volume.setRange(0.0, 1.0, 0.01);
-        // volume.getSlider().addListener(this);
-        setSliderFillColour(pan, c5);
-        trackGroup.addAndMakeVisible(pan);
-
-        // Output gain ---------------------------------------------------------
-        outputGain.setNameText(
-           appendCCNumber("Gain", ParameterId::TrackOutputGain)
-        );
-        juce::Slider& outgains = outputGain.getSlider();
-        outgains.setLookAndFeel(&knobLAF2);
-        // volume.setNameText("Volume");
-        outputGain.setSliderAttachment(vts,
-                                       ParameterId::TrackOutputGain,
-                                       paramGroupData.id);
-        // volume.setRange(0.0, 1.0, 0.01);
-        // volume.getSlider().addListener(this);
-        setSliderFillColour(outputGain, c5);
-        trackGroup.addAndMakeVisible(outputGain);
-    }
-
     // Démarrer le timer pour synchroniser l'UI avec les changements MIDI
     // startTimer(50); // 50ms = 20 Hz
 }
 
-SirenStripComponent::~SirenStripComponent()
-{
-    stopTimer();
-}
-
-void SirenStripComponent::setCurrentSiren(sirenCategory c)
-{
-    currentCategory = c;
-}
+// SirenStripComponent::~SirenStripComponent() {}
 
 void SirenStripComponent::paint(juce::Graphics& g)
 {
-    // auto area = getLocalBounds().reduced(2).toFloat();
     auto area = getLocalBounds().toFloat();
 
-    // g.setColour(backgroundColour);
-    g.setColour(juce::Colour{0xff314159});
-    g.fillRoundedRectangle(area, 12);
-
-    if (hasTitle) {
-        area = area.removeFromLeft(controlStripLayout::titleAreaWidth);
-        area += { controlStripLayout::spacerSize, 0 };
-        g.setColour(backgroundColour);
-        g.fillRoundedRectangle(area, controlStripLayout::cornerSize);
-    }
+    g.setColour(backgroundStripColour);
+    g.fillRoundedRectangle(area, controlStripLayout::cornerSize);
 
     // This draws some kind of minimalistic 19" rack ears ----------------------
 
@@ -400,7 +308,6 @@ void SirenStripComponent::paint(juce::Graphics& g)
 void SirenStripComponent::resized()
 {
     auto area = getLocalBounds().reduced(0);
-    // auto titleArea = area.removeFromLeft(controlStripLayout::titleAreaWidth);
 
     const int area_height = area.getHeight();
 
@@ -411,15 +318,7 @@ void SirenStripComponent::resized()
     root.justifyContent = juce::FlexBox::JustifyContent::flexStart;
     root.alignItems = juce::FlexBox::AlignItems::center;
 
-    const float spacerW = 2.0f;
     const float gap = controlStripLayout::spacerSize;
-
-    if (hasTitle) {
-        root.items.add(juce::FlexItem(spacer0).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
-        root.items.add(juce::FlexItem(titleLabel).withFlex(0,0)
-                                                 .withWidth(controlStripLayout::titleAreaWidth)
-                                                 .withHeight((float) area_height));
-    }
 
     root.items.add(juce::FlexItem(spacer1).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
     root.items.add(juce::FlexItem(startGroup).withFlex(0,0)
@@ -443,13 +342,6 @@ void SirenStripComponent::resized()
                                              .withHeight((float) area_height));
     root.items.add(juce::FlexItem(spacer6).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
 
-    if (hasTrackControls) {
-        root.items.add(juce::FlexItem(trackGroup).withFlex(0)
-                                                 .withMinWidth(trackGroup.getMinWidth())
-                                                 .withHeight((float) area_height));
-        root.items.add(juce::FlexItem(spacer7).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
-    }
-
     root.performLayout(area.toFloat());
 
     startGroup.resized();
@@ -457,50 +349,21 @@ void SirenStripComponent::resized()
     tremGroup.resized();
     envGroup.resized();
     endGroup.resized();
-
-    if (hasTrackControls) {
-        trackGroup.resized();
-    }
 }
 
-float SirenStripComponent::getMinWidth()
-{
-    return getTitleWidth()
-            + getParametersWidth();
-}
-
-float SirenStripComponent::getTitleWidth() const
-{
-    return controlStripLayout::spacerSize
-            + (hasTitle ? controlStripLayout::titleAreaWidth : 0);
-}
-
-float SirenStripComponent::getParametersWidth(bool sirenParametersOnly)
+float SirenStripComponent::getMinWidth() const
 {
     float mw = 0.0f;
 
     for (auto* c : getChildren()) {
-        if (auto* group = dynamic_cast<SliderCellGroup*>(c)) {
-            if (sirenParametersOnly && group->getTitleText() == "Master") {
-                mw -= controlStripLayout::spacerSize;
-                continue;
-            }
+        if (auto* group = dynamic_cast<GuiCellGroup*>(c)) {
             mw += group->getMinWidth();
         } else if (auto* spacer = dynamic_cast<Spacer*>(c)) {
             mw += controlStripLayout::spacerSize;
         }
     }
 
-    mw -= controlStripLayout::spacerSize; // always remove title spacer
-
     return mw;
-}
-
-void SirenStripComponent::setShowTitle(bool s)
-{
-    showTitle = s;
-    titleLabel.setVisible(s);
-    resized();
 }
 
 void SirenStripComponent::setShowGroupLabels(bool s)
@@ -511,9 +374,6 @@ void SirenStripComponent::setShowGroupLabels(bool s)
     tremGroup.setShowLabel(s);
     envGroup.setShowLabel(s);
     endGroup.setShowLabel(s);
-
-    if (hasTrackControls) { trackGroup.setShowLabel(s); }
-
     resized();
 }
 
@@ -534,12 +394,6 @@ void SirenStripComponent::setShowKnobLabels(bool s)
     timbre.setShowLabel(s);
     volume.setShowLabel(s);
     mute.setShowLabel(s);
-
-    if (hasTrackControls) {
-        outputGain.setShowLabel(s);
-        pan.setShowLabel(s);
-    }
-
     resized();
 }
 
@@ -560,33 +414,40 @@ void SirenStripComponent::setShowTextBox(bool s)
     timbre.setShowTextBox(s);
     volume.setShowTextBox(s);
     mute.setShowTextBox(s);
-
-    if (hasTrackControls) {
-        outputGain.setShowTextBox(s);
-        pan.setShowTextBox(s);
-    }
-
     resized();
 }
 
 void SirenStripComponent::setBackgroundColour(juce::Colour c)
 {
-    backgroundColour = c;
     startGroup.setBackgroundColour(c);
     vibGroup.setBackgroundColour(c);
     tremGroup.setBackgroundColour(c);
     envGroup.setBackgroundColour(c);
     endGroup.setBackgroundColour(c);
-
-    if (hasTrackControls) {
-        trackGroup.setBackgroundColour(c);
-    }
-
     repaint();
 }
 
-void SirenStripComponent::timerCallback()
+void SirenStripComponent::setBackgroundStripColour(juce::Colour c)
 {
+    backgroundStripColour = c;
+    repaint();
+}
+
+std::string SirenStripComponent::appendCCNumber(const std::string& s, const ParameterId id)
+{
+    if (auto cc = std::get_if<CCParam>(&parameterDefinitionById.at(id)->data)) {
+        return s + std::string("\ncc") + std::to_string(cc->midiCCNumber) + "";
+    }
+    return s;
+}
+
+void SirenStripComponent::setSliderFillColour(SliderCell& sc, juce::Colour c)
+{
+    sc.getSlider().setColour(juce::Slider::ColourIds::rotarySliderFillColourId, c);
+}
+
+// void SirenStripComponent::timerCallback()
+// {
     /*
     // Synchroniser l'état Enable
     bool currentEnabled = audioProcessor.mySynth->isReverbEnabled();
@@ -638,4 +499,4 @@ void SirenStripComponent::timerCallback()
         lowpassSlider.setValue(currentLowpass, juce::dontSendNotification);
     }
     //*/
-}
+// }

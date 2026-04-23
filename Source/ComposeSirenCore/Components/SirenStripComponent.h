@@ -7,73 +7,66 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
-#include "SliderCellGroup.h"
+#include "GuiCellGroup.h"
+#include "SliderCell.h"
 #include "apvtsUtilities.h"
 #include "../lib/definitions/parameterDefinitions.h"
 
 //==============================================================================
-class SirenStripComponent : public juce::Component,
-                            private juce::Timer
+class SirenStripComponent : public juce::Component
 {
+    // give owning SirenTrackComponent access to all variables
+    friend class SirenTrackComponent;
+
 public:
     SirenStripComponent(juce::AudioProcessorValueTreeState& vts,
-                        const parameterLayoutGroupData& paramGroupData,
-                        bool hasTitleArea = false);
-    ~SirenStripComponent() override;
-
-    void setCurrentSiren(sirenCategory c);
+                        const parameterLayoutGroupData& layoutGroupData);
+    ~SirenStripComponent() override = default;
 
     void paint(juce::Graphics&) override;
     void resized() override;
 
-    float getMinWidth();
-    float getTitleWidth() const;
-    float getParametersWidth(bool sirenParametersOnly = false);
-    void setShowTitle(bool s);
+    float getMinWidth() const;
     void setShowGroupLabels(bool s);
     void setShowKnobLabels(bool s);
     void setShowTextBox(bool s);
-
     void setBackgroundColour(juce::Colour c);
+    void setBackgroundStripColour(juce::Colour c);
 
-protected:
-    void timerCallback() override;
+private:
+    std::string appendCCNumber(const std::string& s, const ParameterId id);
+    void setSliderFillColour(SliderCell& sc, juce::Colour c);
 
     juce::AudioProcessorValueTreeState& apvts;
+    const parameterLayoutGroupData& paramGroupData;
 
-    sirenCategory currentCategory;
-    juce::Label titleLabel;
-    bool showTitle = true;
     bool showGroupLabels = true;
     bool showKnobLabels = true;
     bool showTextBox = true;
 
-    bool hasTrackControls = false;
-    bool hasTitle = false;
-
     IncDecLAF incDecLAF;
-    KnobLAF2 knobLAF2;
-    KnobLAF3 knobLAF3;
+    CentredKnobLAF centredKnobLAF;
+    NotchedKnobLAF notchedKnobLAF;
 
-    juce::Colour backgroundColour = juce::Colour(40, 40, 60);
+    juce::Colour backgroundColour{juce::Colours::black};
+    juce::Colour backgroundStripColour{
+        juce::Colour{mecaviv::Colours::backgroundStripGrey}
+    };
 
     // Groups
-    SliderCellGroup startGroup;
-    SliderCellGroup vibGroup;
-    SliderCellGroup tremGroup;
-    SliderCellGroup envGroup;
-    SliderCellGroup endGroup;
-    SliderCellGroup trackGroup;
+    GuiCellGroup startGroup;
+    GuiCellGroup vibGroup;
+    GuiCellGroup tremGroup;
+    GuiCellGroup envGroup;
+    GuiCellGroup endGroup;
 
     // Spacers between groups
-    Spacer spacer0;
     Spacer spacer1;
     Spacer spacer2;
     Spacer spacer3;
     Spacer spacer4;
     Spacer spacer5;
     Spacer spacer6;
-    Spacer spacer7;
 
     // Sliders (cells)
     const float ksw = controlStripLayout::minKnobSliderWidth;
@@ -100,8 +93,8 @@ protected:
     SliderCell mute             {ksw,  sh, lh};
     SliderCell volume           {ksw,  sh, lh};
 
-    SliderCell outputGain       {ksw * 1.2f, sh, lh};
     SliderCell pan              {ksw, sh, lh};
+    SliderCell outputGain       {ksw, sh, lh};
 };
 
 #endif //COMPOSESIREN_SIRENSTRIPCOMPONENT_H
