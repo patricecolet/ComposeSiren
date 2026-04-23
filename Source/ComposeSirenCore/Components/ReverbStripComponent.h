@@ -7,8 +7,12 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "SliderCellGroup.h"
+#include "GuiCellGroup.h"
+#include "SliderCell.h"
+#include "ToggleCell.h"
 #include "LookAndFeels.h"
+#include "../apvtsUtilities.h"
+#include "../lib/definitions/parameterDefinitions.h"
 
 class ReverbStripComponent : public juce::Component//,
                              // public juce::Slider::Listener,
@@ -23,19 +27,22 @@ class ReverbStripComponent : public juce::Component//,
     bool showKnobLabels = true;
     bool showTextBox = true;
 
-    juce::Colour backgroundColour = juce::Colour(40, 40, 60);
+    juce::Colour backgroundStripColour{
+        juce::Colour{mecaviv::Colours::backgroundStripGrey}
+    };
+
     juce::ToggleButton reverbEnableButton;
 
-    SliderCellGroup enableGroup;
-    SliderCellGroup reverbGroup;
-    SliderCellGroup filterGroup;
+    GuiCellGroup enableGroup;
+    GuiCellGroup reverbGroup;
+    GuiCellGroup filterGroup;
 
     const float ksw = controlStripLayout::minKnobSliderWidth;
     const float idsw = controlStripLayout::minIncDecSliderWidth;
-    const float sh = controlStripLayout::minSliderHeight * 0.85f;
+    const float sh = controlStripLayout::minSliderHeight * 0.95f;
     const float lh = controlStripLayout::sliderLabelHeight * 0.75f;
 
-    SliderCell enable     {ksw, sh, lh};
+    ToggleCell enable     {ksw, sh, lh};
 
     SliderCell dryWet     {ksw, sh, lh};
     SliderCell damping    {ksw, sh, lh};
@@ -51,8 +58,10 @@ class ReverbStripComponent : public juce::Component//,
     Spacer spacer4;
 
 public:
-    ReverbStripComponent(juce::AudioProcessorValueTreeState& vts);
+    ReverbStripComponent(juce::AudioProcessorValueTreeState& vts,
+                         const std::string& paramGroupId);
     ~ReverbStripComponent() override = default;
+
     void paint(juce::Graphics&) override;
     void resized() override;
 
@@ -62,6 +71,7 @@ public:
     void setShowTextBox(bool s);
 
     void setBackgroundColour(juce::Colour c);
+    void setCellBackgroundColour(juce::Colour c);
 };
 
 #endif //COMPOSESIREN_REVERBSTRIPCOMPONENT_H
