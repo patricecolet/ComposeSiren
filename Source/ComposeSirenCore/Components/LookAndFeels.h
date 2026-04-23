@@ -15,7 +15,7 @@ namespace controlStripLayout
 {
 constexpr float titleAreaWidth{70};
 constexpr float titleFontSize{13};
-constexpr float cornerSize{12};
+constexpr float cornerSize{10};
 constexpr float spacerSize{2};
 constexpr float groupLabelHeight{16};
 constexpr float groupLabelFontSize{12};
@@ -28,6 +28,9 @@ constexpr float sliderLabelFontSize{11.5};
 constexpr float minSliderHeight{62};
 constexpr float minKnobSliderWidth{47};
 constexpr float minIncDecSliderWidth{70};
+
+constexpr float knobIndicatorOffThickness{2};
+constexpr float knobIndicatorOnThickness{4};
 }
 
 // MIDI KEYBOARD ///////////////////////////////////////////////////////////////
@@ -353,6 +356,95 @@ public:
     }
 };
 
+class ToggleLAF : public juce::LookAndFeel_V4
+{
+public:
+    ToggleLAF()
+    {
+        setColour(juce::Slider::textBoxOutlineColourId, juce::Colour{0x00000000});
+    }
+
+    ~ToggleLAF() override = default;
+
+    void drawToggleButton(juce::Graphics& g,
+                          juce::ToggleButton& button,
+                          bool shouldDrawButtonAsHighlighted,
+                          bool shouldDrawButtonAsDown) override
+    {
+        // auto fontSize = juce::jmin(15.0f, (float) button.getHeight() * 0.75f);
+        auto size = std::min<float>(button.getWidth(), button.getHeight() * 0.66f);
+        auto btnWidth = size * 0.5f; //* controlStripLayout::spacerSize
+        auto btnHeight = btnWidth * 1.5f;
+
+        drawTickBox(g, button,
+                    ((float) button.getWidth() - btnWidth) * 0.5f,
+                    ((float) button.getHeight() - btnHeight) * 0.5f,
+                    btnWidth, btnHeight,
+                    button.getToggleState(),
+                    button.isEnabled(),
+                    shouldDrawButtonAsHighlighted,
+                    shouldDrawButtonAsDown);
+    }
+
+    void drawTickBox(juce::Graphics& g, juce::Component& component,
+                     float x, float y, float w, float h,
+                     const bool ticked,
+                     [[maybe_unused]] const bool isEnabled,
+                     [[maybe_unused]] const bool shouldDrawButtonAsHighlighted,
+                     [[maybe_unused]] const bool shouldDrawButtonAsDown) override
+    {
+        juce::Rectangle<float> tickBounds;
+        juce::Rectangle<float> ledBounds;
+        juce::Path tickShape;
+        juce::Path tickMask;
+
+        if (h > w) {
+            tickBounds = juce::Rectangle<float>(x, y + h - w, w, w);
+            ledBounds = juce::Rectangle<float>(x, y, w, h - w);
+        } else {
+            tickBounds = juce::Rectangle<float>(x, y, h, h);
+            ledBounds = juce::Rectangle<float>(x + w, y, h, w - h);
+        }
+
+        ledBounds = ledBounds.withCentre({ledBounds.getCentreX(), ledBounds.getY()});
+
+        g.setColour(juce::Colours::darkgreen);
+        g.fillEllipse(ledBounds.withSizeKeepingCentre(9, 9));
+
+        if (!ticked)
+        {
+            tickShape.addRoundedRectangle(tickBounds, 4.0f, 2.0f);
+            tickMask.addRoundedRectangle(tickBounds, 4.0f, 2.0f);
+            tickMask.setUsingNonZeroWinding(false);
+            juce::DropShadow ds(juce::Colours::black, 3, {2, 2});
+            ds.drawForPath(g, tickMask);
+
+            g.setColour(juce::Colours::whitesmoke);
+            g.fillRoundedRectangle(tickBounds, 4.0f);
+            g.setColour(juce::Colours::black);
+            g.drawRoundedRectangle(tickBounds, 4.0f, 2.0f);
+        }
+        else
+        {
+            g.setColour(juce::Colours::lightgreen);
+            g.fillEllipse(ledBounds.withSizeKeepingCentre(6,6));
+
+            g.setColour(juce::Colours::black);
+            g.fillRoundedRectangle(tickBounds, 4.0f);
+            g.setColour(juce::Colours::black);
+            g.drawRoundedRectangle(tickBounds, 4.0f, 2.0f);
+
+            juce::Rectangle<float> tickBoundsExpanded = tickBounds.expanded(3, 3);
+            tickShape.addRoundedRectangle(tickBoundsExpanded, 4.0f, 2.0f);
+            tickMask.addRoundedRectangle(tickBounds, 4.0f, 2.0f);
+            tickMask.setUsingNonZeroWinding(true);
+            g.reduceClipRegion(juce::Rectangle<int>(x, y, w, h));
+            juce::DropShadow ds(juce::Colours::whitesmoke.withAlpha(0.9f), 2, {2, 2});
+            ds.drawForPath(g, tickMask);
+        }
+    }
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 /// SIMPLER LOOK AND FEELS (tintable procedural knob UIs with discrete shadows)
 ///
@@ -398,11 +490,11 @@ public:
         return layout;
     }
 
-    void drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height,
-                            float sliderPos,
-                            const float rotaryStartAngle,
-                            const float rotaryEndAngle,
-                            juce::Slider& slider) override
+    void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
+                          float sliderPos,
+                          const float rotaryStartAngle,
+                          const float rotaryEndAngle,
+                          juce::Slider& slider) override
 
     {
         auto outline = slider.findColour(juce::Slider::rotarySliderOutlineColourId);
@@ -440,11 +532,13 @@ public:
 
         g.setColour(c.withAlpha(0.6f));
         // g.setColour(juce::Colour{0x99ffffff});
-        g.strokePath(backgroundArc,
-                     juce::PathStrokeType(2,
-                                 juce::PathStrokeType::curved,
-                                 juce::PathStrokeType::rounded
-                     )
+        g.strokePath(
+            backgroundArc,
+            juce::PathStrokeType(
+                controlStripLayout::knobIndicatorOffThickness,
+                juce::PathStrokeType::curved,
+                juce::PathStrokeType::rounded
+            )
         );
 
         if (slider.isEnabled() && slider.getValue() > 0)
@@ -462,11 +556,13 @@ public:
             // g.setColour(fill);
             // g.setColour(juce::Colour{0xeeffffff});
             g.setColour(c.withAlpha(0.8f));
-            g.strokePath(valueArc,
-                         juce::PathStrokeType(4,
-                                              juce::PathStrokeType::curved,
-                                              juce::PathStrokeType::rounded
-                         )
+            g.strokePath(
+                valueArc,
+                juce::PathStrokeType(
+                    controlStripLayout::knobIndicatorOnThickness,
+                    juce::PathStrokeType::curved,
+                    juce::PathStrokeType::rounded
+                )
             );
         }
 
@@ -548,266 +644,20 @@ private:
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-/// ANOTHER ONE (BIG BLACK KNOB WITH WHITE CIRCLE POINTER) ///
+/// SAME AS KnobLAF BUT CENTERED FOR PANNING ETC
 
-class KnobLAF2 : public juce::LookAndFeel_V4
-{
-    std::unique_ptr<juce::Drawable> rotarySliderFg;
-
-public:
-    KnobLAF2() {
-        setColour(juce::Slider::textBoxOutlineColourId, juce::Colour{0x00000000});
-
-        rotarySliderFg = juce::Drawable::createFromImageData(
-          BinaryData::basicknoboutline_svg,
-          BinaryData::basicknoboutline_svgSize
-        );
-    }
-
-    ~KnobLAF2() override = default;
-
-    juce::Font getLabelFont(juce::Label &) override
-    {
-        return juce::FontOptions{12.0f, juce::Font::plain};
-    }
-
-    juce::Slider::SliderLayout getSliderLayout(juce::Slider& s) override
-    {
-        auto layout = LookAndFeel_V4::getSliderLayout(s);
-        if (s.getTextBoxPosition() == juce::Slider::NoTextBox)
-            return layout;
-
-        const bool compact = s.getProperties().getWithDefault("compactTextBox", false);
-        const int tbH = layout.textBoxBounds.getHeight();
-
-        const auto bounds
-            = compact
-                ? s.getLocalBounds().withTrimmedTop(6)
-                : s.getLocalBounds();
-        const int gap = compact ? -2 : -4; // <-- tweak this (0..4)
-
-        layout.textBoxBounds = layout.textBoxBounds
-            .withX(bounds.getX())
-            .withWidth(bounds.getWidth())
-            .withHeight(tbH)
-            .withY(bounds.getBottom() - tbH + gap);
-
-        layout.sliderBounds = bounds.withTrimmedBottom(tbH + gap);
-
-        return layout;
-    }
-
-    void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
-                          float sliderPos,
-                          const float rotaryStartAngle,
-                          const float rotaryEndAngle,
-                          juce::Slider& slider) override
-    {
-        auto fgRect = rotarySliderFg->getDrawableBounds();
-        float dim = juce::jmin(width, height);
-        float ratio = dim / fgRect.getWidth(); // or getHeight, is square
-        float myRatio = 0.75f;
-
-        float transX = width > height ? (width - dim) / 2.0f : 0;
-        float transY = width > height ? 0 : (height - dim) / 2.0f;
-
-        auto outline = slider.findColour(juce::Slider::rotarySliderOutlineColourId);
-        // auto fill = slider.findColour (Slider::rotarySliderFillColourId);
-        // auto fill = juce::Colour{0xaa393939};
-        auto fill = juce::Colours::whitesmoke;
-
-        auto bounds = juce::Rectangle<int> (x, y, width, height).toFloat().reduced(2);
-        auto radius = juce::jmin (bounds.getWidth(), bounds.getHeight()) / 2.0f;
-        // clip max knob size (but textbox below is still annoying) :
-        radius = juce::jmin(radius, 22.f);
-        auto arcRadius = myRatio * radius;
-
-        float offset = (myRatio) * radius;
-        auto toAngle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
-
-        auto c = fill;
-
-        juce::Rectangle r{2 * arcRadius, 2 * arcRadius};
-
-        juce::Path backgroundArc;
-        backgroundArc.addCentredArc (bounds.getCentreX(),
-                                      bounds.getCentreY(),
-                                      arcRadius * 1.22f,
-                                      arcRadius * 1.22f,
-                                      0.0f,
-                                      rotaryStartAngle,
-                                      rotaryEndAngle,
-                                      true);
-
-        g.setColour(c.withAlpha(0.6f));
-        // g.setColour(juce::Colour{0x99ffffff});
-        g.strokePath(
-            backgroundArc,
-            juce::PathStrokeType(
-                2,
-                juce::PathStrokeType::curved,
-                juce::PathStrokeType::rounded
-            )
-        );
-
-        if (slider.isEnabled() && slider.getValue() > 0)
-        {
-            juce::Path valueArc;
-            valueArc.addCentredArc (bounds.getCentreX(),
-                                     bounds.getCentreY(),
-                                     arcRadius * 1.22f,
-                                     arcRadius * 1.22f,
-                                     0.0f,
-                                     rotaryStartAngle,
-                                     toAngle,
-                                     true);
-
-            // g.setColour (fill);
-            // g.setColour (Colour{0xeeffffff});
-            // g.setColour(juce::Colours::whitesmoke.withAlpha(0.8f));
-            g.setColour(c.withAlpha(0.8f));
-            g.strokePath(
-                valueArc,
-                juce::PathStrokeType(
-                    3,
-                    juce::PathStrokeType::curved,
-                    juce::PathStrokeType::rounded
-                )
-            );
-        }
-
-        juce::Colour fgc = juce::Colours::white;//findColour(Slider::rotarySliderFillColourId);
-        // auto fg = rotarySliderFg->createCopy();
-        /*
-        rotarySliderFg->replaceColour(Colours::black, fgc);
-        rotarySliderFg->draw(g, 1.f,
-          juce::AffineTransform::scale(ratio)
-          .rotated(sliderPos * 3 * M_PI * 0.5, dim * 0.5, dim * 0.5)
-          // .translated(transX + offset, transY + offset)
-          // .translated(bounds.getCentreX() - dim * 0.5,bounds.getCentreY() - dim * 0.5)
-          .translated(bounds.getCentreX() - arcRadius * 0.99f, bounds.getCentreY() - arcRadius * 0.85f)
-          // .translated(r.getTopLeft())
-          .scaled(myRatio * 0.99f)
-        );
-        //*/
-
-        // DRAW SHADOWS ---------------------------------------
-        juce::Path ellipsis;
-        ellipsis.addEllipse(r.withCentre(bounds.getCentre()));
-
-        // invert the path's fill shape and enlarge it,
-        // so it casts a shadow
-        juce::Path shadowPath(ellipsis);
-        // shadowPath.addRectangle(shadowPath.getBounds().expanded(10));
-        shadowPath.setUsingNonZeroWinding(false);
-        // reduce clip region to avoid the shadow
-        // being drawn outside of the shape to cast the shadow on
-        // g.reduceClipRegion(ellipsis);
-
-        // juce::DropShadow ds(juce::Colour{0xaa000000}, 3, {2, 2});
-        juce::DropShadow ds(juce::Colours::black, 3, {2, 2});
-        ds.drawForPath(g, shadowPath);
-        //-----------------------------------------------------
-
-        // actual white circle bg
-        g.setColour(c);
-        g.fillEllipse (r.withCentre(bounds.getCentre()));
-
-        g.setColour(juce::Colour{0x22000000});
-        g.fillEllipse (r.withCentre(bounds.getCentre()));
-
-        auto r2 = r * 0.9;
-
-        g.setColour (c);
-        g.fillEllipse (r2.withCentre(bounds.getCentre() - juce::Point<float>(0.5, 0.5)));
-
-        // actual white circle bg
-        g.setColour (juce::Colour{0x22000000});
-        g.fillEllipse (r.withCentre(bounds.getCentre()));
-
-        r2 *= 0.9;
-
-        g.setColour (c);
-        g.fillEllipse (r2.withCentre(bounds.getCentre() - juce::Point<float>(1, 1)));
-
-        //=====================================================================
-
-        auto thumbWidth = 7;//arcRadius * 0.25f;//lineW * 1.2f;
-        auto thumbHeight = thumbWidth;
-        juce::Point<float> thumbPoint (bounds.getCentreX() + (arcRadius * 0.5f) * std::cos (toAngle - juce::MathConstants<float>::halfPi),
-                                 bounds.getCentreY() + (arcRadius * 0.5f) * std::sin (toAngle - juce::MathConstants<float>::halfPi));
-        auto markerWidth = 3;
-        auto markerHeight = 3;
-        juce::Point<float> markerPoint(bounds.getCentreX() + (arcRadius * 1.22f) * std::cos(toAngle - juce::MathConstants<float>::halfPi),
-                                 bounds.getCentreY() + (arcRadius * 1.22f) * std::sin(toAngle - juce::MathConstants<float>::halfPi));
-        // Point<float> thumbPoint (bounds.getCentreX() * std::cos (toAngle - MathConstants<float>::halfPi),
-        //                          bounds.getCentreY() * std::sin (toAngle - MathConstants<float>::halfPi));
-
-        // g.setColour (slider.findColour (Slider::thumbColourId));
-        g.setColour(juce::Colour{0x99000000});
-        // g.fillEllipse(Rectangle<float> (thumbWidth, thumbWidth).withCentre (thumbPoint));
-
-        juce::AffineTransform transform;
-        float rotation = toAngle - juce::MathConstants<float>::halfPi;
-        transform = juce::AffineTransform::scale(1.f)
-            .rotation(rotation, thumbPoint.x, thumbPoint.y);
-            //.translated(thumbWidth,thumbHeight);
-        juce::Path p;
-        p.addRoundedRectangle(
-            thumbPoint.x - thumbWidth * 0.5f,
-            thumbPoint.y - thumbHeight * 0.5f,
-            thumbWidth,
-            thumbHeight,
-            5
-        );
-        p.applyTransform(transform);
-
-        // g.setColour(juce::Colour{0x99ffffff});
-        // g.setColour(juce::Colours::whitesmoke);
-        g.fillPath(p);
-        // g.setColour(Colour{0x66000000});
-        g.strokePath(p, juce::PathStrokeType(2.0f));
-
-        transform = juce::AffineTransform::scale(1.f)
-            .rotation(rotation, markerPoint.x, markerPoint.y);
-        //.translated(thumbWidth,thumbHeight);
-        p.clear();
-        return;
-        p.addRoundedRectangle(
-            markerPoint.x - markerWidth * 0.5f,
-            markerPoint.y - markerHeight * 0.5f,
-            markerWidth,
-            markerHeight,
-            3
-        );
-        p.applyTransform(transform);
-
-        if (sliderPos > 0.f) {
-            g.setColour(c);
-            // g.setColour(juce::Colour{0x99ffffff});
-            // g.setColour(juce::Colours::whitesmoke);
-            g.fillPath(p);
-            // g.setColour(juce::Colour{0x66000000});
-            g.strokePath(p, juce::PathStrokeType(2.0f));
-        }
-    }
-};
-
-///////////////////////////////////////////////////////////////////////////////
-/// THIS ONE IS SAME AS ORIGINAL BUT CENTERED ///
-
-class KnobLAF3 : public KnobLAF
+class CentredKnobLAF : public KnobLAF
 {
 
 public:
-    KnobLAF3() = default;
-    ~KnobLAF3() override = default;
+    CentredKnobLAF() = default;
+    ~CentredKnobLAF() override = default;
 
     void drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height,
-                            float sliderPos,
-                            const float rotaryStartAngle,
-                            const float rotaryEndAngle,
-                            juce::Slider& slider) override
+                           float sliderPos,
+                           const float rotaryStartAngle,
+                           const float rotaryEndAngle,
+                           juce::Slider& slider) override
 
     {
         auto outline = slider.findColour (juce::Slider::rotarySliderOutlineColourId);
@@ -847,7 +697,7 @@ public:
         g.strokePath(
             backgroundArcs,
             juce::PathStrokeType(
-                2,
+                controlStripLayout::knobIndicatorOffThickness,
                 juce::PathStrokeType::curved,
                 juce::PathStrokeType::rounded
             )
@@ -882,7 +732,7 @@ public:
         g.strokePath(
             valueArc,
             juce::PathStrokeType(
-                4,
+                controlStripLayout::knobIndicatorOnThickness,
                 juce::PathStrokeType::curved,
                 juce::PathStrokeType::rounded
             )
@@ -963,6 +813,312 @@ public:
         g.fillPath(p);
         g.setColour(juce::Colour{0x66000000});
         g.strokePath(p, juce::PathStrokeType(2.0f));
+    }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// ANOTHER ONE (BIG BLACK KNOB WITH WHITE CIRCLE POINTER) ///
+
+class NotchedKnobLAF : public juce::LookAndFeel_V4
+{
+    int notches;
+    float notchAngle;
+    std::unique_ptr<juce::Drawable> rotarySliderFg;
+
+    // Ramanujan formula
+    static float approximateEllipsePerimeter(float a, float b)
+    {
+        const float sum = a + b;
+        const float diff = a - b;
+        const float h = (diff * diff) / (sum * sum);
+
+        return juce::MathConstants<float>::pi * sum *
+               (1.0f + (3.0f * h) / (10.0f + std::sqrt(4.0f - 3.0f * h)));
+    }
+public:
+    NotchedKnobLAF(int nbNotches = 12) : notches(nbNotches) {
+        setColour(juce::Slider::textBoxOutlineColourId, juce::Colour{0x00000000});
+
+        rotarySliderFg = juce::Drawable::createFromImageData(
+          BinaryData::basicknoboutline_svg,
+          BinaryData::basicknoboutline_svgSize
+        );
+
+        float notchWidth = 1.0f / static_cast<float>(2 * notches);
+        notchAngle = notchWidth * juce::MathConstants<float>::twoPi;
+    }
+
+    ~NotchedKnobLAF() override = default;
+
+    juce::Font getLabelFont(juce::Label &) override
+    {
+        return juce::FontOptions{12.0f, juce::Font::plain};
+    }
+
+    juce::Slider::SliderLayout getSliderLayout(juce::Slider& s) override
+    {
+        auto layout = LookAndFeel_V4::getSliderLayout(s);
+        if (s.getTextBoxPosition() == juce::Slider::NoTextBox)
+            return layout;
+
+        const bool compact = s.getProperties().getWithDefault("compactTextBox", false);
+        const int tbH = layout.textBoxBounds.getHeight();
+
+        const auto bounds
+            = compact
+                ? s.getLocalBounds().withTrimmedTop(6)
+                : s.getLocalBounds();
+        const int gap = compact ? -2 : -4; // <-- tweak this (0..4)
+
+        layout.textBoxBounds = layout.textBoxBounds
+            .withX(bounds.getX())
+            .withWidth(bounds.getWidth())
+            .withHeight(tbH)
+            .withY(bounds.getBottom() - tbH + gap);
+
+        layout.sliderBounds = bounds.withTrimmedBottom(tbH + gap);
+
+        return layout;
+    }
+
+    void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
+                          float sliderPos,
+                          const float rotaryStartAngle,
+                          const float rotaryEndAngle,
+                          juce::Slider& slider) override
+    {
+        const float centreX = (float) x + (float) width * 0.5f;
+        const float centreY = (float) y + (float) height * 0.5f;
+
+        auto fgRect = rotarySliderFg->getDrawableBounds();
+        float dim = juce::jmin(width, height);
+        float ratio = dim / fgRect.getWidth(); // or getHeight, is square
+        float myRatio = 0.75f;
+
+        // float transX = width > height ? (width - dim) / 2.0f : 0;
+        // float transY = width > height ? 0 : (height - dim) / 2.0f;
+
+        auto outline = slider.findColour(juce::Slider::rotarySliderOutlineColourId);
+        // auto fill = slider.findColour (Slider::rotarySliderFillColourId);
+        // auto fill = juce::Colour{0xaa393939};
+        // auto fill = juce::Colours::whitesmoke;
+        auto fill = juce::Colours::black;
+
+        auto bounds = juce::Rectangle<int>(x, y, width, height).toFloat();//.reduced(2);
+        auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) / 2.0f;
+        // clip max knob size (but textbox below is still annoying) :
+        // radius = juce::jmin(radius, 22.f);
+        auto arcRadius = myRatio * radius;
+
+        auto toAngle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
+
+        auto c = fill;
+
+        // g.setColour(juce::Colours::red);
+        // g.fillRect(bounds);
+
+        juce::Rectangle r{2 * arcRadius, 2 * arcRadius};
+
+        juce::Path backgroundArc;
+        backgroundArc.addCentredArc(bounds.getCentreX(),
+                                    bounds.getCentreY(),
+                                    arcRadius * 1.22f,
+                                    arcRadius * 1.22f,
+                                    0.0f,
+                                    rotaryStartAngle,
+                                    rotaryEndAngle,
+                                    true);
+
+        g.setColour(c.withAlpha(0.6f));
+        // g.setColour(juce::Colour{0x99ffffff});
+        g.strokePath(
+            backgroundArc,
+            juce::PathStrokeType(
+                controlStripLayout::knobIndicatorOffThickness,
+                juce::PathStrokeType::curved,
+                juce::PathStrokeType::rounded
+            )
+        );
+
+        if (slider.isEnabled() && slider.getValue() > 0)
+        {
+            juce::Path valueArc;
+            valueArc.addCentredArc(bounds.getCentreX(),
+                                   bounds.getCentreY(),
+                                   arcRadius * 1.22f,
+                                   arcRadius * 1.22f,
+                                   0.0f,
+                                   rotaryStartAngle,
+                                   toAngle,
+                                   true);
+
+            g.setColour(c.withAlpha(0.8f));
+            g.strokePath(
+                valueArc,
+                juce::PathStrokeType(
+                    controlStripLayout::knobIndicatorOnThickness,
+                    juce::PathStrokeType::curved,
+                    juce::PathStrokeType::rounded
+                )
+            );
+        }
+
+        // FAILED : ALWAYS A SMALL OFFSET AT THE CENTRE DUE TO ROUNDING ERRORS (IN INKSCAPE ... ?)
+        //juce::Colour fgc = juce::Colours::black;//findColour(Slider::rotarySliderFillColourId);
+        // auto fg = rotarySliderFg->createCopy();
+        /*
+        rotarySliderFg->replaceColour(juce::Colours::black, fgc);
+        rotarySliderFg->draw(g, 1.f,
+          juce::AffineTransform::scale(ratio)
+          .rotated(sliderPos * 3 * M_PI * 0.5, dim * 0.5, dim * 0.5)
+          // .translated(radius / 2.0f, radius / 2.0f)
+          // .translated(bounds.getCentreX() - dim * 0.5, bounds.getCentreY() - dim * 0.5)
+          // .translated(bounds.getCentreX() - arcRadius, bounds.getCentreY() - arcRadius)
+          // .translated(centreX - dim * 0.5f, centreY - dim * 0.5f)
+          .translated(centreX - ratio * width * 0.5f, centreY - ratio * height * 0.5f)
+          // .translated(r.getTopLeft())
+          // .scaled(myRatio * 0.99f)
+          .scaled(myRatio)
+        );
+        //*/
+
+        // DRAW SHADOWS ---------------------------------------
+        juce::Path ellipsis;
+        ellipsis.addEllipse(r.withCentre(bounds.getCentre()));
+
+        g.setColour(juce::Colour(0xff222222));
+        juce::PathStrokeType pathStrokeType(2.0);
+        // float segmentLength = approximateEllipsePerimeter(arcRadius, arcRadius) / notches;
+        // or simpler (as we draw a circle, not an ellipse) :
+        float segmentLength = arcRadius * juce::MathConstants<float>::twoPi / static_cast<float>(notches);
+        float notchPercent = 0.3f;
+        float dashedLength[2] = {
+            segmentLength * notchPercent,
+            segmentLength * (1.0f - notchPercent)
+        };
+        pathStrokeType.setJointStyle(juce::PathStrokeType::JointStyle::curved);
+        pathStrokeType.setEndStyle(juce::PathStrokeType::EndCapStyle::rounded);
+        pathStrokeType.createDashedStroke(ellipsis, ellipsis, dashedLength, 2);
+
+        ellipsis.applyTransform(
+            juce::AffineTransform::scale(1)
+            .rotated(
+                toAngle - juce::MathConstants<float>::halfPi,
+                // sliderPos * 3 * M_PI * 0.5,
+                width * 0.5,
+                height * 0.5
+            )
+            .translated(
+                bounds.getCentreX() - width * 0.5f,
+                bounds.getCentreY() - height * 0.5f
+            )
+        );
+
+        g.strokePath(
+            ellipsis,
+            pathStrokeType
+        );
+
+        // g.setColour(juce::Colour(0xffffffff));
+        g.setColour(juce::Colour(0xff000000));
+
+        // invert the path's fill shape and enlarge it,
+        // so it casts a shadow
+        juce::Path shadowPath(ellipsis);
+        shadowPath.setUsingNonZeroWinding(false);
+        // reduce clip region to avoid the shadow
+        // being drawn outside of the shape to cast the shadow on
+        // g.reduceClipRegion(ellipsis);
+
+        juce::DropShadow ds(juce::Colours::black, 5, {2, 2});
+        ds.drawForPath(g, shadowPath);
+        //-----------------------------------------------------
+
+        // actual white circle bg
+        g.setColour(c);
+        g.fillEllipse (r.withCentre(bounds.getCentre()));
+
+        g.setColour(juce::Colour{0x22000000});
+        g.fillEllipse (r.withCentre(bounds.getCentre()));
+
+        auto r2 = r * 0.9;
+
+        g.setColour(c);
+        g.fillEllipse (r2.withCentre(bounds.getCentre() - juce::Point<float>(0.5, 0.5)));
+
+        // actual white circle bg
+        g.setColour (juce::Colour{0x22000000});
+        g.fillEllipse (r.withCentre(bounds.getCentre()));
+
+        r2 *= 0.9;
+
+        g.setColour (c);
+        g.fillEllipse (r2.withCentre(bounds.getCentre() - juce::Point<float>(1, 1)));
+
+        //======================================================================
+        // THUMB POINT
+
+        auto thumbWidth = 7;//arcRadius * 0.25f;//lineW * 1.2f;
+        auto thumbHeight = thumbWidth;
+        juce::Point<float> thumbPoint (bounds.getCentreX() + (arcRadius * 0.5f) * std::cos(toAngle - juce::MathConstants<float>::halfPi),
+                                 bounds.getCentreY() + (arcRadius * 0.5f) * std::sin(toAngle - juce::MathConstants<float>::halfPi));
+        auto markerWidth = 3;
+        auto markerHeight = 3;
+        juce::Point<float> markerPoint(bounds.getCentreX() + (arcRadius * 1.22f) * std::cos(toAngle - juce::MathConstants<float>::halfPi),
+                                 bounds.getCentreY() + (arcRadius * 1.22f) * std::sin(toAngle - juce::MathConstants<float>::halfPi));
+        // Point<float> thumbPoint (bounds.getCentreX() * std::cos (toAngle - MathConstants<float>::halfPi),
+        //                          bounds.getCentreY() * std::sin (toAngle - MathConstants<float>::halfPi));
+
+        // g.setColour (slider.findColour (Slider::thumbColourId));
+        // g.setColour(juce::Colour{0x99000000});
+        g.setColour(juce::Colour{0x99ffffff});
+        // g.fillEllipse(Rectangle<float> (thumbWidth, thumbWidth).withCentre (thumbPoint));
+
+        juce::AffineTransform transform;
+        float rotation = toAngle - juce::MathConstants<float>::halfPi;
+        juce::Path p;
+        p.addRoundedRectangle(
+            (width - thumbWidth) * 0.5f,
+            (height - thumbHeight) * 0.5f,
+            thumbWidth,
+            thumbHeight,
+            5
+        );
+        p.applyTransform(juce::AffineTransform::scale(1.f)
+            .translated(arcRadius * 0.75f, 0)
+            .rotated(rotation, width * 0.5f, height * 0.5f)
+        );
+
+        // g.setColour(juce::Colour{0x99ffffff});
+        // g.setColour(juce::Colours::whitesmoke);
+        g.fillPath(p);
+        // g.setColour(Colour{0x66000000});
+        g.strokePath(p, juce::PathStrokeType(2.0f));
+
+        //======================================================================
+        // MARKER POINT
+        transform = juce::AffineTransform::scale(1.f)
+            .rotation(rotation, markerPoint.x, markerPoint.y);
+        //.translated(thumbWidth,thumbHeight);
+        p.clear();
+        return;
+        p.addRoundedRectangle(
+            markerPoint.x - markerWidth * 0.5f,
+            markerPoint.y - markerHeight * 0.5f,
+            markerWidth,
+            markerHeight,
+            3
+        );
+        p.applyTransform(transform);
+
+        if (sliderPos > 0.f) {
+            g.setColour(c);
+            // g.setColour(juce::Colour{0x99ffffff});
+            // g.setColour(juce::Colours::whitesmoke);
+            g.fillPath(p);
+            // g.setColour(juce::Colour{0x66000000});
+            g.strokePath(p, juce::PathStrokeType(2.0f));
+        }
     }
 };
 
