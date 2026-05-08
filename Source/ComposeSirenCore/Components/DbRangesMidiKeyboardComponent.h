@@ -14,10 +14,11 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../lib/definitions/sirenProperties.h"
 #include "../lib/definitions/palette.h"
+#include "../colourUtilities.h"
 #include "LookAndFeels.h"
 #include "VoiceManagerState.h"
-
-
+#include "lib/wrappers/SirenEnsemble.h"
+#include "lib/wrappers/SirenStateMonitor.h"
 
 class MidiKeyboardLabelLookAndFeel : public juce::LookAndFeel_V3
 {
@@ -25,6 +26,108 @@ public:
     MidiKeyboardLabelLookAndFeel()
     {
         setColour(juce::Label::textColourId, juce::Colours::whitesmoke);
+    }
+};
+
+class SirenPitchesDisplayComponent : public juce::Component,
+                                     public juce::Timer,
+                                     public SirenStateMonitor::Listener
+{
+    std::map<sirenId, SirenVoice::State> sirenStates{};
+
+    juce::MidiKeyboardComponent& keyboardComponent;
+    SirenStateMonitor& sirenStateMonitor;
+
+public:
+    SirenPitchesDisplayComponent(SirenStateMonitor& ssm,
+                                 juce::MidiKeyboardComponent& kc) :
+        keyboardComponent(kc),
+        sirenStateMonitor(ssm)
+    {
+        sirenStateMonitor.addListener(this);
+        const std::vector<sirenId>& ids = sirenStateMonitor.getActiveSirenIds();
+        SirenPitchesDisplayComponent::activeSirenIds(ids);
+        startTimer(33);
+    }
+
+    ~SirenPitchesDisplayComponent() override
+    {
+        sirenStateMonitor.removeListener(this);
+        stopTimer();
+    };
+
+    // SirenStateMonitor::Listener callbacks
+    //--------------------------------------------------------------------------
+    void activeSirenIds(const std::vector<sirenId>& ids) override {
+        sirenStates.clear();
+        for (const auto id : ids) { sirenStates[id] = {}; }
+    }
+
+    void currentSirenState(const sirenId id,
+                           const SirenVoice::State& state) override {
+        sirenStates[id] = state;
+    }
+
+    // juce::Timer callback ----------------------------------------------------
+    void timerCallback() override {
+        repaint();
+    }
+
+    // juce::Component methods
+    //--------------------------------------------------------------------------
+    void paint(juce::Graphics& g) override {
+        auto bounds = getLocalBounds().toFloat();
+        g.fillAll(juce::Colours::whitesmoke);
+        float s = bounds.getHeight();
+        float y = s * 0.5f;
+        for (const auto& [ id, state ] : sirenStates) {
+            g.setColour(sirenColourById.at(id));
+            float pos = getPositionFromFloatNote(state.currentPitch);
+            juce::Rectangle<float> area
+                = juce::Rectangle<float>().withCentre({pos, y})
+                                          .withSizeKeepingCentre(s, s);
+            if (state.isNoteOn) {
+                g.fillEllipse(area);
+            } else {
+                g.drawEllipse(area, 2);
+            }
+        }
+    }
+
+    void resized() override {
+        // auto bounds = getBounds().toFloat();
+    }
+
+private:
+     static bool isWhiteNote(int midiNoteNumber) {
+        switch (midiNoteNumber % 12) {
+        case 0:
+        case 2:
+        case 4:
+        case 5:
+        case 7:
+        case 9:
+        case 11:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    float getPositionFromNote(int midiNoteNumber) const {
+        float s = keyboardComponent.getKeyStartPosition(midiNoteNumber);
+        float w = isWhiteNote(midiNoteNumber) ?
+                  keyboardComponent.getKeyWidth() :
+                  keyboardComponent.getBlackNoteWidth();
+        return s + w * 0.5f;
+    }
+
+    float getPositionFromFloatNote(float midiNoteNumber) const {
+         midiNoteNumber += 12;
+         float lower = getPositionFromNote(std::floor(midiNoteNumber));
+         float upper = getPositionFromNote(std::ceil(midiNoteNumber));
+         float frac = midiNoteNumber - std::floor(midiNoteNumber);
+         return lower + frac * (upper - lower);
     }
 };
 
@@ -41,15 +144,18 @@ public:
       juce::MidiKeyboardComponent(s, o)
     {
         // setBlackNoteLengthProportion(1.0f);
+        // setOctaveForMiddleC(4);
     }
 
     ~CustomMidiKeyboardComponent() override = default;
 
     // TODO : override paint method for more control over final look and feel
 
-    void drawBlackNote(int /*midiNoteNumber*/,
-                       juce::Graphics& g, juce::Rectangle<float> area,
-                       bool isDown, bool isOver,
+    void drawBlackNote(int midiNoteNumber,
+                       juce::Graphics& g,
+                       juce::Rectangle<float> area,
+                       bool isDown,
+                       bool isOver,
                        const juce::Colour noteFillColour) override
     {
         juce::Colour c(noteFillColour);
@@ -87,6 +193,7 @@ public:
 
     /*
      * copied from juce_audio_utils/gui/MidiKeyboardComponent
+     * (intent : draw fancier keys with inner shadows
      */
     void drawWhiteNote(int midiNoteNumber,
                        juce::Graphics& g,
@@ -190,6 +297,7 @@ private:
     MidiKeyboardLabelLookAndFeel mkllaf;
 
     CustomMidiKeyboardComponent keyboard;
+    SirenPitchesDisplayComponent sirenPitchesDisplay;
     VoiceManagerState& voiceManagerState;
 
     juce::Rectangle<int> dbRangesBounds;
@@ -206,9 +314,11 @@ private:
 public:
     DbRangesMidiKeyboardComponent(juce::MidiKeyboardState& s,
                                   VoiceManagerState& vms,
+                                  SirenStateMonitor& ssm,
                                   const juce::String& name = "") :
         Component(name),
         keyboard(s, juce::MidiKeyboardComponent::horizontalKeyboard),
+        sirenPitchesDisplay(ssm, keyboard),
         voiceManagerState(vms)
     {
         voiceManagerState.addListener(
@@ -218,11 +328,14 @@ public:
 
         // keyboard.setEnabled(false);
         keyboard.setAvailableRange(24, 95);
+        // keyboard.setAvailableRange(36, 107);
         keyboard.setBlackNoteLengthProportion(0.5f);
         keyboard.setScrollButtonsVisible(false);
         // keyboard.setScrollButtonWidth(0);
         keyboard.setLookAndFeel(&mklaf);
         addAndMakeVisible(keyboard);
+
+        addAndMakeVisible(sirenPitchesDisplay);
 
         const juce::FontOptions f{10.0f, juce::Font::plain};
 
@@ -246,7 +359,7 @@ public:
 
         setCurrentSirenCategory(voiceManagerState.getSirenCategory());
     }
-  
+
     ~DbRangesMidiKeyboardComponent() override
     {
         voiceManagerState.removeListener(
@@ -320,11 +433,20 @@ public:
     {
         int spacer = 3;
         auto bounds = getLocalBounds().reduced(spacer);
-        float keyboardHeightRatio = 0.7f;
+        float sirenPitchesHeightRatio = 0.18f;
+        float keyboardHeightRatio = 0.57f;//0.7f;
+        float dbRangesRatio = 0.25f;
+        int sirenPitchesHeight = bounds.getHeight() * sirenPitchesHeightRatio - 0.5 * spacer;
         int keyboardHeight = bounds.getHeight() * keyboardHeightRatio - 0.5 * spacer;
-        int dbRangesHeight = bounds.getHeight() * (1.0f - keyboardHeightRatio) - 0.5 * spacer;
+        int dbRangesHeight = bounds.getHeight() * dbRangesRatio - 0.5 * spacer;
 
-        auto keyboardBounds = bounds;
+        auto sirenPitchesBounds = bounds;
+        sirenPitchesBounds.setHeight(sirenPitchesHeight);
+        // sirenPitchesBounds.setLeft(sirenPitchesBounds.getX() - 1);
+        sirenPitchesBounds.setBottom(sirenPitchesBounds.getBottom() + 1);
+        sirenPitchesDisplay.setBounds(sirenPitchesBounds);
+
+        auto keyboardBounds = bounds.withTop(sirenPitchesBounds.getBottom() + 2);
         keyboardBounds.setHeight(keyboardHeight);
         keyboardBounds.setLeft(keyboardBounds.getX() - 1);
         keyboardBounds.setBottom(keyboardBounds.getBottom() + 1);
