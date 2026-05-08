@@ -1,6 +1,7 @@
 #pragma once
 #include "../utilities/cpp.stdlib.is.crippled.h"
 #include <optional>
+#include <set>
 #include "sirenProperties.h"
 #include "parameterDefinitions.h"
 
