@@ -18,14 +18,15 @@ OneSirenPluginEditor::OneSirenPluginEditor(OneSirenPluginProcessor& p) :
     ),
     midiKeyboard(
         p.getMidiKeyboardState(),
-        p.getVoiceManagerState()
+        p.getVoiceManagerState(),
+        p.getSirenStateMonitor()
     )
 {
-    audioProcessor.getVoiceManagerState().addListener(this);
-    auto cat = audioProcessor.getVoiceManagerState().getSirenCategory();
-
     addAndMakeVisible(mainButtons);
     addAndMakeVisible(voiceManager);
+
+    audioProcessor.getVoiceManagerState().addListener(this);
+    auto cat = audioProcessor.getVoiceManagerState().getSirenCategory();
 
     sirenStrip.setShowGroupLabels(true);
     sirenStrip.setShowKnobLabels(true);
@@ -35,8 +36,13 @@ OneSirenPluginEditor::OneSirenPluginEditor(OneSirenPluginProcessor& p) :
         // juce::Colour(mecaviv::Colours::SirenPalette::darkBlue)
     );
     addAndMakeVisible(sirenStrip);
-    addAndMakeVisible(midiKeyboard);
 
+    auto inch = audioProcessor.getVoiceManagerState().getMidiInput();
+    if (inch.isAny) { inch = AnyOrOneBasedMidiChannel::specific({1}); }
+    midiKeyboard.setCurrentChannel(inch.channel);
+    midiKeyboard.setCurrentSirenCategory(cat);
+
+    addAndMakeVisible(midiKeyboard);
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     setSize(754, 200);
@@ -70,4 +76,10 @@ void OneSirenPluginEditor::categoryChanged(sirenCategory c)
     sirenStrip.setBackgroundColour(
         sirenColourById.at(defaultSirenIdByCategory.at(c))
     );
+}
+
+void OneSirenPluginEditor::midiInputChanged(AnyOrOneBasedMidiChannel inch)
+{
+    if (inch.isAny) { inch = AnyOrOneBasedMidiChannel::specific({1}); }
+    midiKeyboard.setCurrentChannel(inch.channel);
 }

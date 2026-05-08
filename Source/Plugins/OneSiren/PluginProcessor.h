@@ -7,12 +7,13 @@
 
 // #include <JuceHeader.h>
 #include <juce_audio_processors/juce_audio_processors.h>
-#include <MidiRouter.h>
 #include <MidiScheduler.h>
 #include <apvtsUtilities.h>
 #include <lib/wrappers/SirenVoice.h>
 #include <Components/VoiceManagerState.h>
 #include <Components/MainButtonsComponent.h>
+#include "OneMidiRouter.h"
+#include "lib/wrappers/SirenStateMonitor.h"
 // #include "UiState.h"
 
 class OneSirenPluginProcessor :
@@ -84,6 +85,7 @@ public:
     // UiState& getUiState();
     juce::MidiKeyboardState& getMidiKeyboardState();
     VoiceManagerState& getVoiceManagerState();
+    SirenStateMonitor& getSirenStateMonitor();
 
 private:
     // void initialiseUiState();
@@ -99,9 +101,11 @@ private:
     juce::MidiKeyboardState midiKeyboardState;
     VoiceManagerState vms;
 
-    MidiRouter router;
+    OneMidiRouter router;
     MidiScheduler scheduler;
     SirenVoice siren;
+
+    SirenStateMonitor ssm;
 
     std::function<std::string(void)> getResourcesPathFunction;
 

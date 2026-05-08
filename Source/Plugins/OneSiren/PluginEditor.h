@@ -34,7 +34,7 @@ public:
     //==========================================================================
     // VoiceManagerState::Listener
     void categoryChanged(sirenCategory) override;
-
+    void midiInputChanged(AnyOrOneBasedMidiChannel inch) override;
 private:
     OneSirenPluginProcessor& audioProcessor;
     MainButtonsComponent mainButtons;

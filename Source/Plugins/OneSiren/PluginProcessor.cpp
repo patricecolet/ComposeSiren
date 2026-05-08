@@ -29,19 +29,20 @@ OneSirenPluginProcessor::OneSirenPluginProcessor() :
           "PARAMETERS",
           createParameterLayout(parameterLayoutData)
     ),
-    // Reminder : we want one MidiRouter instance per siren group
     router(parameterLayoutData[0], apvts, midiKeyboardState),
     getResourcesPathFunction(getResourcesPathGetter())
 {
     vms.addListener(this);
+    ssm.subscribe(&siren);
     const sirenCategory defaultSirenCategory = vms.getSirenCategory();
-    setSirenId(sirenPropertiesByCategory.at(defaultSirenCategory)->id);
-    // startTimer(1);
+    setSirenId(defaultSirenIdByCategory.at(defaultSirenCategory));
+    startTimer(33);
 }
 
 OneSirenPluginProcessor::~OneSirenPluginProcessor()
 {
     vms.removeListener(this);
+    stopTimer();
 }
 
 //==============================================================================
@@ -119,7 +120,8 @@ void OneSirenPluginProcessor::midiOutputChanged(AnyOrOneBasedMidiChannel outch)
 
 void OneSirenPluginProcessor::timerCallback()
 {
-    siren.update();
+    // siren.update();
+    siren.notifyListeners();
 }
 
 // void OneSirenPluginProcessor::initialiseUiState()
@@ -188,6 +190,7 @@ void OneSirenPluginProcessor::processBlock(juce::AudioBuffer<float>& audio,
 
     // SirenVoiceUnit* sirenUnit{nullptr};
     // if (!siren.getRawSirenHandle(sirenUnit)) {
+    // internal rawSiren handle
     if (!siren.getRawSirenHandle()) {
         audio.clear();
         return;
@@ -198,6 +201,8 @@ void OneSirenPluginProcessor::processBlock(juce::AudioBuffer<float>& audio,
     audio.clear();
     auto* lch = audio.getWritePointer(0);
     auto* rch = audio.getWritePointer(1);
+
+    siren.beginProcessBlock();
 
     juce::MidiBufferIterator midiIt = midiIn.findNextSamplePosition(0);
     juce::MidiMessageMetadata metadata;
@@ -399,6 +404,12 @@ VoiceManagerState& OneSirenPluginProcessor::getVoiceManagerState()
 {
     return vms;
 }
+
+SirenStateMonitor& OneSirenPluginProcessor::getSirenStateMonitor()
+{
+    return ssm;
+}
+
 //==============================================================================
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
