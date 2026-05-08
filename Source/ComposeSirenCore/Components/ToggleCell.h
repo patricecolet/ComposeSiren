@@ -24,6 +24,12 @@ public:
         addAndMakeVisible(toggle);
     }
 
+    ~ToggleCell() override
+    {
+        attachment.reset();
+        toggle.setLookAndFeel(nullptr);
+    }
+
     void setState(bool e) {
         toggle.setToggleState(e, juce::dontSendNotification);
     }
