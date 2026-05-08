@@ -72,6 +72,7 @@ public:
 
     void setBackgroundColour(juce::Colour c);
     void setCellBackgroundColour(juce::Colour c);
+    void setBackgroundStripColour(juce::Colour c);
 };
 
 #endif //COMPOSESIREN_REVERBSTRIPCOMPONENT_H

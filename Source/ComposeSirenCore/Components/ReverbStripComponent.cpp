@@ -10,6 +10,7 @@ ReverbStripComponent::ReverbStripComponent(
 ) :
     apvts(vts)
 {
+
     const float gap = controlStripLayout::spacerSize;
 
     enableGroup.setTitleText("Enable");
@@ -43,7 +44,7 @@ ReverbStripComponent::ReverbStripComponent(
 
     // --- reverb enable switch (horizontal) -----------------------------------
 
-    enable.setNameText("Enable");
+    enable.setNameText("Enable Reverb");
     enable.setToggleAttachment(vts,
                                ParameterId::ReverbEnable,
                                paramGroupId);
@@ -217,5 +218,11 @@ void ReverbStripComponent::setCellBackgroundColour(juce::Colour c)
     enableGroup.setCellBackgroundColour(c);
     reverbGroup.setCellBackgroundColour(c);
     filterGroup.setCellBackgroundColour(c);
+    repaint();
+}
+
+void ReverbStripComponent::setBackgroundStripColour(juce::Colour c)
+{
+    backgroundStripColour = c;
     repaint();
 }

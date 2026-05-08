@@ -19,7 +19,7 @@ class MasterVolumeComponent : public juce::Component
 public:
     MasterVolumeComponent(juce::AudioProcessorValueTreeState& vts,
                           const std::string& paramGroupId);
-    ~MasterVolumeComponent() override = default;
+    ~MasterVolumeComponent() override;
 
     void paint(juce::Graphics&) override;
     void resized() override;
@@ -31,11 +31,17 @@ public:
 
     void setBackgroundColour(juce::Colour c);
     void setCellBackgroundColour(juce::Colour c);
+    void setBackgroundStripColour(juce::Colour c);
 
 protected:
     juce::AudioProcessorValueTreeState& apvts;
     juce::Label titleLabel;
     NotchedKnobLAF notchedKnobLAF;
+
+    juce::Colour backgroundColour{juce::Colours::black};
+    juce::Colour backgroundStripColour{
+        juce::Colour{mecaviv::Colours::backgroundStripGrey}
+    };
 
     // Groups
     GuiCellGroup masterGroup;

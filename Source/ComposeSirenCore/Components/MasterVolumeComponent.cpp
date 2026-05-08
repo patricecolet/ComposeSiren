@@ -10,7 +10,7 @@ MasterVolumeComponent::MasterVolumeComponent(juce::AudioProcessorValueTreeState&
 {
     const float gap = controlStripLayout::spacerSize;
 
-    masterGroup.setTitleText("Volume");
+    masterGroup.setTitleText("Master Volume");
     masterGroup.setGap(gap);
     masterGroup.setWrap(false);
     addAndMakeVisible(masterGroup);
@@ -18,7 +18,7 @@ MasterVolumeComponent::MasterVolumeComponent(juce::AudioProcessorValueTreeState&
     addAndMakeVisible(spacer0);
     addAndMakeVisible(spacer1);
 
-    volume.setNameText("Volume");
+    volume.setNameText("Master Volume");
     volume.setSliderAttachment(vts,
                                ParameterId::MasterVolume,
                                paramGroupId);
@@ -28,15 +28,19 @@ MasterVolumeComponent::MasterVolumeComponent(juce::AudioProcessorValueTreeState&
     masterGroup.addAndMakeVisible(volume);
 }
 
-// MasterVolumeComponent::~MasterVolumeComponent() {}
+MasterVolumeComponent::~MasterVolumeComponent()
+{
+    // why is this not required although it is in other places ?
+    // volume.getSlider().setLookAndFeel(nullptr);
+}
 
 void MasterVolumeComponent::paint(juce::Graphics& g)
 {
-    auto area = getLocalBounds().reduced(2).toFloat();
+    auto area = getLocalBounds().toFloat();
 
-    g.setColour(juce::Colour{0xff314159});
-    // g.fillRoundedRectangle(area, controlStripLayout::cornerSize);
-
+    // g.setColour(juce::Colour{0xff314159});
+    g.setColour(backgroundStripColour);
+    g.fillRoundedRectangle(area, controlStripLayout::cornerSize);
     // todo : draw tick bars for dBs here
 }
 
@@ -98,5 +102,11 @@ void MasterVolumeComponent::setBackgroundColour(juce::Colour c)
 void MasterVolumeComponent::setCellBackgroundColour(juce::Colour c)
 {
     masterGroup.setCellBackgroundColour(c);
+    repaint();
+}
+
+void MasterVolumeComponent::setBackgroundStripColour(juce::Colour c)
+{
+    backgroundStripColour = c;
     repaint();
 }
