@@ -6,8 +6,11 @@
 #define COMPOSESIREN_SIRENTRACKCOMPONENT_H
 
 #include "SirenStripComponent.h"
+#include "lib/wrappers/SirenStateMonitor.h"
 
-class SirenTrackComponent : public juce::Component {
+class SirenTrackComponent : public juce::Component,
+                            public SirenStateMonitor::Listener
+{
     //--------------------------------------------------------------------------
     // private component displaying a white outline above whole strip
     class Selection : public juce::Component
@@ -59,11 +62,17 @@ public:
 
     SirenTrackComponent(sirenId sid,
                         juce::AudioProcessorValueTreeState& vts,
-                        const parameterLayoutGroupData& layoutGroupData);
+                        const parameterLayoutGroupData& layoutGroupData,
+                        SirenStateMonitor& ssm);
     ~SirenTrackComponent() override;
 
+    // juce::Component
     void paint(juce::Graphics&) override;
     void resized() override;
+
+    // SirenStateMonitor::Listener
+    // void activeSirenIds(const std::vector<sirenId>&) override;
+    void currentSirenState(const sirenId, const SirenVoice::State&) override;
 
     void addListener(Listener* l);
     void removeListener(Listener* l);
@@ -86,7 +95,9 @@ public:
     void setIsPlayingNote(bool isPlaying);
 
 private:
+    sirenId id;
     SirenStripComponent sirenControls;
+    SirenStateMonitor& sirenStateMonitor;
 
     MouseListeningTitleLabel titleLabel{this};
     std::set<Listener*> listeners;

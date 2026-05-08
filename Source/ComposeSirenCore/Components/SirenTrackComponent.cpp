@@ -6,9 +6,13 @@
 
 SirenTrackComponent::SirenTrackComponent(sirenId sid,
                                          juce::AudioProcessorValueTreeState& vts,
-                                         const parameterLayoutGroupData& layoutGroupData) :
-    sirenControls(vts, layoutGroupData)
+                                         const parameterLayoutGroupData& layoutGroupData,
+                                         SirenStateMonitor& ssm) :
+    id(sid),
+    sirenControls(vts, layoutGroupData),
+    sirenStateMonitor(ssm)
 {
+    sirenStateMonitor.addListener(this);
     sirenControls.setBackgroundColour(juce::Colours::transparentBlack);
 
     addAndMakeVisible(spacer1);
@@ -41,7 +45,7 @@ SirenTrackComponent::SirenTrackComponent(sirenId sid,
 
     // Output gain ---------------------------------------------------------
     // outputGain.setNameText(
-    //    appendCCNumber("Gain", ParameterId::TrackOutputGain)
+    //    sirenControls.appendCCNumber("Gain", ParameterId::TrackOutputGain)
     // );
     outputGain.setNameText("Gain");
     juce::Slider& outgains = outputGain.getSlider();
@@ -62,6 +66,7 @@ SirenTrackComponent::SirenTrackComponent(sirenId sid,
 
 SirenTrackComponent::~SirenTrackComponent()
 {
+    sirenStateMonitor.removeListener(this);
     listeners.clear();
 }
 
@@ -85,7 +90,7 @@ void SirenTrackComponent::paint(juce::Graphics& g)
     );
 
     g.setColour(juce::Colours::darkgreen);
-    g.fillEllipse(ledBounds.withSizeKeepingCentre(9, 9));
+    g.fillEllipse(ledBounds.withSizeKeepingCentre(8, 8));
 
     if (isPlayingNote) {
         g.setColour(juce::Colours::lightgreen);
@@ -125,6 +130,12 @@ void SirenTrackComponent::resized()
     trackGroup.resized();
     selection.setBounds(getLocalBounds());
     selection.resized();
+}
+
+void SirenTrackComponent::currentSirenState(const sirenId sid,
+                                            const SirenVoice::State& s)
+{
+    if (id == sid) { setIsPlayingNote(s.isNoteOn); }
 }
 
 void SirenTrackComponent::addListener(Listener* l)
@@ -221,6 +232,8 @@ void SirenTrackComponent::onTitleLabelClicked()
 
 void SirenTrackComponent::setIsPlayingNote(bool isPlaying)
 {
-    isPlayingNote = isPlaying;
-    repaint();
+    if (isPlaying != isPlayingNote) {
+        isPlayingNote = isPlaying;
+        repaint();
+    }
 }
