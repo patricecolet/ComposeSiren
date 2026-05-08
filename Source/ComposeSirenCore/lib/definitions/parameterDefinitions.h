@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <iostream>
-#include <set>
+// #include <set>
 #include <map>
 #include <vector>
 #include <variant>
@@ -341,18 +341,18 @@ inline const std::vector<paramData> parameterDefinitions = {
   mkCCParam     (ParameterId::Timbre             ,   0.0f, 127.0f,  1.00f,   0.0f,   13        ),
   mkCCParam     (ParameterId::Mute               ,   0.0f, 127.0f,  1.00f,   0.0f,   12        ),
 
-  mkCCParam     (ParameterId::ReverbEnable       ,   0.0f,   1.0f,  1.00f,   0.0f,   64        ),
-  mkCCParam     (ParameterId::ReverbDryWet       ,   0.0f, 127.0f,  1.00f,   0.0f,   66        ),
-  mkCCParam     (ParameterId::ReverbDamping      ,   0.0f, 127.0f,  1.00f,   0.0f,   67        ),
-  mkCCParam     (ParameterId::ReverbRoomSize     ,   0.0f, 127.0f,  1.00f,   0.0f,   65        ),
-  mkCCParam     (ParameterId::ReverbWidth        ,   0.0f, 127.0f,  1.00f,   0.0f,   70        ),
-  mkCCParam     (ParameterId::ReverbLowCut       ,   0.0f, 127.0f,  1.00f,   0.0f,   68        ),
-  mkCCParam     (ParameterId::ReverbHighCut      ,   0.0f, 127.0f,  1.00f,   0.0f,   69        ),
+  mkCCParam     (ParameterId::ReverbEnable       ,   0.0f,   1.0f,  0.00f,   0.0f,   64        ),
+  mkCCParam     (ParameterId::ReverbDryWet       ,   0.0f,   1.0f,  0.00f,   0.0f,   66        ),
+  mkCCParam     (ParameterId::ReverbDamping      ,   0.0f,   1.0f,  0.00f,   0.0f,   67        ),
+  mkCCParam     (ParameterId::ReverbRoomSize     ,   0.0f,   1.0f,  0.00f,   0.0f,   65        ),
+  mkCCParam     (ParameterId::ReverbWidth        ,   0.0f,   1.0f,  0.00f,   0.0f,   70        ),
+  mkCCParam     (ParameterId::ReverbLowCut       ,   20.f,   1000.f,0.00f,   20.f,   68        ),
+  mkCCParam     (ParameterId::ReverbHighCut      ,   5000.f,20000.f,0.00f,   20000.f,69        ),
 
-  mkCCParam     (ParameterId::TrackPanning       ,   -1.0f,  1.0f,  0.00f,   0.0f,   10        ),
-  mkCCParam     (ParameterId::TrackOutputGain    ,   0.0f, 1.0f,    0.00f,   1.0f,   70        ),
+  mkCCParam     (ParameterId::TrackPanning       ,   -1.0f, 1.0f,   0.00f,   0.0f,   10        ),
+  mkCCParam     (ParameterId::TrackOutputGain    ,   0.0f,  1.0f,   0.00f,   1.0f,   70        ),
 
-  mkCCParam     (ParameterId::MasterVolume       ,   0.0f, 127.0f,  1.00f,   0.0f,   7         ),
+  mkCCParam     (ParameterId::MasterVolume       ,   0.0f,  1.0f,   0.00f,   1.0f,   7         ),
 
   // mkCCParam     (ParameterId::MatrixNoteIn       ,   0.0f, 127.0f,  1.00f,   0.0f,   10        ),
 };
