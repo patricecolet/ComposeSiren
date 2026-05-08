@@ -87,6 +87,8 @@ public:
     const std::string& vectorIntervalFile
   );
 
+  float getCurrentPitch();
+
 private:
     void setMidicent(int note);
 

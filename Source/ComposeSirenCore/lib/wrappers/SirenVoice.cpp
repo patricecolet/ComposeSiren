@@ -42,8 +42,10 @@ void SirenVoiceUnit::handleMidi(int status, int value1, int value2) {
     // second nibble is the channel so we ignore it
     if (status >> 4 == 0x8) { // note off
         midiIn->realTimeStopNote(value1);
+        ino = false;
     } else if (status >> 4 == 0x9) { // note on
         midiIn->realTimeStartNote(value1, value2);
+        ino = true;
     } else if (status >> 4 == 0xB) { // cc
         midiIn->handleControlChange(value1, value2);
     } else if (status >> 4 & 0xE) { // pitch bend
@@ -53,6 +55,12 @@ void SirenVoiceUnit::handleMidi(int status, int value1, int value2) {
 
 void SirenVoiceUnit::stopSiren() {
     midiIn->stopSirene();
+}
+
+void SirenVoiceUnit::beginProcessBlock()
+{
+    isNoteOn.store(ino, std::memory_order_relaxed);
+    currentPitch.store(cp, std::memory_order_relaxed);
 }
 
 float SirenVoiceUnit::process() {
@@ -72,6 +80,7 @@ float SirenVoiceUnit::process() {
 
     if (setNoteSampleCounter % setNoteCallbackPeriodSamples == 0) {
         siren->setnote();
+        cp = siren->getCurrentPitch() * 0.01f; // pitch is in cents
         setNoteSampleCounter = 0;
     }
     ++setNoteSampleCounter;
@@ -91,6 +100,14 @@ void SirenVoiceUnit::update() {
     siren->setnote();
 }
 
+bool SirenVoiceUnit::getIsNoteOn() const {
+    return isNoteOn.load(std::memory_order_relaxed);
+}
+
+float SirenVoiceUnit::getCurrentPitch() const {
+    return currentPitch.load(std::memory_order_relaxed);
+}
+
 // SIREN VOICE WRAPPER =========================================================
 
 SirenVoice::SirenVoice() :
@@ -101,14 +118,33 @@ SirenVoice::~SirenVoice()
 {
     delete currentSiren.load();
     delete discardedSiren.load();
+    removeAllListeners();
+}
+
+void SirenVoice::addListener(Listener* listener)
+{
+    listeners.insert(listener);
+}
+
+void SirenVoice::removeListener(Listener* listener)
+{
+    if (listeners.find(listener) != listeners.end()) {
+        listeners.erase(listener);
+    }
+}
+
+void SirenVoice::removeAllListeners()
+{
+    listeners.clear();
 }
 
 void SirenVoice::setSirenId(
-    sirenId id,
+    sirenId sid,
     const std::string& resourcesPath
 ) {
     sirenIsLoading.store(true, std::memory_order_release);
-    auto* newSiren = new SirenVoiceUnit(id, resourcesPath);
+    id = sid;
+    auto* newSiren = new SirenVoiceUnit(sid, resourcesPath);
     newSiren->setSampleRate(lastSampleRate);
     auto* oldSiren = currentSiren.exchange(newSiren, std::memory_order_acq_rel);
     // safe to delete the old Siren at the end of processBlock, the audio thread
@@ -116,6 +152,16 @@ void SirenVoice::setSirenId(
     // -> call deleteDiscarded at the end of processBlock !
     discardedSiren.store(oldSiren, std::memory_order_release);
     sirenIsLoading.store(false, std::memory_order_release);
+    for (const auto& l : listeners) { l->currentSirenId(id.value()); }
+}
+
+bool SirenVoice::getSirenId(sirenId& sid)
+{
+    if (id.has_value()) {
+        sid = id.value();
+        return true;
+    }
+    return false;
 }
 
 bool SirenVoice::isSirenLoading() const
@@ -123,13 +169,20 @@ bool SirenVoice::isSirenLoading() const
     return sirenIsLoading.load(std::memory_order_acquire);
 }
 
-bool SirenVoice::getRawSirenHandle(SirenVoiceUnit* target)
+bool SirenVoice::getRawSirenHandle()
 {
     rawSiren = currentSiren.load(std::memory_order_acquire);
-    target = rawSiren;
     if (rawSiren == nullptr) { return false; }
     return true;
 }
+
+// bool SirenVoice::getRawSirenHandle(SirenVoiceUnit* target)
+// {
+//     rawSiren = currentSiren.load(std::memory_order_acquire);
+//     target = rawSiren;
+//     if (rawSiren == nullptr) { return false; }
+//     return true;
+// }
 
 void SirenVoice::deleteDiscarded()
 {
@@ -157,7 +210,38 @@ void SirenVoice::handleMidi(int status, int value1, int value2)
     rawSiren->handleMidi(status, value1, value2);
 }
 
+void SirenVoice::beginProcessBlock()
+{
+    rawSiren->beginProcessBlock();
+}
+
 float SirenVoice::process()
 {
     return rawSiren->process();
 }
+
+bool SirenVoice::getIsNoteOn()
+{
+    if (getRawSirenHandle()) { return rawSiren->getIsNoteOn(); }
+    return false;
+}
+
+float SirenVoice::getCurrentPitch()
+{
+    if (getRawSirenHandle()) { return rawSiren->getCurrentPitch(); }
+    return 0.0;
+}
+
+void SirenVoice::notifyListeners()
+{
+    if (!id.has_value()) { return; }
+
+    for (const auto& l : listeners) {
+        l->currentSirenState(id.value(), {
+            getIsNoteOn(),
+            getCurrentPitch()
+        });
+    }
+}
+
+

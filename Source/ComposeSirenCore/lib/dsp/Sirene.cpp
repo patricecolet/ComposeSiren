@@ -16,6 +16,7 @@
 // we need this to ensure file loading will not fail if floats are not 32 bits,
 // although it's highly unlikely to happen on macos / windows and common linux distros
 #include <climits>
+
 static_assert(CHAR_BIT == 8 && sizeof(float) == 4, "require 8 bits bytes and 32 bits floats");
 // or is this enough ?
 // static_assert(sizeof(float) * CHAR_BIT == 32, "require 32 bits floats");
@@ -106,8 +107,8 @@ void Sirene::readDataFromBinaryFile(const std::string& dataFilePath,
   {
     myfile.read(reinterpret_cast<char *>(tabAmp), sizeof tabAmp);
     if (myfile.gcount() != sizeof tabAmp) {
-      std::cout << "Warning (" << tabAmpFile << ") : readDataFromBinaryFile: read " << myfile.gcount()
-      << " bytes instead of " << sizeof tabAmp << std::endl;
+      // std::cout << "Warning (" << tabAmpFile << ") : readDataFromBinaryFile: read " << myfile.gcount()
+      // << " bytes instead of " << sizeof tabAmp << std::endl;
     }
     myfile.close();
   }
@@ -139,6 +140,10 @@ void Sirene::readDataFromBinaryFile(const std::string& dataFilePath,
     myfile.close();
   }
   else std::cout <<  "Error. Binary file not found.\n";
+}
+
+float Sirene::getCurrentPitch() {
+    return noteEncour;
 }
 
 void Sirene::setMidicent(int note) {

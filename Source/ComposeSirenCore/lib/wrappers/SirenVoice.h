@@ -5,6 +5,7 @@
 #ifndef COMPOSESIREN_SIREN_VOICE_H
 #define COMPOSESIREN_SIREN_VOICE_H
 
+#include <set>
 #include "../definitions/parameterDefinitions.h"
 #include "../dsp/MidiIn.h"
 #include "../dsp/Sirene.h"
@@ -21,6 +22,11 @@ class SirenVoiceUnit {
     int sampleCountForMidiInTimer;
     int setNoteCallbackPeriodSamples;
     int setNoteSampleCounter;
+
+    std::atomic<bool> isNoteOn { false };
+    bool ino = false;
+    std::atomic<float> currentPitch { 0.0f };
+    float cp = 0.0f;
 
 public:
     SirenVoiceUnit(sirenId id, const std::string& resourcesPath);
@@ -40,6 +46,7 @@ public:
     void handleMidi(int status, int value1, int value2);
     void stopSiren();
 
+    void beginProcessBlock();
     // this will compute the next sample to play and return it
     float process();
 
@@ -47,6 +54,9 @@ public:
     // this needs to be called at a fixed rate (maybe we could do it by
     // counting the audio samples -> yes, very probably !)
     void update();
+
+    bool getIsNoteOn() const;
+    float getCurrentPitch() const;
 };
 
 // SIREN VOICE WRAPPER CLASS ===================================================
@@ -62,33 +72,70 @@ class SirenVoice
 
     SirenVoiceUnit* rawSiren;
 
+protected:
+    std::optional<sirenId> id {std::nullopt};
+
+public:
+    struct State {
+        bool isNoteOn{false};
+        float currentPitch{0.0f};
+    };
+
+    //--------------------------------------------------------------------------
+    // SIREN VOICE LISTENER ////////////////////////////////////////////////////
+    // Listen to note on/off and pitch changes :
+    class Listener
+    {
+    public:
+        virtual ~Listener() = default;
+        virtual void currentSirenId(sirenId) {}
+        virtual void currentSirenState(sirenId, State) {}
+    };
+    //--------------------------------------------------------------------------
+
+private:
+    std::set<Listener*> listeners;
+
 public:
     SirenVoice();
-    ~SirenVoice();
+    virtual ~SirenVoice();
 
     // SirenVoiceUnit lifecycle management
-    void setSirenId(
-        sirenId id,
-        const std::string& resourcesPath
-    );
+    virtual void setSirenId(sirenId sid, const std::string& resourcesPath);
+    bool getSirenId(sirenId& sid);
+
+    void addListener(Listener* listener);
+    void removeListener(Listener* listener);
+    void removeAllListeners();
 
     // use this at the start of the processBlock function
     // (returns true if currentSiren is not loading or nullptr),
     // then safely call handleMidi and process methods.
     bool isSirenLoading() const;
-    bool getRawSirenHandle(SirenVoiceUnit* target = nullptr);
+    bool getRawSirenHandle();
+    // bool getRawSirenHandle(SirenVoiceUnit* target = nullptr);
     // use this at the end of the processBlock function.
     void deleteDiscarded();
 
     // those are using getRawSirenHandle internally :
-    void setSampleRate(double newSampleRate);
+    virtual void setSampleRate(double newSampleRate);
     void stop();
     void update();
 
     // those are not using getRawSirenHandle
     // handle with care ! (see comments above)
     void handleMidi(int status, int value1, int value2);
+    virtual void beginProcessBlock();
     float process();
+
+    // the following method is thread safe and should be called
+    // from a Timer callback to trigger notifications (calls
+    // getIsNoteOn and getCurrentPitch under the hood)
+    void notifyListeners();
+
+private:
+    bool getIsNoteOn();
+    float getCurrentPitch();
 };
 
 #endif //COMPOSESIREN_SIREN_VOICE_H
