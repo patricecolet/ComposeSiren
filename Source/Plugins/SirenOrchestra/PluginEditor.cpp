@@ -5,40 +5,53 @@
 #include "PluginEditor.h"
 #include <colourUtilities.h>
 
-static std::map<sirenId, std::unique_ptr<SirenStripComponent>>
-makeSirenStrips(juce::AudioProcessorValueTreeState& vts,
-           std::vector<parameterLayoutGroupData>& paramGroupData)
+static std::map<sirenId, std::unique_ptr<SirenTrackComponent>>
+makeSirenTracks(juce::AudioProcessorValueTreeState& vts,
+                std::vector<parameterLayoutGroupData>& paramGroupData,
+                SirenStateMonitor& ssm)
 {
-    std::map<sirenId, std::unique_ptr<SirenStripComponent>> strips;
+    std::map<sirenId, std::unique_ptr<SirenTrackComponent>> tracks;
     for (auto& group : paramGroupData) {
-        if (sirenIddByStrId.contains(group.id)) {
-            auto sid = sirenIddByStrId.at(group.id);
-            strips.emplace(sid, std::make_unique<SirenStripComponent>(vts, group, true));
-            strips.at(sid)->setBackgroundColour(juce::Colour(sirenColourById.at(sid)));
+        if (sirenIdByStrId.contains(group.id)) {
+            auto sid = sirenIdByStrId.at(group.id);
+            tracks.emplace(sid, std::make_unique<SirenTrackComponent>(sid, vts, group, ssm));
+            tracks.at(sid)->setBackgroundColour(juce::Colour(sirenColourById.at(sid)));
         }
     }
-    return std::move(strips);
+    return tracks;
 }
 
 SirenOrchestraPluginEditor::SirenOrchestraPluginEditor(SirenOrchestraPluginProcessor& p) :
     AudioProcessorEditor(p),
     audioProcessor(p),
     voiceManager(p.getVoiceManagerState()),
-    sirenStrips(
-        makeSirenStrips(
+    sirenTracks(
+        makeSirenTracks(
             p.getAudioProcessorValueTreeState(),
-            p.getParameterLayoutData()
+            p.getParameterLayoutData(),
+            p.getSirenStateMonitor()
         )
     ),
-    rvbStrip(p.getAudioProcessorValueTreeState()),
+    rvbStrip(p.getAudioProcessorValueTreeState(), "R"),
+    masterVolume(p.getAudioProcessorValueTreeState(), "M"),
     midiKeyboard(p.getMidiKeyboardState(),
-                 p.getVoiceManagerState())
+                 p.getVoiceManagerState(),
+                 p.getSirenStateMonitor()),
+    sirenStripMenu(sirenTracks)
 {
+    sirenStripMenu.setListener(this);
+
     for (auto i : sirenOrder) {
-        addAndMakeVisible(sirenStrips.at(i).get());
+        addAndMakeVisible(sirenTracks.at(i).get());
     }
 
     addAndMakeVisible(rvbStrip);
+    addAndMakeVisible(masterVolume);
+
+    audioProcessor.getVoiceManagerState().addListener(VoiceManagerState::Listener::Key::midiInput, this);
+    auto inch = audioProcessor.getVoiceManagerState().getMidiInput();
+    if (inch.isAny) { inch = AnyOrOneBasedMidiChannel::specific({1}); }
+    midiKeyboard.setCurrentChannel(inch.channel);
     addAndMakeVisible(midiKeyboard);
 
     wood = juce::Drawable::createFromImageData(
@@ -46,13 +59,16 @@ SirenOrchestraPluginEditor::SirenOrchestraPluginEditor(SirenOrchestraPluginProce
         BinaryData::boiserie_pngSize
     );
 
-    int sirenWidth = static_cast<int>(sirenStrips.at(sirenOrder[0])->getMinWidth());
+    bottomColour = sirenColourById.at(sirenOrder.back());
+
+    int sirenWidth = static_cast<int>(sirenTracks.at(sirenOrder[0])->getMinWidth());
     setSize(sirenWidth + 2 * woodThickness, 600);
 }
 
 SirenOrchestraPluginEditor::~SirenOrchestraPluginEditor()
 {
-    audioProcessor.getVoiceManagerState().removeListener(this);
+    audioProcessor.getVoiceManagerState().removeListener(VoiceManagerState::Listener::Key::midiInput, this);
+    sirenStripMenu.removeListener();
 }
 //==============================================================================
 // AudioProcessorEditor
@@ -64,7 +80,7 @@ void SirenOrchestraPluginEditor::paint(juce::Graphics& g)
     g.fillRect(getLocalBounds().toFloat());
 
     const int& spacer = controlStripLayout::spacerSize;
-    int sirenWidth = static_cast<int>(sirenStrips.at(sirenOrder[0])->getMinWidth());
+    int sirenWidth = static_cast<int>(sirenTracks.at(sirenOrder[0])->getMinWidth());
     const int ensembleHeight = (sirenOrder.size() - 1) * (55 + spacer) + 200;
 
     bool drawWood = woodThickness > 0;
@@ -96,43 +112,89 @@ void SirenOrchestraPluginEditor::paint(juce::Graphics& g)
 void SirenOrchestraPluginEditor::resized()
 {
     const int& spacer = controlStripLayout::spacerSize;
-    int sirenWidth = static_cast<int>(sirenStrips.at(sirenOrder[0])->getMinWidth());
-    int sirenTitleWidth = static_cast<int>(sirenStrips.at(sirenOrder[0])->getTitleWidth());
-    int sirenParametersWidth = static_cast<int>(sirenStrips.at(sirenOrder[0])->getParametersWidth(true));
+    int sirenWidth = static_cast<int>(sirenTracks.at(sirenOrder[0])->getMinWidth());
+    int sirenTitleWidth = static_cast<int>(sirenTracks.at(sirenOrder[0])->getTitleWidth());
+    int sirenControlsWidth = static_cast<int>(sirenTracks.at(sirenOrder[0])->getSirenControlsWidth());
+    int sirenTrackControlsWidth = static_cast<int>(sirenTracks.at(sirenOrder[0])->getTrackControlsWidth());
 
     for (std::size_t i = 0; i < sirenOrder.size(); ++i) {
-        auto& strip = sirenStrips.at(sirenOrder[i]);
-        strip->setBackgroundColour(juce::Colour(sirenColourById.at(sirenOrder[i])));
-        // strip->setBackgroundColour(juce::Colour(sirenColourById.at(sirenOrder[0])));
-        strip->setTitle(sirenTitleById.at(sirenOrder[i]));
-        strip->setShowTitle(true);
+        auto& track = sirenTracks.at(sirenOrder[i]);
+        track->setBackgroundColour(juce::Colour(sirenColourById.at(sirenOrder[i])));
+        track->setTitle(sirenTitleById.at(sirenOrder[i]));
+        // track->setShowTitle(true);
 
         if (i==0) {
-            strip->setShowGroupLabels(true);
-            strip->setShowKnobLabels(true);
-            strip->setShowTextBox(true);
-            strip->setBounds(woodThickness, 0, sirenWidth, 100);
+            track->setShowGroupLabels(true);
+            track->setShowKnobLabels(true);
+            track->setShowTextBox(true);
+            track->setBounds(woodThickness, 0, sirenWidth, 100);
         } else {
-            strip->setShowGroupLabels(false);
-            strip->setShowKnobLabels(false);
-            strip->setShowTextBox(true);
-            strip->setBounds(
+            track->setShowGroupLabels(false);
+            track->setShowKnobLabels(false);
+            track->setShowTextBox(true);
+            track->setBounds(
                 woodThickness, (i - 1) * (minSirenHeight + spacer) + 100 + spacer,
                 sirenWidth, minSirenHeight
             );
         }
     }
 
-    int nexty = (sirenOrder.size() - 1) * (minSirenHeight + spacer) + 100 + spacer;
+    int reverby = (sirenOrder.size() - 1) * (minSirenHeight + spacer) + 100 + spacer;
 
     rvbStrip.setTitle("Reverb");
     rvbStrip.setShowTitle(true);
     rvbStrip.setShowGroupLabels(false);
     rvbStrip.setShowKnobLabels(true);
     rvbStrip.setShowTextBox(true);
-    rvbStrip.setBounds(woodThickness + sirenTitleWidth, nexty, sirenParametersWidth, 65);
-    rvbStrip.setBackgroundColour(juce::Colour{mecaviv::Colours::SirenPalette::lightGreen});
-    nexty = nexty + 65 + spacer;
+    rvbStrip.setBounds(
+        woodThickness + controlStripLayout::spacerSize,
+        reverby,
+        sirenControlsWidth - 2 * controlStripLayout::spacerSize,
+        70
+    );
+    // rvbStrip.setBackgroundColour(juce::Colours::transparentBlack);
+    // rvbStrip.setBackgroundColour(bottomColour);
+    rvbStrip.setBackgroundColour(juce::Colour{0x22ffffff});
+    // rvbStrip.setBackgroundColour(juce::Colour{mecaviv::Colours::SirenPalette::darkBlue});
+    rvbStrip.setCellBackgroundColour(juce::Colours::transparentBlack);
+    // rvbStrip.setCellBackgroundColour(bottomColour);
+    rvbStrip.setBackgroundStripColour(bottomColour);
 
-    midiKeyboard.setBounds(woodThickness + sirenTitleWidth, nexty, sirenParametersWidth, 70);
+    masterVolume.setTitle("Master Volume");
+    masterVolume.setShowTitle(true);
+    masterVolume.setShowGroupLabels(false);
+    masterVolume.setShowKnobLabels(true);
+    masterVolume.setShowTextBox(true);
+    masterVolume.setBounds(
+        woodThickness + sirenControlsWidth,
+        reverby,
+        sirenTrackControlsWidth + sirenTitleWidth - controlStripLayout::spacerSize,
+        140 + spacer
+    );
+    // masterVolume.setBackgroundColour(juce::Colours::transparentBlack);
+    // masterVolume.setBackgroundColour(bottomColour);
+    masterVolume.setBackgroundColour(juce::Colour{0x22ffffff});
+    // masterVolume.setBackgroundColour(juce::Colour{mecaviv::Colours::SirenPalette::darkBlue});
+    masterVolume.setCellBackgroundColour(juce::Colours::transparentBlack);
+    // masterVolume.setCellBackgroundColour(bottomColour);
+    masterVolume.setBackgroundStripColour(bottomColour);
+
+    int nexty = reverby + 70 + spacer;
+    midiKeyboard.setBounds(woodThickness, nexty, sirenControlsWidth, 70);
+}
+
+void SirenOrchestraPluginEditor::midiInputChanged(AnyOrOneBasedMidiChannel inch)
+{
+    if (inch.isAny) { inch = AnyOrOneBasedMidiChannel::specific({1}); }
+    midiKeyboard.setCurrentChannel(inch.channel);
+}
+
+void SirenOrchestraPluginEditor::sirenStripMenuItemSelected(std::optional<sirenId> s)
+{
+    if (s.has_value()) {
+        AnyOrOneBasedMidiChannel ch{false, sirenPropertiesById.at(s.value())->oneBasedMidiChannel};
+        audioProcessor.getVoiceManagerState().setMidiInput(ch, true);
+    } else {
+        audioProcessor.getVoiceManagerState().setMidiInput(AnyOrOneBasedMidiChannel::any(), true);
+    }
 }

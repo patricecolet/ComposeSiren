@@ -8,17 +8,77 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <Components/MainButtonsComponent.h>
 #include <Components/VoiceManagerComponent.h>
-#include <Components/SirenStripComponent.h>
+// #include <lib/wrappers/SirenStateMonitor.h>
+#include <Components/SirenTrackComponent.h>
 #include <Components/DbRangesMidiKeyboardComponent.h>
 #include <Components/ReverbStripComponent.h>
+#include <Components/MasterVolumeComponent.h>
 #include "PluginProcessor.h"
 
 constexpr int minSirenHeight = 55;
-constexpr std::array<sirenId, 7> sirenOrder = { S3, S4, S1, S2, S5, S6, S7 };
-// constexpr std::array<sirenId, 7> sirenOrder = { S7, S6, S5, S2, S1, S4, S3 };
+// constexpr std::array<sirenId, 7> sirenOrder = { S3, S4, S1, S2, S5, S6, S7 };
+constexpr std::array<sirenId, 7> sirenOrder = { S7, S6, S5, S2, S1, S4, S3 };
+
+// SIREN STRIP MENU (SHOULD BE MOVED TO ITS OWN FILE ===========================
+
+class SirenStripMenu : public SirenTrackComponent::Listener
+{
+    std::map<sirenId, std::unique_ptr<SirenTrackComponent>>& tracks;
+public:
+    class Listener
+    {
+    public:
+        Listener() = default;
+        virtual ~Listener() = default;
+        virtual void sirenStripMenuItemSelected(std::optional<sirenId>) = 0;
+    };
+
+    SirenStripMenu(std::map<sirenId, std::unique_ptr<SirenTrackComponent>>& s)
+    : tracks(s) {
+        for (auto& [id, track] : tracks) {
+            track->addListener(this);
+        }
+    }
+
+    ~SirenStripMenu() override {
+        for (auto& [id, track] : tracks) {
+            track->removeListener(this);
+        }
+    }
+
+    void setListener(Listener* l) { listener = l; }
+    void removeListener() { listener = nullptr; }
+
+    void sirenTrackSelected(SirenTrackComponent* s) override
+    {
+        if (s == nullptr) {
+            // notify listener / error case ?
+            // listener->sirenStripMenuItemSelected();
+            // jassert(false);
+        }
+
+        for (auto& [id, track] : tracks) {
+            if (track.get() == s) {
+                bool v = track->getSelected();
+                track->setSelected(!v);
+                if (!v) {
+                    listener->sirenStripMenuItemSelected(id);
+                } else {
+                    listener->sirenStripMenuItemSelected(std::nullopt);
+                }
+            } else {
+                track->setSelected(false);
+            }
+        }
+    }
+
+private:
+    Listener* listener;
+};
 
 class SirenOrchestraPluginEditor : public juce::AudioProcessorEditor,
-                                   public VoiceManagerState::Listener
+                                   public VoiceManagerState::Listener,
+                                   public SirenStripMenu::Listener
 {
 public:
     SirenOrchestraPluginEditor(SirenOrchestraPluginProcessor&);
@@ -27,16 +87,30 @@ public:
     void paint(juce::Graphics&) override;
     void resized() override;
 
+    // VoiceManagerState::Listener
+    //--------------------------------------------------------------------------
+    void midiInputChanged(AnyOrOneBasedMidiChannel inch) override;
+
+    // SirenStripMenu::Listener
+    //--------------------------------------------------------------------------
+    void sirenStripMenuItemSelected(std::optional<sirenId> s) override;
+
 private:
     const int woodThickness = 0;//25;
     std::unique_ptr<juce::Drawable> wood;
 
     SirenOrchestraPluginProcessor& audioProcessor;
     // MainButtonsComponent mainButtons;
+
     VoiceManagerComponent voiceManager;
-    std::map<sirenId, std::unique_ptr<SirenStripComponent>> sirenStrips;
+    std::map<sirenId, std::unique_ptr<SirenTrackComponent>> sirenTracks;
     ReverbStripComponent rvbStrip;
+    MasterVolumeComponent masterVolume;
     DbRangesMidiKeyboardComponent midiKeyboard;
+
+    // uses sirenTracks as menu items and provides callback
+    SirenStripMenu sirenStripMenu;
+    juce::Colour bottomColour;
 };
 
 
