@@ -28,12 +28,13 @@ target_include_directories(ComposeSirenCore
 target_sources(ComposeSirenCore
   PRIVATE
   # Synth.cpp
+  Reverb.cpp
 
   lib/definitions/sirenProperties.cpp
   lib/definitions/parameterDefinitions.cpp
 
   # lib/dsp/CS_midiIN.cpp
-  lib/dsp/MidiIN.cpp
+  lib/dsp/MidiIn.cpp
   lib/dsp/Sirene.cpp
   lib/dsp/allpass.cpp
   lib/dsp/comb.cpp
