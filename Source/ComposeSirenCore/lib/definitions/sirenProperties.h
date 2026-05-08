@@ -393,15 +393,29 @@ defaultSirenIdByCategory = {
     { Piccolo, S7 },
 };
 
-inline const std::map<const std::string, sirenId> sirenIddByStrId = {
-    { "S1", S1 },
-    { "S2", S2 },
-    { "S3", S3 },
-    { "S4", S4 },
-    { "S5", S5 },
-    { "S6", S6 },
-    { "S7", S7 },
+inline const std::vector<sirenId> allSirenIds = { S1, S2, S3, S4, S5, S6, S7 };
+
+inline const std::vector<std::pair<sirenId, const std::string>>sirenIdStrIdPairs = {
+    { S1, "S1" },
+    { S2, "S2" },
+    { S3, "S3" },
+    { S4, "S4" },
+    { S5, "S5" },
+    { S6, "S6" },
+    { S7, "S7" },
 };
+
+inline const std::map<const std::string, sirenId> sirenIdByStrId = []() {
+    std::map<const std::string, sirenId> res;
+    for (auto& p : sirenIdStrIdPairs) { res[p.second] = p.first; }
+    return res;
+}();
+
+inline const std::map<sirenId, const std::string> sirenStrIdById = []() {
+    std::map<sirenId, const std::string> res;
+    for (const auto& [ id, strId ] : sirenIdStrIdPairs) { res.emplace(id, strId); }
+    return res;
+}();
 
 inline const std::map<sirenId, const std::string> sirenTitleById = {
     { S1, "Alto 1" },
