@@ -28,7 +28,7 @@ class KeyboardMidiBridge : public juce::AudioProcessorParameter::Listener,
 
     juce::MidiKeyboardState& keyboardState;
     juce::RangedAudioParameter* transposeParam;
-    OneBasedMidiChannel defaultInputChannel;
+    AnyOrOneBasedMidiChannel allowedInputChannel;
 
     std::atomic<bool> updatingFromMidi { false };
 
@@ -48,9 +48,9 @@ public:
     KeyboardMidiBridge(const parameterLayoutGroupData& layoutData,
                        juce::AudioProcessorValueTreeState& vts,
                        juce::MidiKeyboardState& s,
-                       OneBasedMidiChannel defaultInput) :
+                       AnyOrOneBasedMidiChannel allowedInput) :
         keyboardState(s),
-        defaultInputChannel(defaultInput)
+        allowedInputChannel(allowedInput)
     {
         transposeParam = vts.getParameter(
             ParameterIdGet::toJuceParameterId(
@@ -72,9 +72,9 @@ public:
         mapChannel = std::move(fn);
     }
 
-    void setDefaultInputChannel(OneBasedMidiChannel ch)
+    void setAllowedInputChannel(AnyOrOneBasedMidiChannel ch)
     {
-        defaultInputChannel = ch;
+        allowedInputChannel = ch;
     }
 
     // bool processBlock(float& v, int& samplePosition, int numSamples);
@@ -102,12 +102,6 @@ public:
     void handleIncomingNoteEvent(const juce::MidiMessage& msg,
                                  int samplePosition,
                                  MidiScheduler& scheduler)
-                                 // MidiScheduler& scheduler,
-                                 // int channel,
-                                 // int note,
-                                 // float velocity,
-                                 // bool isOn,
-                                 // int samplePosition)
     {
         int channel = msg.getChannel();
         int note = msg.getNoteNumber();
@@ -139,14 +133,18 @@ public:
 
 private:
     // TRANSPOSE PARAM LISTENER ================================================
-    void parameterValueChanged(int, float newValue) override
-    {
+    void parameterValueChanged(int, float newValue) override {
         transpose = static_cast<int>(transposeParam->convertFrom0to1(newValue));
     }
 
     void parameterGestureChanged(int, bool isGesture) override {}
 
     // KEYBOARD STATE LISTENER =================================================
+
+    // NB : we don't define the GUI Keyboard channel in handleNoteOn and
+    // HandleNoteOff. We do it directly in the KeyboardComponent so it is
+    // transmitted to the KeyboardState, then optionally filtered here.
+
     void handleNoteOn(juce::MidiKeyboardState* source,
                       int channel,
                       int note,
@@ -154,7 +152,12 @@ private:
     {
         // avoid MIDI echo
         if (updatingFromMidi.load(std::memory_order_relaxed)) { return; }
-        pushEvent({ defaultInputChannel.oneBased, note, velocity, true, 0 });
+        // filter input channel :
+        // allow any  channel, or only a specific one if there are several
+        // KeyboardMidiBridges listening to the same KeyboardState
+        if (allowedInputChannel != AnyOrOneBasedMidiChannel::any() &&
+            allowedInputChannel.channel.oneBased != channel) { return; }
+        pushEvent({ channel, note, velocity, true, 0 });
     }
 
     void handleNoteOff(juce::MidiKeyboardState* source,
@@ -164,7 +167,10 @@ private:
     {
         // avoid MIDI echo
         if (updatingFromMidi.load(std::memory_order_relaxed)) { return; }
-        pushEvent({ defaultInputChannel.oneBased, note, velocity, false, 0 });
+        // filter input channel
+        if (allowedInputChannel != AnyOrOneBasedMidiChannel::any() &&
+            allowedInputChannel.channel.oneBased != channel) { return; }
+        pushEvent({ channel, note, velocity, false, 0 });
     }
 
     void pushEvent(const NoteEvent& e)
@@ -179,7 +185,7 @@ private:
     {
         const auto key = std::make_pair(e.channel, e.note);
 
-        const ActiveNote n{
+        const ActiveNote n {
             .transformedChannel = mapChannel(e.channel),
             .transformedNote = juce::jlimit(0, 127, e.note + transpose)
         };
@@ -218,4 +224,4 @@ private:
     }
 };
 
-#endif //COMPOSESIREN_KEYBOARDMIDIBRIDGE_H
+#endif // COMPOSESIREN_KEYBOARDMIDIBRIDGE_H
