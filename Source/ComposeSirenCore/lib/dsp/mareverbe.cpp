@@ -55,127 +55,120 @@ mareverbe::mareverbe()
 	
 	// Buffer will be full of rubbish - so we MUST mute them
 	mute();
-	
 }
 
 mareverbe::~mareverbe() {
 }
 
 void mareverbe::process_events() {
-	if (roomsize)
-		setroomsize(roomsize);
-	if (damp)
-		setdamp(damp);
-	if (wet)
-		setwet(dbtoamp(wet,-48.0f));
-	if (dry)
-		setdry(dbtoamp(dry,-48.0f));
-	if (width)
-		setwidth(width);
-	if (freeze)
-		setmode(freeze);
+    if (roomsize)   { setroomsize(roomsize); }
+    if (damp)       { setdamp(damp); }
+    if (wet)        { setwet(dbtoamp(wet,-48.0f)); }
+    if (dry)        { setdry(dbtoamp(dry,-48.0f)); }
+    if (width)      { setwidth(width); }
+    if (freeze)     { setmode(freeze); }
 }
 
-void mareverbe::process_stereo(float *inL, float *inR, float *outL, float *outR, int n) {
+void mareverbe::process_stereo(float *inL, float *inR,
+                               float *outL, float *outR,
+                               int n)
+{
 	processreplace(inL, inR, outL, outR, n, 1);
 	dsp_clip(outL, n, 1);
 	dsp_clip(outR, n, 1); // signal may never exceed -1..1
-	
 }
 
 void mareverbe::mute()
 {
 	int i;
 	
-	if (getmode() >= freezemode)
-		return;
-	
-	for (i=0;i<numcombs;i++)
-	{
+	if (getmode() >= freezemode) {
+	    return;
+	}
+
+	for (i = 0; i < numcombs; i++) {
 		combL[i].mute();
 		combR[i].mute();
 	}
-	for (i=0;i<numallpasses;i++)
-	{
+
+	for (i = 0; i < numallpasses; i++) {
 		allpassL[i].mute();
 		allpassR[i].mute();
 	}
 }
 
-void mareverbe::processreplace(float *inputL, float *inputR, float *outputL, float *outputR, long numsamples, int skip)
+void mareverbe::processreplace(float *inputL, float *inputR,
+                               float *outputL, float *outputR,
+                               long numsamples, int skip)
 {
-	float outL,outR,input;
-	int i;
-	input = (*inputL + *inputR) * gain;
-	if((input <=1.0)&&(input >=-1.0)){ 
-		
-	while(numsamples--)
+    float outL,outR,proxyInputL,proxyInputR;
+    int i;
+    // proxyInputL = proxyInputR = (*inputL + *inputR) * gain;
+    proxyInputL = *inputL * gain;
+    proxyInputR = *inputR * gain;
+
+	if (proxyInputL <=  1.0 &&
+	    proxyInputL >= -1.0 &&
+	    proxyInputR <=  1.0 &&
+	    proxyInputR >= -1.0)
 	{
-		outL = outR = 0;
-		input = (*inputL + *inputR) * gain;
-		
-		// Accumulate comb filters in parallel
-		for(i=0; i<numcombs; i++)
-		{
-			outL += combL[i].process(input);
-			outR += combR[i].process(input);
-		}
-		
-		// Feed through allpasses in series
-		for(i=0; i<numallpasses; i++)
-		{
-			outL = allpassL[i].process(outL);
-			outR = allpassR[i].process(outR);
-		}
+        while (numsamples--)
+        {
+            outL = outR = 0;
+            // WTH ? this was reverberating the mono mix all along ?
+            // proxyInputL = proxyInputR = (*inputL + *inputR) * gain;
+            proxyInputL = *inputL * gain;
+            proxyInputR = *inputR * gain;
 
-		// Calculate output REPLACING anything already there
-		*outputL = outL*wet1 + outR*wet2 + (*inputL)*dry;
-		*outputR = outR*wet1 + outL*wet2 + (*inputR)*dry;
-		
+            // Accumulate comb filters in parallel
+            for (i = 0; i < numcombs; i++) {
+                outL += combL[i].process(proxyInputL);
+                outR += combR[i].process(proxyInputR);
+            }
 
-		// Increment sample pointers, allowing for interleave (if any) 
-		inputL += skip;
-		inputR += skip;
-		outputL += skip;
-		outputR += skip;
-	
-	}
-	
-	}
+            // Feed through allpasses in series
+            for (i = 0; i < numallpasses; i++) {
+                outL = allpassL[i].process(outL);
+                outR = allpassR[i].process(outR);
+            }
+
+            // Calculate output REPLACING anything already there
+            *outputL = outL * wet1 + outR * wet2 + (*inputL) * dry;
+            *outputR = outR * wet1 + outL * wet2 + (*inputR) * dry;
+
+            // Increment sample pointers, allowing for interleave (if any)
+            inputL += skip;
+            inputR += skip;
+            outputL += skip;
+            outputR += skip;
+        }
+    }
 }
-
-
 
 void mareverbe::update()
 {
 	// Recalculate internal values after parameter change
-	
 	int i;
 	
 	wet1 = wet*(width/2 + 0.5f);
 	wet2 = wet*((1-width)/2);
 	
-	if (mode >= freezemode)
-	{
+	if (mode >= freezemode) {
 		roomsize1 = 1;
 		damp1 = 0;
 		gain = muted;
-	}
-	else
-	{
+	} else {
 		roomsize1 = roomsize;
 		damp1 = damp;
 		gain = fixedgain;
 	}
 	
-	for(i=0; i<numcombs; i++)
-	{
+	for (i = 0; i < numcombs; i++) {
 		combL[i].setfeedback(roomsize1);
 		combR[i].setfeedback(roomsize1);
 	}
 	
-	for(i=0; i<numcombs; i++)
-	{
+	for (i = 0; i < numcombs; i++) {
 		combL[i].setdamp(damp1);
 		combR[i].setdamp(damp1);
 	}
