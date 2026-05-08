@@ -8,19 +8,18 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <Components/MainButtonsComponent.h>
 #include <Components/VoiceManagerState.h>
-#include <MidiRouter.h>
 #include <MidiScheduler.h>
 #include <apvtsUtilities.h>
-#include <atomicUtilities.h>
-#include <pathUtilities.h>
-#include <lib/dsp/mareverbe.h>
-#include <lib/wrappers/SirenVoice.h>
+#include <Reverb.h>
+#include <lib/wrappers/SirenEnsemble.h>
+#include <lib/wrappers/SirenStateMonitor.h>
+#include <ParameterBridges.h>
+#include "OrchestraMidiRouter.h"
 
 class SirenOrchestraPluginProcessor :
     public juce::AudioProcessor,
-    // public juce::AudioProcessorValueTreeState::Listener,
-    // public juce::MidiKeyboardState::Listener,
     public MainButtonsComponent::Listener,
+    public VoiceManagerState::Listener,
     public juce::Timer
 {
 public:
@@ -54,6 +53,12 @@ public:
     void resetSiren() override;
     std::string getResourcesPath() override;
     void selectedNewResourcesPath(const std::string&) override;
+
+    // VoiceManagerState::Listener callbacks
+    //--------------------------------------------------------------------------
+    void categoryChanged(sirenCategory newCategory) override;
+    void midiInputChanged(AnyOrOneBasedMidiChannel) override;
+    void midiOutputChanged(AnyOrOneBasedMidiChannel) override;
 
     // Timer callback (called from UI thread)
     //--------------------------------------------------------------------------
@@ -94,13 +99,9 @@ public:
     // UiState& getUiState();
     juce::MidiKeyboardState& getMidiKeyboardState();
     VoiceManagerState& getVoiceManagerState();
+    SirenStateMonitor& getSirenStateMonitor();
 
 private:
-    // MidiIn* myMidiInHandler;
-    // Synth* mySynth;
-    mareverbe reverb;
-
-    // needed by DSP
     // needed by DSP
     double lastSampleRate;
     int lastSamplesPerBlock;
@@ -111,18 +112,18 @@ private:
     juce::MidiKeyboardState midiKeyboardState;
     VoiceManagerState vms;
 
-    MidiRouter router;
+    OrchestraMidiRouter router;
     MidiScheduler scheduler;
-    // std::atomic<SirenVoice*> currentSiren   { nullptr };
-    // std::atomic<SirenVoice*> discardedSiren { nullptr };
-    // std::atomic<bool> sirenIsLoading { false };
-    SirenVoice siren;
 
     std::function<std::string(void)> getResourcesPathFunction;
 
-    // int sampleCountForMidiInTimer;
-    // juce::AudioProcessorValueTreeState apvts;
-    // juce::MidiKeyboardState midiKeyboardState;
+    SirenEnsemble ensemble;
+    SirenEnsembleParameterBridges ensembleParameterBridges;
+
+    Reverb reverb;
+    ReverbParameterBridges reverbParameterBridges;
+
+    SirenStateMonitor ssm;
 
 private:
     //==========================================================================

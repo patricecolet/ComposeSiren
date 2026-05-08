@@ -2,69 +2,63 @@
 // Created by joseph larralde on 20/02/2026.
 //
 
+#include <lib/definitions/sirenProperties.h>
 #include <apvtsUtilities.h>
+#include <pathUtilities.h>
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
 SirenOrchestraPluginProcessor::SirenOrchestraPluginProcessor() :
 #ifndef JucePlugin_PreferredChannelConfigurations
-    AudioProcessor (BusesProperties()
+    AudioProcessor(BusesProperties()
 #if ! JucePlugin_IsMidiEffect
 #if ! JucePlugin_IsSynth
-        .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
+        .withInput("Input", juce::AudioChannelSet::stereo(), true)
 #endif
-        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
+        .withOutput("Output", juce::AudioChannelSet::stereo(), true)
 #endif
     ),
 #endif
     // will be initialized by prepareToPlay at startup anyway
     lastSampleRate(44100.0),
     lastSamplesPerBlock(512),
-    parameterLayoutData(std::vector<parameterLayoutGroupData>{
-        mkLayoutGroupData("S1", "Alto 1",
-                          ParameterClass::SirenControl,
-                          ParameterClass::TrackControl),
-        mkLayoutGroupData("S2", "Alto 2",
-                          ParameterClass::SirenControl,
-                          ParameterClass::TrackControl),
-        mkLayoutGroupData("S3", "Basse",
-                          ParameterClass::SirenControl,
-                          ParameterClass::TrackControl),
-        mkLayoutGroupData("S4", "Tenor",
-                          ParameterClass::SirenControl,
-                          ParameterClass::TrackControl),
-        mkLayoutGroupData("S5", "Soprano 1",
-                          ParameterClass::SirenControl,
-                          ParameterClass::TrackControl),
-        mkLayoutGroupData("S6", "Soprano 2",
-                          ParameterClass::SirenControl,
-                          ParameterClass::TrackControl),
-        mkLayoutGroupData("S7", "Piccolo",
-                          ParameterClass::SirenControl,
-                          ParameterClass::TrackControl),
-        mkLayoutGroupData("R",  "Reverb",
-                          ParameterClass::ReverbControl),
-        mkLayoutGroupData("M",  "Master",
-                          ParameterClass::MasterControl)
-    }),
+    parameterLayoutData([]() {
+        std::vector<parameterLayoutGroupData> res;
+        for (const auto& sid : allSirenIds) {
+            res.push_back(
+                mkLayoutGroupData(sirenStrIdById.at(sid),
+                                  sirenTitleById.at(sid),
+                                  ParameterClass::SirenControl,
+                                  ParameterClass::TrackControl)
+            );
+        }
+        res.push_back(mkLayoutGroupData("R", "Reverb",
+                                        ParameterClass::ReverbControl));
+        res.push_back(mkLayoutGroupData("M", "Master",
+                                        ParameterClass::MasterControl));
+        return res;
+    }()),
     apvts(*this,
           nullptr,
           "PARAMETERS",
           createParameterLayout(parameterLayoutData)
     ),
-    // Reminder : we want one MidiRouter instance per siren group
-    router(parameterLayoutData[0], apvts, midiKeyboardState),
-    getResourcesPathFunction(getResourcesPathGetter())
+    router(parameterLayoutData, apvts, midiKeyboardState),
+    getResourcesPathFunction(getResourcesPathGetter()),
+    ensemble(allSirenIds, getResourcesPathFunction()),
+    ensembleParameterBridges(apvts, &ensemble),
+    reverbParameterBridges(apvts, &reverb)
 {
-    // vms.addListener(this);
-    // const sirenCategory defaultSirenCategory = vms.getSirenCategory();
-    // setSirenId(sirenPropertiesByCategory.at(defaultSirenCategory)->id);
-    // startTimer(1);
+    ssm.subscribe(&ensemble);
+    router.sendAllCurrentParameterValues();
+    ensembleParameterBridges.sendParameterValues();
+    reverbParameterBridges.sendParameterValues();
+    startTimer(33);
 }
 
 SirenOrchestraPluginProcessor::~SirenOrchestraPluginProcessor()
 {
-    // vms.removeListener(this);
+    stopTimer();
 }
 
 //==============================================================================
@@ -76,7 +70,8 @@ void SirenOrchestraPluginProcessor::prepareToPlay(double sampleRate, int samples
     // if (sirenIsLoading.load(std::memory_order_acquire)) { return; }
     // auto siren = currentSiren.load(std::memory_order_acquire);
     // if (siren == nullptr) { return; }
-    siren.setSampleRate(sampleRate);
+    reverb.setSampleRate(sampleRate);
+    ensemble.setSampleRate(sampleRate);
 }
 
 void SirenOrchestraPluginProcessor::releaseResources()
@@ -115,7 +110,7 @@ void SirenOrchestraPluginProcessor::resetSiren()
     // if (sirenIsLoading.load(std::memory_order_acquire)) { return; }
     // auto siren = currentSiren.load(std::memory_order_acquire);
     // if (siren == nullptr) { return; }
-    siren.stop();
+    ensemble.stop();
 }
 
 std::string SirenOrchestraPluginProcessor::getResourcesPath()
@@ -129,6 +124,23 @@ void SirenOrchestraPluginProcessor::selectedNewResourcesPath(const std::string& 
     // setSirenId(defaultSirenIdByCategory.at(vms.getSirenCategory()));
 }
 
+// VoiceManagerState::Listener callbacks
+//------------------------------------------------------------------------------
+void SirenOrchestraPluginProcessor::categoryChanged(sirenCategory newCategory)
+{
+
+}
+
+void SirenOrchestraPluginProcessor::midiInputChanged(AnyOrOneBasedMidiChannel)
+{
+
+}
+
+void SirenOrchestraPluginProcessor::midiOutputChanged(AnyOrOneBasedMidiChannel)
+{
+
+}
+
 // juce::Timer callback
 //------------------------------------------------------------------------------
 void SirenOrchestraPluginProcessor::timerCallback()
@@ -136,7 +148,8 @@ void SirenOrchestraPluginProcessor::timerCallback()
     // if (sirenIsLoading.load(std::memory_order_acquire)) { return; }
     // auto siren = currentSiren.load(std::memory_order_acquire);
     // if (siren == nullptr) { return; }
-    siren.update();
+    // ensemble.update();
+    ensemble.notifyListeners();
 }
 
 // void SirenOrchestraPluginProcessor::initialiseUiState()
@@ -213,7 +226,10 @@ void SirenOrchestraPluginProcessor::processBlock(juce::AudioBuffer<float>& audio
     //     return;
     // }
 
-    if (!siren.getRawSirenHandle()) {
+    // SirenVoiceUnit* sirenUnit = nullptr;
+    // if (!siren.getRawSirenHandle(sirenUnit)) {
+    // if (!siren.getRawSirenHandle()) {
+    if (!ensemble.getRawSirenHandles()) {
         audio.clear();
         return;
     }
@@ -223,6 +239,9 @@ void SirenOrchestraPluginProcessor::processBlock(juce::AudioBuffer<float>& audio
     audio.clear();
     auto* lch = audio.getWritePointer(0);
     auto* rch = audio.getWritePointer(1);
+
+    ensemble.beginProcessBlock();
+    reverb.beginProcessBlock();
 
     juce::MidiBufferIterator midiIt = midiIn.findNextSamplePosition(0);
     juce::MidiMessageMetadata metadata;
@@ -237,9 +256,9 @@ void SirenOrchestraPluginProcessor::processBlock(juce::AudioBuffer<float>& audio
     for (int i = 0; i < audio.getNumSamples(); ++i) {
         while (nextPosition == i) {
             auto msg = metadata.getMessage();
-            siren.handleMidi(msg.getRawData()[0],
-                             msg.getRawData()[1],
-                             msg.getRawData()[2]);
+            ensemble.handleMidi(msg.getRawData()[0],
+                                msg.getRawData()[1],
+                                msg.getRawData()[2]);
 
             ++midiIt;
             if (midiIt == midiIn.cend()) {
@@ -250,8 +269,9 @@ void SirenOrchestraPluginProcessor::processBlock(juce::AudioBuffer<float>& audio
             }
         }
 
-        float sample = siren.process();
-        lch[i] = rch[i] = sample;
+        float l, r;
+        ensemble.process(&l, &r);
+        reverb.process(&l, &r, &lch[i], &rch[i], 1);
     }
 
     // security inspired from SurgeSynthProcessor.cpp
@@ -260,16 +280,15 @@ void SirenOrchestraPluginProcessor::processBlock(juce::AudioBuffer<float>& audio
     while (midiIt != midiIn.cend()) {
         metadata = *midiIt;
         auto msg = metadata.getMessage();
-        siren.handleMidi(msg.getRawData()[0],
-                         msg.getRawData()[1],
-                         msg.getRawData()[2]);
+        ensemble.handleMidi(msg.getRawData()[0],
+                            msg.getRawData()[1],
+                            msg.getRawData()[2]);
         ++midiIt;
     }
 
     // now we can safely delete the previous siren pointer
     // (if it's already nullptr, delete will just do nothing)
-    // delete discardedSiren.exchange(nullptr);
-    siren.deleteDiscarded();
+    ensemble.deleteDiscarded();
 }
 
 //==============================================================================
@@ -424,6 +443,11 @@ juce::MidiKeyboardState& SirenOrchestraPluginProcessor::getMidiKeyboardState()
 VoiceManagerState& SirenOrchestraPluginProcessor::getVoiceManagerState()
 {
     return vms;
+}
+
+SirenStateMonitor& SirenOrchestraPluginProcessor::getSirenStateMonitor()
+{
+    return ssm;
 }
 
 //==============================================================================
