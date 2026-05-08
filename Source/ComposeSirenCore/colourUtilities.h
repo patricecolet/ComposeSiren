@@ -31,7 +31,6 @@ static inline std::vector<juce::Colour> makeHslInterpolatedPalette(
 }
 
 inline const std::map<sirenId, juce::Colour> sirenColourById = []() {
-
     auto colours = makeHslInterpolatedPalette(
         juce::Colour(mecaviv::Colours::SirenPalette::darkBlue),
         juce::Colour(mecaviv::Colours::SirenPalette::lightBlue),
@@ -47,16 +46,6 @@ inline const std::map<sirenId, juce::Colour> sirenColourById = []() {
         { S6, colours[5] },
         { S7, colours[6] },
     };
-
-    // std::map<sirenId, juce::Colour> res = {
-    //     { S3, colours[0] },
-    //     { S4, colours[1] },
-    //     { S1, colours[0] },
-    //     { S2, colours[1] },
-    //     { S5, colours[0] },
-    //     { S6, colours[1] },
-    //     { S7, colours[0] },
-    // };
 
     return res;
 }();
