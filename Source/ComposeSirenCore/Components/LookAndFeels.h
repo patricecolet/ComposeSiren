@@ -409,7 +409,7 @@ public:
         ledBounds = ledBounds.withCentre({ledBounds.getCentreX(), ledBounds.getY()});
 
         g.setColour(juce::Colours::darkgreen);
-        g.fillEllipse(ledBounds.withSizeKeepingCentre(9, 9));
+        g.fillEllipse(ledBounds.withSizeKeepingCentre(8, 8));
 
         if (!ticked)
         {
@@ -895,14 +895,8 @@ public:
         float ratio = dim / fgRect.getWidth(); // or getHeight, is square
         float myRatio = 0.75f;
 
-        // float transX = width > height ? (width - dim) / 2.0f : 0;
-        // float transY = width > height ? 0 : (height - dim) / 2.0f;
-
-        auto outline = slider.findColour(juce::Slider::rotarySliderOutlineColourId);
-        // auto fill = slider.findColour (Slider::rotarySliderFillColourId);
-        // auto fill = juce::Colour{0xaa393939};
-        // auto fill = juce::Colours::whitesmoke;
         auto fill = juce::Colours::black;
+        auto outline = juce::Colours::lightgrey;
 
         auto bounds = juce::Rectangle<int>(x, y, width, height).toFloat();//.reduced(2);
         auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) / 2.0f;
@@ -913,7 +907,6 @@ public:
         auto toAngle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
 
         auto c = fill;
-
         // g.setColour(juce::Colours::red);
         // g.fillRect(bounds);
 
@@ -929,8 +922,7 @@ public:
                                     rotaryEndAngle,
                                     true);
 
-        g.setColour(c.withAlpha(0.6f));
-        // g.setColour(juce::Colour{0x99ffffff});
+        g.setColour(outline.withAlpha(0.6f));
         g.strokePath(
             backgroundArc,
             juce::PathStrokeType(
@@ -952,7 +944,7 @@ public:
                                    toAngle,
                                    true);
 
-            g.setColour(c.withAlpha(0.8f));
+            g.setColour(outline.withAlpha(0.8f));
             g.strokePath(
                 valueArc,
                 juce::PathStrokeType(
