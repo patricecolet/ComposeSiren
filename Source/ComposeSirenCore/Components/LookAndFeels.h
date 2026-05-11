@@ -7,6 +7,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_utils/juce_audio_utils.h>
+#include "../lib/definitions/palette.h"
 #include "BinaryData.h"
 
 // LAYOUT VARS /////////////////////////////////////////////////////////////////
@@ -26,6 +27,7 @@ constexpr float groupLabelFontSize{12};
 constexpr float sliderLabelHeight{28};
 constexpr float sliderLabelFontSize{11.5};
 constexpr float minSliderHeight{62};
+constexpr float minFullStripHeight{100};
 constexpr float minKnobSliderWidth{47};
 constexpr float minIncDecSliderWidth{70};
 
@@ -48,6 +50,10 @@ public:
                   juce::Colours::transparentBlack);
         setColour(juce::MidiKeyboardComponent::keySeparatorLineColourId,
                   juce::Colours::black);
+        setColour(juce::MidiKeyboardComponent::keyDownOverlayColourId,
+                  juce::Colour{mecaviv::Colours::orangeMecanique});
+        setColour(juce::MidiKeyboardComponent::mouseOverKeyOverlayColourId,
+                  juce::Colour{mecaviv::Colours::orangeMecanique}.withAlpha(0.75f));
     }
 
     ~MidiKeyboardLookAndFeel() override = default;
