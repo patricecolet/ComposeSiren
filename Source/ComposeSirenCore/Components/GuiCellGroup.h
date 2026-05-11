@@ -107,8 +107,8 @@ public:
                     : juce::FlexBox::Wrap::noWrap;
         fb.flexDirection = juce::FlexBox::Direction::row;
         fb.justifyContent = juce::FlexBox::JustifyContent::center; // <- this !!
-        fb.alignContent   = juce::FlexBox::AlignContent::flexStart;
-        fb.alignItems     = juce::FlexBox::AlignItems::flexStart;
+        fb.alignContent   = juce::FlexBox::AlignContent::center;//flexStart;
+        fb.alignItems     = juce::FlexBox::AlignItems::center;//flexStart;
 
         bool first = true;
 
@@ -117,7 +117,7 @@ public:
             if (auto* cell = dynamic_cast<GuiCell*>(c)) {
                 float w = cell->getMinWidth();
                 // float h = cell->getMinHeight();
-                float h = bounds.getHeight() - gap;
+                float h = bounds.getHeight() - 2 * gap;
 
                 auto item = juce::FlexItem(*cell).withMinWidth(w)
                                                  .withMinHeight(h)
