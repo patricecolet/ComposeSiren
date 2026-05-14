@@ -32,8 +32,9 @@ inline std::string getDefaultResourcesPath()
 #if COMPOSESIREN_DEV_BUILD
     std::string resourcesDirStr = XSTRINGIFY(COMPOSESIREN_DEV_RESOURCES_DIR);
     std::cout << "resourcesDir : " << resourcesDirStr.c_str() << std::endl;
-    juce::File resourcesDir = juce::File(juce::String(resourcesDirStr));
-    dataFilePath = resourcesDir.getFullPathName().toStdString() + "/";
+    const juce::File resourcesDir = juce::File(juce::String(resourcesDirStr));
+    const juce::String& path = resourcesDir.getFullPathName();
+    dataFilePath = juce::File::addTrailingSeparator(path).toStdString();
 #else
     // Pour les plugins (AU, VST, etc.), utiliser le chemin d'installation
 #if defined (_MSC_VER) // Windows
@@ -51,7 +52,7 @@ inline std::string getDefaultResourcesPath()
 inline std::function<std::string(void)>
 getResourcesPathGetter(std::optional<std::string> resourcesPath = std::nullopt)
 {
-    if (!resourcesPath) {
+    if (!resourcesPath.has_value()) {
         return getDefaultResourcesPath;
     } else {
         return [res = resourcesPath.value()]() {

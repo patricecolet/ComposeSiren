@@ -152,12 +152,13 @@ public:
                 juce::FileBrowserComponent::openMode
                 | juce::FileBrowserComponent::canSelectDirectories;
 
-            fileChooser->launchAsync(flags, [this](const juce::FileChooser& chooser) {
+            fileChooser->launchAsync(flags,[this](const juce::FileChooser& chooser) {
                 // get the result to update resourcesPath
                 juce::File newResourcesPath = chooser.getResult();
                 listener.selectedNewResourcesPath(
-                    newResourcesPath.getFullPathName().toStdString() +
-                    *juce::File::getSeparatorString()
+                    juce::File::addTrailingSeparator(
+                        newResourcesPath.getFullPathName()
+                    ).toStdString()
                 );
             });
         }
