@@ -12,7 +12,7 @@ class rampe
 {
     bool ramping{false};
     T target{0};
-    T duration{0};
+    T duration{0}; // in ms
     T increment{1}; // in samples
     T current{0};
     double sampleRate{44100}; // in samples per second
