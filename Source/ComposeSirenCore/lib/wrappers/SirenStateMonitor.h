@@ -75,15 +75,15 @@ public:
         if (const auto* sv = std::get_if<SirenVoice*>(&notifier)) {
             activeSirens = { id };
             for (auto* l : listeners) { l->activeSirenIds(activeSirens); }
-        } else {
-            assert(false); // error case, ids never change in SirenEnsemble
+        } else if (const auto* se = std::get_if<SirenEnsemble*>(&notifier)) {
+            activeSirens = (*se)->getSirenIds();
+            for (auto* l : listeners) { l->activeSirenIds(activeSirens); }
         }
     }
 
     void currentSirenState(const sirenId id,
                            const SirenVoice::State state) override {
         for (auto* l : listeners) { l->currentSirenState(id, state); }
-        // std::cout << "sending siren state " << id << " " << state.currentPitch << std::endl;
     }
 };
 
