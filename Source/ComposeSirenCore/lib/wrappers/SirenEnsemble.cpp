@@ -61,6 +61,12 @@ SirenEnsemble::SirenEnsemble(const std::vector<sirenId>& ids,
     }
 }
 
+void SirenEnsemble::updateResourcesPath(const std::string& resourcesPath) {
+    for (auto& id : tracks | std::views::keys) {
+        tracks[id]->setSirenId(id, resourcesPath);
+    }
+}
+
 bool SirenEnsemble::areSirensLoading() const {
     for (auto& t : tracks | std::views::values) {
         if (t->isSirenLoading()) { return true; }

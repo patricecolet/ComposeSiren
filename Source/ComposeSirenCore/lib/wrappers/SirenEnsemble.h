@@ -58,6 +58,7 @@ public:
                   const std::string& resourcesPath);
     ~SirenEnsemble() = default;
 
+    void updateResourcesPath(const std::string& resourcesPath);
     bool areSirensLoading() const;
     bool getRawSirenHandles() const;
     std::vector<sirenId> getSirenIds() const;
