@@ -11,7 +11,7 @@ ReverbStripComponent::ReverbStripComponent(
     apvts(vts)
 {
 
-    const float gap = controlStripLayout::spacerSize;
+    const float gap = 0;//controlStripLayout::spacerSize;
 
     enableGroup.setTitleText("Enable");
     enableGroup.setGap(gap);
@@ -29,10 +29,10 @@ ReverbStripComponent::ReverbStripComponent(
     filterGroup.setWrap(false);
     addAndMakeVisible(filterGroup);
 
-    addAndMakeVisible(spacer1);
+    // addAndMakeVisible(spacer1);
     addAndMakeVisible(spacer2);
     addAndMakeVisible(spacer3);
-    addAndMakeVisible(spacer4);
+    // addAndMakeVisible(spacer4);
 
     juce::Colour c1 = juce::Colours::whitesmoke;//juce::Colours::lightgoldenrodyellow;
     juce::Colour c2 = juce::Colours::whitesmoke;
@@ -130,7 +130,7 @@ void ReverbStripComponent::paint(juce::Graphics& g)
 
 void ReverbStripComponent::resized()
 {
-    auto area = getLocalBounds().reduced(0);
+    auto area = getLocalBounds().reduced(controlStripLayout::spacerSize);
 
     const int area_height = area.getHeight();
 
@@ -145,7 +145,7 @@ void ReverbStripComponent::resized()
     const float gap = controlStripLayout::spacerSize;
 
     // NB : withMinWidth is 52 for 1, 103 for 2, 154 for 3 etc
-    root.items.add(juce::FlexItem(spacer1).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
+    // root.items.add(juce::FlexItem(spacer1).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
     root.items.add(juce::FlexItem(enableGroup).withFlex(1/7.f,0)
                                               .withWidth(enableGroup.getMinWidth())
                                               .withHeight((float) area_height));
@@ -157,7 +157,7 @@ void ReverbStripComponent::resized()
     root.items.add(juce::FlexItem(filterGroup).withFlex(2/7.f,0)
                                               .withMinWidth(filterGroup.getMinWidth())
                                               .withHeight((float) area_height));
-    root.items.add(juce::FlexItem(spacer4).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
+    // root.items.add(juce::FlexItem(spacer4).withFlex(0,0).withWidth(gap).withHeight((float) area_height));
 
     root.performLayout(area.toFloat());
 

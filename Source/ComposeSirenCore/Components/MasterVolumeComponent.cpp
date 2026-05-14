@@ -8,15 +8,15 @@ MasterVolumeComponent::MasterVolumeComponent(juce::AudioProcessorValueTreeState&
                                              const std::string& paramGroupId) :
     apvts(vts)
 {
-    const float gap = controlStripLayout::spacerSize;
+    const float gap = 0;//controlStripLayout::spacerSize;
 
     masterGroup.setTitleText("Master Volume");
     masterGroup.setGap(gap);
     masterGroup.setWrap(false);
     addAndMakeVisible(masterGroup);
 
-    addAndMakeVisible(spacer0);
-    addAndMakeVisible(spacer1);
+    // addAndMakeVisible(spacer0);
+    // addAndMakeVisible(spacer1);
 
     volume.setNameText("Master Volume");
     volume.setSliderAttachment(vts,
@@ -46,7 +46,7 @@ void MasterVolumeComponent::paint(juce::Graphics& g)
 
 void MasterVolumeComponent::resized()
 {
-    auto area = getLocalBounds();//.reduced(0);
+    auto area = getLocalBounds().reduced(controlStripLayout::spacerSize);
     const int area_height = area.getHeight();
 
     // Parent FlexBox: [ vibGroup ] [ spacer ] [ tremGroup ] [ spacer ] [ envGroup ]
