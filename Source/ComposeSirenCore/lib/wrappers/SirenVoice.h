@@ -16,6 +16,7 @@
 class SirenVoiceUnit {
     sirenId id;
     std::shared_ptr<const sirenData> data;
+    int maxNote; // as defined in velocityRanges
     std::unique_ptr<MidiIn> midiIn;
     std::unique_ptr<Sirene> siren;
     double sampleRate;
@@ -73,12 +74,12 @@ class SirenVoice
     SirenVoiceUnit* rawSiren;
 
 protected:
-    std::optional<sirenId> id {std::nullopt};
+    std::optional<sirenId> id { std::nullopt };
 
 public:
     struct State {
-        bool isNoteOn{false};
-        float currentPitch{0.0f};
+        bool isNoteOn { false };
+        float currentPitch { 0.0f };
     };
 
     //--------------------------------------------------------------------------
