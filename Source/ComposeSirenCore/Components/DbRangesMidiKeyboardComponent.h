@@ -33,6 +33,9 @@ class SirenPitchesDisplayComponent : public juce::Component,
                                      public juce::Timer,
                                      public SirenStateMonitor::Listener
 {
+    std::vector<sirenId> sirenStateIds;
+    std::optional<sirenId> fgSirenId{std::nullopt};
+    std::vector<sirenId> sortedSirenStateIds;
     std::map<sirenId, SirenVoice::State> sirenStates{};
 
     juce::MidiKeyboardComponent& keyboardComponent;
@@ -56,11 +59,27 @@ public:
         stopTimer();
     };
 
+    void setForegroundSirenId(std::optional<sirenId> id = std::nullopt) {
+        fgSirenId = id;
+        sortedSirenStateIds = sirenStateIds;
+        if (fgSirenId.has_value()) {
+            auto last = sortedSirenStateIds.size() - 1;
+            for (auto i = 0; i <= last; ++i) {
+                if (sortedSirenStateIds[i] == fgSirenId.value() && i < last) {
+                    std::swap(sortedSirenStateIds[i],
+                              sortedSirenStateIds[last]);
+                }
+            }
+        }
+    }
+
     // SirenStateMonitor::Listener callbacks
     //--------------------------------------------------------------------------
     void activeSirenIds(const std::vector<sirenId>& ids) override {
         sirenStates.clear();
+        sirenStateIds = ids;
         for (const auto id : ids) { sirenStates[id] = {}; }
+        setForegroundSirenId(fgSirenId);
     }
 
     void currentSirenState(const sirenId id,
@@ -77,26 +96,34 @@ public:
     //--------------------------------------------------------------------------
     void paint(juce::Graphics& g) override {
         auto bounds = getLocalBounds().toFloat();
-        g.fillAll(juce::Colours::whitesmoke);
+
+        auto bg = bounds;
+        bg.removeFromLeft(1); // align to midi keyboard
+        g.setColour(juce::Colours::whitesmoke);
+        g.fillRect(bg);
+
         float s = bounds.getHeight();
         float y = s * 0.5f;
-        for (const auto& [ id, state ] : sirenStates) {
+        juce::Rectangle<float> area;
+
+        bool hasFgSiren = fgSirenId.has_value();
+
+        for (auto i = 0; i < sirenStates.size(); ++i) {
+            const auto& id = sortedSirenStateIds[i];
+            const auto& [ isNoteOn, currentPitch ] = sirenStates[id];
+            float pos = getPositionFromFloatNote(currentPitch);
+            area = area.withCentre({pos, y})
+                       .withSizeKeepingCentre(s, s)
+                       .reduced((hasFgSiren && i < sirenStates.size() - 1) ? 1 : 0);
+            float alpha = isNoteOn ? 0.12f : 0.5f;
             g.setColour(sirenColourById.at(id));
-            float pos = getPositionFromFloatNote(state.currentPitch);
-            juce::Rectangle<float> area
-                = juce::Rectangle<float>().withCentre({pos, y})
-                                          .withSizeKeepingCentre(s, s);
-            if (state.isNoteOn) {
-                g.fillEllipse(area);
-            } else {
-                g.drawEllipse(area, 2);
-            }
+            g.fillEllipse(area);
+            g.setColour(juce::Colours::white.withAlpha(alpha));
+            g.fillEllipse(area.reduced(2));
         }
     }
 
-    void resized() override {
-        // auto bounds = getBounds().toFloat();
-    }
+    void resized() override {}
 
 private:
      static bool isWhiteNote(int midiNoteNumber) {
@@ -141,10 +168,11 @@ class CustomMidiKeyboardComponent : public juce::MidiKeyboardComponent
 public:
     CustomMidiKeyboardComponent(juce::MidiKeyboardState& s,
                                 juce::MidiKeyboardComponent::Orientation o) :
-      juce::MidiKeyboardComponent(s, o)
+        juce::MidiKeyboardComponent(s, o)
     {
         // setBlackNoteLengthProportion(1.0f);
         // setOctaveForMiddleC(4);
+        setWantsKeyboardFocus(false);
     }
 
     ~CustomMidiKeyboardComponent() override = default;
@@ -190,99 +218,6 @@ public:
 
         return {};
     }
-
-    /*
-     * copied from juce_audio_utils/gui/MidiKeyboardComponent
-     * (intent : draw fancier keys with inner shadows
-     */
-    void drawWhiteNote(int midiNoteNumber,
-                       juce::Graphics& g,
-                       juce::Rectangle<float> area,
-                       bool isDown,
-                       bool isOver,
-                       juce::Colour lineColour,
-                       juce::Colour textColour) override
-    {
-        auto c = juce::Colours::transparentWhite;
-
-        if (isDown)  c = findColour(keyDownOverlayColourId);
-        if (isOver)  c = c.overlaidWith(findColour(mouseOverKeyOverlayColourId));
-
-        g.setColour (c);
-        g.fillRect (area);
-
-        const auto currentOrientation = getOrientation();
-
-        auto text = getWhiteNoteText (midiNoteNumber);
-
-        if (text.isNotEmpty())
-        {
-            auto fontHeight = juce::jmin (12.0f, getKeyWidth() * 0.9f);
-
-            g.setColour (textColour);
-            g.setFont (withDefaultMetrics (juce::FontOptions { fontHeight }).withHorizontalScale (0.8f));
-
-            switch (currentOrientation)
-            {
-                case horizontalKeyboard:
-                    g.drawText (
-                        text,
-                        area.withTrimmedLeft (1.0f).withTrimmedBottom (2.0f),
-                        juce::Justification::centredBottom,
-                        false
-                    );
-                    break;
-                case verticalKeyboardFacingLeft:
-                    g.drawText (
-                        text,
-                        area.reduced (2.0f),
-                        juce::Justification::centredLeft,
-                        false
-                    );
-                    break;
-                case verticalKeyboardFacingRight:
-                    g.drawText(
-                        text,
-                        area.reduced (2.0f),
-                        juce::Justification::centredRight,
-                        false
-                    );
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        if (! lineColour.isTransparent())
-        {
-            g.setColour (lineColour);
-
-            switch (currentOrientation)
-            {
-                case horizontalKeyboard:            g.fillRect (area.withWidth (1.0f)); break;
-                case verticalKeyboardFacingLeft:    g.fillRect (area.withHeight (1.0f)); break;
-                case verticalKeyboardFacingRight:   g.fillRect (area.removeFromBottom (1.0f)); break;
-                default: break;
-            }
-
-            if (midiNoteNumber == getRangeEnd())
-            {
-                switch (currentOrientation)
-                {
-                    case horizontalKeyboard:            g.fillRect (area.expanded (1.0f, 0).removeFromRight (1.0f)); break;
-                    case verticalKeyboardFacingLeft:    g.fillRect (area.expanded (0, 1.0f).removeFromBottom (1.0f)); break;
-                    case verticalKeyboardFacingRight:   g.fillRect (area.expanded (0, 1.0f).removeFromTop (1.0f)); break;
-                    default: break;
-                }
-            }
-        }
-    }
-private:
-    // see https://forum.juce.com/t/midikeyboardstate-is-not-threadsafe/40067
-    // seems that this fix didn't make it into juce 6.1.2
-    // (there should be updates in handleNoteOn, handleNoteOff and timerCallback
-    // too)
-    //std::atomic<bool> noPendingUpdates = { true };
 };
 
 //==============================================================================
@@ -393,9 +328,13 @@ public:
             sirenPropertiesByChannel.end())
         {
             data = sirenPropertiesByChannel.at(midiChannel);
+            sirenPitchesDisplay.setForegroundSirenId(data->id);
             keyboard.setMidiChannel(midiChannel.oneBased);
             resized();
             repaint();
+        } else {
+            // paint using default sirenId order;
+            sirenPitchesDisplay.setForegroundSirenId();
         }
     }
 
@@ -431,35 +370,31 @@ public:
 
     void resized() override
     {
-        int spacer = 3;
-        auto bounds = getLocalBounds().reduced(spacer);
+        int xspacer = 2;
+        int yspacer = 1;
+        auto bounds = getLocalBounds().reduced(xspacer, yspacer);
         float sirenPitchesHeightRatio = 0.18f;
         float keyboardHeightRatio = 0.57f;//0.7f;
         float dbRangesRatio = 0.25f;
-        int sirenPitchesHeight = bounds.getHeight() * sirenPitchesHeightRatio - 0.5 * spacer;
-        int keyboardHeight = bounds.getHeight() * keyboardHeightRatio - 0.5 * spacer;
-        int dbRangesHeight = bounds.getHeight() * dbRangesRatio - 0.5 * spacer;
+        int sirenPitchesHeight = bounds.getHeight() * sirenPitchesHeightRatio - yspacer;
+        int keyboardHeight = bounds.getHeight() * keyboardHeightRatio - yspacer;
+        int dbRangesHeight = bounds.getHeight() * dbRangesRatio - yspacer;
 
         auto sirenPitchesBounds = bounds;
         sirenPitchesBounds.setHeight(sirenPitchesHeight);
-        // sirenPitchesBounds.setLeft(sirenPitchesBounds.getX() - 1);
-        sirenPitchesBounds.setBottom(sirenPitchesBounds.getBottom() + 1);
+        sirenPitchesBounds.setLeft(sirenPitchesBounds.getX() - 1);
         sirenPitchesDisplay.setBounds(sirenPitchesBounds);
 
-        auto keyboardBounds = bounds.withTop(sirenPitchesBounds.getBottom() + 2);
+        auto keyboardBounds = bounds.withTop(sirenPitchesBounds.getBottom() + 2 * yspacer);
         keyboardBounds.setHeight(keyboardHeight);
         keyboardBounds.setLeft(keyboardBounds.getX() - 1);
         keyboardBounds.setBottom(keyboardBounds.getBottom() + 1);
-
         keyboard.setBounds(keyboardBounds);
         keyboard.setKeyWidth(keyboardBounds.getWidth() / 42.0f);
 
         dbRangesBounds = bounds;
         dbRangesBounds.setHeight(dbRangesHeight);
         dbRangesBounds = dbRangesBounds.withBottomY(bounds.getBottom());
-
-        //float minLeft = dbRangesBounds.getX() + 1 + 1.0f; // border + half blue line thickness;
-        //float maxRight = dbRangesBounds.getRight() - 1 - 1.0f; // same;
 
         juce::Rectangle<int>* ranges[] = { &lowDbRange, &midDbRange, &highDbRange };
         juce::Label* labels[] = { &lowDbRangeLabel, &midDbRangeLabel, &highDbRangeLabel };
@@ -469,14 +404,9 @@ public:
             *(ranges[i]) = dbRangesBounds;
             auto minMaxNote = data->velocityRanges[i];
             auto [ min, max ] = minMaxNote;
-            /*
-            ranges[i]->setLeft(jmax(keyboard.getKeyPosition(min - 12).getStart() + spacer,
-                                  minLeft));
-            ranges[i]->setRight(jmin(keyboard.getKeyPosition(max - 12).getEnd() + spacer,
-                                   maxRight));
-            //*/
-            ranges[i]->setLeft(keyboard.getKeyPosition(min - 12).getStart() + spacer);
-            ranges[i]->setRight(keyboard.getKeyPosition(max - 12).getEnd() + spacer);
+
+            ranges[i]->setLeft(keyboard.getKeyPosition(min - 12).getStart() + xspacer);
+            ranges[i]->setRight(keyboard.getKeyPosition(max - 12).getEnd() + xspacer);
             ranges[i]->reduce(0,1);
             labels[i]->setBounds(*ranges[i]);
         }
