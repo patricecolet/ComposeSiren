@@ -29,11 +29,26 @@ std::map<int, std::tuple<int, int>> VelocityRanges::makeForCategory(const sirenC
     auto dbPerNote = d.dbPerNote;
     assert(minNote < maxNote && dbPerNote.size() == maxNote - minNote + 1);
 
+    const auto& [ minNoteClipped, maxNoteClipped ] = d.minMaxNoteClipped;
+
+    if (minNoteClipped < maxNoteClipped) {
+        if (minNoteClipped > minNote) {
+            dbPerNote.erase(dbPerNote.begin(),
+                            dbPerNote.begin() + minNoteClipped - minNote);
+            minNote = minNoteClipped;
+        }
+        if (maxNoteClipped < maxNote) {
+            dbPerNote.erase(dbPerNote.end() - 1 - (maxNote - maxNoteClipped),
+                            dbPerNote.end() - 1);
+            maxNote = maxNoteClipped;
+        }
+    }
+
     auto it = dbPerNote.begin();
     int i = minNote, min = 0, max = 0;
     int dbRangeIndex = 0;
 
-    for (auto& db : dbThresholds) {
+    for (const auto& db : dbThresholds) {
         bool minIsSet = false;
 
         while (it != dbPerNote.end() && *it < db) {

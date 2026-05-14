@@ -139,7 +139,9 @@ struct sirenCategoryData {
     // velocity (127), all shutters open.
     // found in "Doc/MESURE ACOUSTIQUE SIRENES.xlsx" file
     std::vector<double> dbPerNote = { 0 }; // must be of length (maxNote - minNote) + 1
-    sirenCategorySynthConstants synthConstants = { 0 };
+    // minMaxNote values to use due to limitations of original synthesis algorithm :
+    std::tuple<int, int> minMaxNoteClipped = std::tuple(0, 0);
+    sirenCategorySynthConstants synthConstants;
 };
 
 inline const std::map<sirenCategory, sirenCategoryData> sirenCategoriesData = {
@@ -155,6 +157,7 @@ inline const std::map<sirenCategory, sirenCategoryData> sirenCategoriesData = {
                 113.40,112.10,114.00,115.80,115.20,118.00,119.20,122.30,119.40,117.80,119.60,124.10,
                 125.10,122.70,122.90,123.40,125.30,127.80
             },
+            std::tuple(12, 64),
             { 24, 6400, 7, 1, 12, 7.5 }
         }
     },
@@ -170,6 +173,7 @@ inline const std::map<sirenCategory, sirenCategoryData> sirenCategoriesData = {
                 112.20,112.50,114.50,116.30,117.80,120.80,123.20,123.00,125.40,124.90,121.30,120.90,
                 122.40,123.70,124.20,126.40,126.50,128.10,129.80,128.00
             },
+            std::tuple(12, 65),
             { 24, 6500, 15, 1, 12, 20./3. }
         }
     },
@@ -189,6 +193,7 @@ inline const std::map<sirenCategory, sirenCategoryData> sirenCategoriesData = {
                 119.40,119.20,118.40,119.20,117.60,121.20,119.70,124.50,127.00,127.30,128.80,129.40,
                 130.80,129.70,130.10
             },
+            std::tuple(12, 72),
             { 24, 7200, 7, 1, 24, 5 }
         }
     },
@@ -209,6 +214,7 @@ inline const std::map<sirenCategory, sirenCategoryData> sirenCategoriesData = {
                 98.80,97.40,98.80,100.70,104.40,104.40,98.60,106.60,107.50,109.60,110.10,112.10,
                 114.00,110.20,112.80,115.10,118.30,118.20,114.70,117.30,121.90,118.00,119.60
             },
+            std::tuple(24, 78),
             { 36, 7900, 7, 1, 48, 7.5 }
         }
     },
@@ -223,6 +229,7 @@ inline const std::map<sirenCategory, sirenCategoryData> sirenCategoriesData = {
                 98.60,96.50,92.30,94.80,97.60,102.30,106.50,106.00,106.40,104.40,100.00,95.60,
                 103.90,103.70,104.50,112.20,115.00,113.00,114.20,112.20,116.80,114.10,112.00
             },
+            std::tuple(36, 78),
             { 36, 7900, 7, 2, 24, 7.5 }
         }
     }

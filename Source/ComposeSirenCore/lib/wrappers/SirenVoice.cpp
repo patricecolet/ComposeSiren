@@ -2,6 +2,7 @@
 // Created by joseph larralde on 07/02/2026.
 //
 
+#include <ranges>
 #include "SirenVoice.h"
 
 SirenVoiceUnit::SirenVoiceUnit(sirenId sid, const std::string& resourcesPath) :
@@ -9,6 +10,15 @@ SirenVoiceUnit::SirenVoiceUnit(sirenId sid, const std::string& resourcesPath) :
     sampleCountForMidiInTimer(0),
     setNoteSampleCounter(0)
 {
+    data = sirenPropertiesById.at(id);
+    const auto& maxRange = data->velocityRanges.rbegin()->second;
+
+    // we really need to settle on what is C0 and C1 !
+    // this +12 -12 fix is scattered through the code
+    // (see DbRangesMidiKeyboardComponent)
+    // is the legacy DSP code the source of truth ? this means JUCE is WRONG ?
+    maxNote = get<1>(maxRange) + 12;
+
     siren = std::make_unique<Sirene>(id, resourcesPath);
     // attempt to get rid of aliasing-like sounds in last note of soprano/piccolo
     // siren->changeQualite(20);
@@ -41,9 +51,11 @@ void SirenVoiceUnit::handleMidi(int status, int value1, int value2) {
     // first nibble goes from 8 to F (ms bit is always on)
     // second nibble is the channel so we ignore it
     if (status >> 4 == 0x8) { // note off
+        value1 = value1 < maxNote ? value1 : maxNote;
         midiIn->realTimeStopNote(value1);
         ino = false;
     } else if (status >> 4 == 0x9) { // note on
+        value1 = value1 < maxNote ? value1 : maxNote;
         midiIn->realTimeStartNote(value1, value2);
         ino = true;
     } else if (status >> 4 == 0xB) { // cc
@@ -186,7 +198,7 @@ bool SirenVoice::getRawSirenHandle()
 
 void SirenVoice::deleteDiscarded()
 {
-    discardedSiren.exchange(nullptr, std::memory_order_release);
+    delete discardedSiren.exchange(nullptr, std::memory_order_release);
 }
 
 void SirenVoice::setSampleRate(double sampleRate)
