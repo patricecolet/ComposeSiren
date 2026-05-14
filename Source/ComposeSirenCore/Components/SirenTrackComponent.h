@@ -22,9 +22,10 @@ class SirenTrackComponent : public juce::Component,
         void enable(bool e) { enabled = e; }
         void paint(juce::Graphics& g) override {
             if (!enabled) { return; }
-            auto area = getLocalBounds().reduced(1, 1).toFloat();
-            g.setColour(juce::Colour{0xddffffff});
-            g.drawRoundedRectangle(area, controlStripLayout::cornerSize, 2);
+            auto area = getLocalBounds().reduced(2, 1).toFloat();
+            // g.setColour(juce::Colour{0xddffffff});
+            g.setColour(juce::Colours::whitesmoke);
+            g.drawRoundedRectangle(area, controlStripLayout::cornerSize, 1);
         }
         void resized() override { repaint(); }
     };
@@ -51,13 +52,13 @@ class SirenTrackComponent : public juce::Component,
     };
 
 public:
-    // this is implemented by SirenTrackMenu in SirenOrchestra Editor class
+    // this is implemented by SirenStripMenu in SirenOrchestra Editor class
     class Listener
     {
     public:
         Listener() = default;
         virtual ~Listener() = default;
-        virtual void sirenTrackSelected(SirenTrackComponent* s) = 0;
+        virtual void sirenTrackClicked(sirenId) = 0;
     };
 
     SirenTrackComponent(sirenId sid,

@@ -227,7 +227,7 @@ void SirenTrackComponent::setSelected(bool s)
 
 void SirenTrackComponent::onTitleLabelClicked()
 {
-    for (auto* l : listeners) { l->sirenTrackSelected(this); }
+    for (auto* l : listeners) { l->sirenTrackClicked(id); }
 }
 
 void SirenTrackComponent::setIsPlayingNote(bool isPlaying)

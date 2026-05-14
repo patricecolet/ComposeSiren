@@ -7,8 +7,6 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <Components/MainButtonsComponent.h>
-#include <Components/VoiceManagerComponent.h>
-// #include <lib/wrappers/SirenStateMonitor.h>
 #include <Components/SirenTrackComponent.h>
 #include <Components/DbRangesMidiKeyboardComponent.h>
 #include <Components/ReverbStripComponent.h>
@@ -49,31 +47,49 @@ public:
     void setListener(Listener* l) { listener = l; }
     void removeListener() { listener = nullptr; }
 
-    void sirenTrackSelected(SirenTrackComponent* s) override
-    {
-        if (s == nullptr) {
-            // notify listener / error case ?
-            // listener->sirenStripMenuItemSelected();
-            // jassert(false);
-        }
+    // SirenTrackComponent::Listener callback
+    void sirenTrackClicked(sirenId sid) override {
+        sirenTrackSelected(sid, true);
+   }
 
-        for (auto& [id, track] : tracks) {
-            if (track.get() == s) {
-                bool v = track->getSelected();
-                track->setSelected(!v);
-                if (!v) {
-                    listener->sirenStripMenuItemSelected(id);
-                } else {
-                    listener->sirenStripMenuItemSelected(std::nullopt);
-                }
-            } else {
-                track->setSelected(false);
-            }
-        }
+    void setSelectedSirenTrack(std::optional<sirenId> sid, bool notify = true) {
+        sirenTrackSelected(sid, notify);
     }
 
 private:
-    Listener* listener;
+    Listener* listener{nullptr};
+
+    void sirenTrackSelected(std::optional<sirenId> sid, bool notify) const {
+        if (!sid.has_value()) {
+            if (notify) { listener->sirenStripMenuItemSelected(std::nullopt); }
+            for (const auto& track : tracks | std::views::values) {
+                track->setSelected(false);
+            }
+        } else {
+            for (const auto& [id, track] : tracks) {
+                if (id == sid.value()) {
+                    if (notify) { listener->sirenStripMenuItemSelected(id); }
+                    track->setSelected(true);
+
+                    // use below code if we want to implement an unselected state :
+                    // (fiddling with the MIDI keyboard looks tedious if we want to
+                    // keep the mouse interaction but disable sending MIDI messages,
+                    // alternative is to disable all mouse interaction if no track
+                    // is selected)
+
+                    // bool v = track->getSelected();
+                    // track->setSelected(!v);
+                    // if (!v) {
+                    //     listener->sirenStripMenuItemSelected(id);
+                    // } else {
+                    //     listener->sirenStripMenuItemSelected(std::nullopt);
+                    // }
+                } else {
+                    track->setSelected(false);
+                }
+            }
+        }
+    }
 };
 
 class SirenOrchestraPluginEditor : public juce::AudioProcessorEditor,
@@ -100,9 +116,8 @@ private:
     std::unique_ptr<juce::Drawable> wood;
 
     SirenOrchestraPluginProcessor& audioProcessor;
-    // MainButtonsComponent mainButtons;
 
-    VoiceManagerComponent voiceManager;
+    MainButtonsComponent mainButtons;
     std::map<sirenId, std::unique_ptr<SirenTrackComponent>> sirenTracks;
     ReverbStripComponent rvbStrip;
     MasterVolumeComponent masterVolume;
