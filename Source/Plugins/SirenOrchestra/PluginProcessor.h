@@ -19,7 +19,6 @@
 class SirenOrchestraPluginProcessor :
     public juce::AudioProcessor,
     public MainButtonsComponent::Listener,
-    public VoiceManagerState::Listener,
     public juce::Timer
 {
 public:
@@ -50,15 +49,15 @@ public:
 
     // MainButtonsComponents::Listener callbacks
     //--------------------------------------------------------------------------
-    void resetSiren() override;
+    void resetSiren(std::optional<sirenId>) override;
     std::string getResourcesPath() override;
     void selectedNewResourcesPath(const std::string&) override;
 
     // VoiceManagerState::Listener callbacks
     //--------------------------------------------------------------------------
-    void categoryChanged(sirenCategory newCategory) override;
-    void midiInputChanged(AnyOrOneBasedMidiChannel) override;
-    void midiOutputChanged(AnyOrOneBasedMidiChannel) override;
+    // void categoryChanged(sirenCategory newCategory) override;
+    // void midiInputChanged(AnyOrOneBasedMidiChannel) override;
+    // void midiOutputChanged(AnyOrOneBasedMidiChannel) override;
 
     // Timer callback (called from UI thread)
     //--------------------------------------------------------------------------

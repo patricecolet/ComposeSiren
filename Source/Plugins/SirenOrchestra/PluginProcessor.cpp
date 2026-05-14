@@ -67,9 +67,6 @@ void SirenOrchestraPluginProcessor::prepareToPlay(double sampleRate, int samples
     lastSampleRate = sampleRate;
     lastSamplesPerBlock = samplesPerBlock;
 
-    // if (sirenIsLoading.load(std::memory_order_acquire)) { return; }
-    // auto siren = currentSiren.load(std::memory_order_acquire);
-    // if (siren == nullptr) { return; }
     reverb.setSampleRate(sampleRate);
     ensemble.setSampleRate(sampleRate);
 }
@@ -105,12 +102,9 @@ bool SirenOrchestraPluginProcessor::isBusesLayoutSupported(const BusesLayout& la
 
 // MainButtonsComponent::Listener callbacks
 //------------------------------------------------------------------------------
-void SirenOrchestraPluginProcessor::resetSiren()
+void SirenOrchestraPluginProcessor::resetSiren(std::optional<sirenId> id)
 {
-    // if (sirenIsLoading.load(std::memory_order_acquire)) { return; }
-    // auto siren = currentSiren.load(std::memory_order_acquire);
-    // if (siren == nullptr) { return; }
-    ensemble.stop();
+    ensemble.stop(id);
 }
 
 std::string SirenOrchestraPluginProcessor::getResourcesPath()
@@ -121,24 +115,9 @@ std::string SirenOrchestraPluginProcessor::getResourcesPath()
 void SirenOrchestraPluginProcessor::selectedNewResourcesPath(const std::string& s)
 {
     getResourcesPathFunction = getResourcesPathGetter();
-    // setSirenId(defaultSirenIdByCategory.at(vms.getSirenCategory()));
-}
-
-// VoiceManagerState::Listener callbacks
-//------------------------------------------------------------------------------
-void SirenOrchestraPluginProcessor::categoryChanged(sirenCategory newCategory)
-{
-
-}
-
-void SirenOrchestraPluginProcessor::midiInputChanged(AnyOrOneBasedMidiChannel)
-{
-
-}
-
-void SirenOrchestraPluginProcessor::midiOutputChanged(AnyOrOneBasedMidiChannel)
-{
-
+    ensemble.updateResourcesPath(s);
+    router.sendAllCurrentParameterValues();
+    ensembleParameterBridges.sendParameterValues();
 }
 
 // juce::Timer callback
@@ -167,24 +146,8 @@ void SirenOrchestraPluginProcessor::timerCallback()
 // PROCESS BLOCK
 //==============================================================================
 
-// void SirenOrchestraPluginProcessor::setSirenId(sirenId id)
-// {
-//     // try to use shared_ptr instead, see :
-//     // https://www.modernescpp.com/index.php/a-lock-free-stack-atomic-smart-pointer/
-//     sirenIsLoading.store(true, std::memory_order_release);
-//     auto* newSiren = new SirenVoice(id, getResourcesPath());
-//     newSiren->setSampleRate(lastSampleRate);
-//     auto* oldSiren = currentSiren.exchange(newSiren, std::memory_order_acq_rel);
-//     // safe to delete the old Siren at the end of processBlock, the audio thread
-//     // might still be using it right now (think in terms of ownership horizon)
-//     discardedSiren.store(oldSiren, std::memory_order_release);
-//     sirenIsLoading.store(false, std::memory_order_release);
-//     router.sendAllCurrentParameterValues();
-// }
-
-// NB : FORCE CHANNEL ACCORDING TO SELECTED SIREN CATEGORY ?
 void SirenOrchestraPluginProcessor::processBlock(juce::AudioBuffer<float>& audio,
-                                           juce::MidiBuffer& midiIn)
+                                                 juce::MidiBuffer& midiIn)
 {
     juce::MidiBuffer midiOut;
 
@@ -214,27 +177,12 @@ void SirenOrchestraPluginProcessor::processBlock(juce::AudioBuffer<float>& audio
 
     // AUDIO CONTROL / SYNTHESIS ///////////////////////////////////////////////
 
-    // if (sirenIsLoading.load(std::memory_order_acquire)) {
-    //     audio.clear();
-    //     return;
-    // }
-    //
-    // auto siren = currentSiren.load(std::memory_order_acquire);
-    //
-    // if (siren == nullptr) {
-    //     audio.clear();
-    //     return;
-    // }
-
-    // SirenVoiceUnit* sirenUnit = nullptr;
-    // if (!siren.getRawSirenHandle(sirenUnit)) {
-    // if (!siren.getRawSirenHandle()) {
     if (!ensemble.getRawSirenHandles()) {
         audio.clear();
         return;
     }
 
-    // WE HAVE A SIREN SO WE PROCEED TO USE IT :
+    // WE HAVE ALL SIRENS SO WE PROCEED TO USE THEM :
 
     audio.clear();
     auto* lch = audio.getWritePointer(0);
@@ -366,7 +314,7 @@ const juce::String SirenOrchestraPluginProcessor::getProgramName(int index)
 }
 
 void SirenOrchestraPluginProcessor::changeProgramName(int index,
-                                                const juce::String& newName)
+                                                      const juce::String& newName)
 {
 }
 
@@ -378,12 +326,12 @@ void SirenOrchestraPluginProcessor::getStateInformation(juce::MemoryBlock& destD
 {
     juce::XmlElement xmlState("AllParameters");
     xmlState.addChildElement(apvts.state.createXml().release());
-    // xmlState.addChildElement(vms.toXml().release());
+    xmlState.addChildElement(vms.toXml().release());
     copyXmlToBinary(xmlState, destData);
 }
 
 void SirenOrchestraPluginProcessor::setStateInformation(const void* data,
-                                                  int sizeInBytes)
+                                                        int sizeInBytes)
 {
     auto xmlState(getXmlFromBinary(data, sizeInBytes));
     if (xmlState != nullptr) {
@@ -392,10 +340,10 @@ void SirenOrchestraPluginProcessor::setStateInformation(const void* data,
 
             // ensure routing is restored before "one shot" parameters like
             // PitchBendRange are sent via the plugin's midi output
-            // xmlSubState = xmlState->getChildByName("VoiceManagerState");
-            // if (xmlSubState != nullptr) {
-            //     vms.fromXml(*xmlSubState);
-            // }
+            xmlSubState = xmlState->getChildByName("VoiceManagerState");
+            if (xmlSubState != nullptr) {
+                vms.fromXml(*xmlSubState);
+            }
 
             // now the apvts can trigger midi output messages which will be routed
             // correctly
