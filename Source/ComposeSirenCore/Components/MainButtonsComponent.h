@@ -7,6 +7,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../lib/definitions/palette.h"
+#include "../lib/definitions/sirenProperties.h"
 
 class MainButtonsComponent : public juce::Component,
                              public juce::TextButton::Listener
@@ -15,20 +16,15 @@ public:
     class Listener {
     public:
         virtual ~Listener() = default;
-        virtual void resetSiren() = 0;
+        virtual void resetSiren(std::optional<sirenId>) = 0;
         virtual void selectedNewResourcesPath(const std::string&) = 0;
         virtual std::string getResourcesPath() = 0;
     };
 
-    MainButtonsComponent(Listener& l) : listener(l)
+    MainButtonsComponent(Listener& l, bool hasResetAll = false) :
+        listener(l),
+        hasResetAllButton(hasResetAll)
     {
-
-        resetButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkred);
-        resetButton.setColour(juce::TextButton::textColourOffId , juce::Colours::whitesmoke);
-        resetButton.setButtonText ("Reset");
-        resetButton.addListener(this);
-        addAndMakeVisible(resetButton);
-
         selectResourcesButton.setColour(
             juce::TextButton::buttonColourId,
             juce::Colour{mecaviv::Colours::darkTransparentBackground}
@@ -39,6 +35,20 @@ public:
 #if COMPOSESIREN_DEV_BUILD
         addAndMakeVisible(selectResourcesButton);
 #endif
+
+        resetButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkred);
+        resetButton.setColour(juce::TextButton::textColourOffId , juce::Colours::whitesmoke);
+        resetButton.setButtonText ("Reset");
+        resetButton.addListener(this);
+        addAndMakeVisible(resetButton);
+
+        if (hasResetAllButton) {
+            resetAllButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkred);
+            resetAllButton.setColour(juce::TextButton::textColourOffId , juce::Colours::whitesmoke);
+            resetAllButton.setButtonText ("Reset All");
+            resetAllButton.addListener(this);
+            addAndMakeVisible(resetAllButton);
+        }
     }
 
     ~MainButtonsComponent() override = default;
@@ -103,13 +113,32 @@ public:
                                           .withFlex(0,0);
         item.margin = juce::FlexItem::Margin(0.f, 0.f, 0.f, (float) margin);
         fb.items.add(item);
+
+        if (hasResetAllButton) {
+            item = juce::FlexItem(resetAllButton).withMinWidth(150)
+                                                 .withMinHeight(menuHeight)
+                                                 .withFlex(0,0);
+            item.margin = juce::FlexItem::Margin(0.f, 0.f, 0.f, (float) margin);
+            fb.items.add(item);
+        }
+
         fb.performLayout(bounds);
+    }
+
+    void setSirenIdToReset(std::optional<sirenId> id)
+    {
+        currentSirenId = id;
     }
 
     void buttonClicked(juce::Button* btn) override
     {
         if (btn == &resetButton) {
-            listener.resetSiren();
+            listener.resetSiren(currentSirenId);
+            return;
+        }
+
+        if (btn == &resetAllButton) {
+            listener.resetSiren(std::nullopt);
             return;
         }
 
@@ -127,7 +156,8 @@ public:
                 // get the result to update resourcesPath
                 juce::File newResourcesPath = chooser.getResult();
                 listener.selectedNewResourcesPath(
-                    newResourcesPath.getFullPathName().toStdString()
+                    newResourcesPath.getFullPathName().toStdString() +
+                    *juce::File::getSeparatorString()
                 );
             });
         }
@@ -136,7 +166,11 @@ public:
 private:
     Listener& listener;
 
+    std::optional<sirenId> currentSirenId{std::nullopt};
+    bool hasResetAllButton{false};
+
     juce::TextButton resetButton;
+    juce::TextButton resetAllButton;
     juce::TextButton selectResourcesButton;
 
     std::unique_ptr<juce::FileChooser> fileChooser;
