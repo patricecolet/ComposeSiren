@@ -67,7 +67,7 @@ void OneSirenPluginEditor::resized()
     int sirenWidth = static_cast<int>(sirenStrip.getMinWidth());
     mainButtons.setBounds(0,0,sirenWidth,25);
     voiceManager.setBounds(0,0,sirenWidth/2,30);
-    sirenStrip.setBounds(0,30,sirenWidth,100);
+    sirenStrip.setBounds(0,30,sirenWidth,controlStripLayout::minFullStripHeight);
     midiKeyboard.setBounds(0, 130, sirenWidth, 70);
 }
 

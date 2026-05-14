@@ -14,7 +14,6 @@
 
 class OneSirenPluginEditor : public juce::AudioProcessorEditor,
                              public VoiceManagerState::Listener
-                             // public MainButtonsComponent::Listener
 {
 public:
     OneSirenPluginEditor(OneSirenPluginProcessor&);

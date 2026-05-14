@@ -34,8 +34,8 @@ OneSirenPluginProcessor::OneSirenPluginProcessor() :
 {
     vms.addListener(this);
     ssm.subscribe(&siren);
-    const sirenCategory defaultSirenCategory = vms.getSirenCategory();
-    setSirenId(defaultSirenIdByCategory.at(defaultSirenCategory));
+    // const sirenCategory defaultSirenCategory = vms.getSirenCategory();
+    // setSirenId(defaultSirenIdByCategory.at(defaultSirenCategory));
     startTimer(33);
 }
 
@@ -85,7 +85,7 @@ bool OneSirenPluginProcessor::isBusesLayoutSupported(const BusesLayout& layouts)
 
 // MainButtonsComponent::Listener callbacks
 //--------------------------------------------------------------------------
-void OneSirenPluginProcessor::resetSiren()
+void OneSirenPluginProcessor::resetSiren(std::optional<sirenId>)
 {
     siren.stop();
 }
@@ -97,7 +97,7 @@ std::string OneSirenPluginProcessor::getResourcesPath()
 
 void OneSirenPluginProcessor::selectedNewResourcesPath(const std::string& s)
 {
-    getResourcesPathFunction = getResourcesPathGetter();
+    getResourcesPathFunction = getResourcesPathGetter(s);
     setSirenId(defaultSirenIdByCategory.at(vms.getSirenCategory()));
 }
 
@@ -141,17 +141,6 @@ void OneSirenPluginProcessor::timerCallback()
 
 void OneSirenPluginProcessor::setSirenId(sirenId id)
 {
-    // try to use shared_ptr instead, see :
-    // https://www.modernescpp.com/index.php/a-lock-free-stack-atomic-smart-pointer/
-    // sirenIsLoading.store(true, std::memory_order_release);
-    // auto* newSiren = new SirenVoice(id, getResourcesPath());
-    // newSiren->setSampleRate(lastSampleRate);
-    // auto* oldSiren = currentSiren.exchange(newSiren, std::memory_order_acq_rel);
-    // // safe to delete the old Siren at the end of processBlock, the audio thread
-    // // might still be using it right now (think in terms of ownership horizon)
-    // discardedSiren.store(oldSiren, std::memory_order_release);
-    // sirenIsLoading.store(false, std::memory_order_release);
-
     siren.setSirenId(id, getResourcesPath());
     router.sendAllCurrentParameterValues();
 }
@@ -188,8 +177,6 @@ void OneSirenPluginProcessor::processBlock(juce::AudioBuffer<float>& audio,
 
     // AUDIO CONTROL / SYNTHESIS ///////////////////////////////////////////////
 
-    // SirenVoiceUnit* sirenUnit{nullptr};
-    // if (!siren.getRawSirenHandle(sirenUnit)) {
     // internal rawSiren handle
     if (!siren.getRawSirenHandle()) {
         audio.clear();

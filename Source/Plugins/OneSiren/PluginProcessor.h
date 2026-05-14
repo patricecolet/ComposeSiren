@@ -37,7 +37,7 @@ public:
 
     // MainButtonsComponents::Listener callbacks
     //--------------------------------------------------------------------------
-    void resetSiren() override;
+    void resetSiren(std::optional<sirenId>) override;
     std::string getResourcesPath() override;
     void selectedNewResourcesPath(const std::string&) override;
 
