@@ -61,12 +61,8 @@ public:
 
     void resized() override
     {
-        const int margin = 5;
-
-        auto bounds = getLocalBounds();
-        bounds.removeFromTop(margin);
-        bounds.removeFromRight(margin);
-        bounds.removeFromLeft(margin);
+        constexpr float margin = 5;
+        auto bounds = getLocalBounds().reduced(static_cast<int>(margin));
 
         juce::FlexBox fb;
 
@@ -76,7 +72,7 @@ public:
         fb.alignItems = juce::FlexBox::AlignItems::flexEnd;
         fb.alignContent = juce::FlexBox::AlignContent::spaceBetween;
 
-        const int menuHeight = bounds.getHeight();
+        const float btnsHeight = static_cast<float>(bounds.getHeight());
         juce::FlexItem item;
 
         // Left button /////////////////////////////////////////////////////////
@@ -105,20 +101,20 @@ public:
         fb.justifyContent = juce::FlexBox::JustifyContent::flexEnd;
 
         item = juce::FlexItem(selectResourcesButton).withMinWidth(230)
-                                                    .withMinHeight(menuHeight)
+                                                    .withMinHeight(btnsHeight)
                                                     .withFlex(0,1);
         fb.items.add(item);
         item = juce::FlexItem(resetButton).withMinWidth(75)
-                                          .withMinHeight(menuHeight)
+                                          .withMinHeight(btnsHeight)
                                           .withFlex(0,0);
-        item.margin = juce::FlexItem::Margin(0.f, 0.f, 0.f, (float) margin);
+        item.margin = juce::FlexItem::Margin(0.f, 0.f, 0.f, margin);
         fb.items.add(item);
 
         if (hasResetAllButton) {
             item = juce::FlexItem(resetAllButton).withMinWidth(150)
-                                                 .withMinHeight(menuHeight)
+                                                 .withMinHeight(btnsHeight)
                                                  .withFlex(0,0);
-            item.margin = juce::FlexItem::Margin(0.f, 0.f, 0.f, (float) margin);
+            item.margin = juce::FlexItem::Margin(0.f, 0.f, 0.f, margin);
             fb.items.add(item);
         }
 

@@ -12,6 +12,7 @@
 #include "../uiParameterUtilities.h"
 #include "../atomicUtilities.h"
 #include "VoiceManagerState.h"
+#include "../lib/wrappers/SirenStateMonitor.h"
 
 class LabelLAF : public juce::LookAndFeel_V2
 {
@@ -30,13 +31,43 @@ public:
     ~LabelLAF() override = default;
 };
 
+class MonitorLedComponent : public juce::Component
+{
+public:
+    MonitorLedComponent() = default;
+    ~MonitorLedComponent() override = default;
+
+    void paint(juce::Graphics& g) override {
+        auto area = getLocalBounds().toFloat();
+
+        g.setColour(juce::Colours::darkgreen);
+        g.fillEllipse(area.withSizeKeepingCentre(8, 8));
+
+        if (isLit) {
+            g.setColour(juce::Colours::lightgreen);
+            g.fillEllipse(area.withSizeKeepingCentre(6,6));
+        }
+    }
+
+    void resized() override {}
+
+    void enable(bool e) {
+        isLit = e;
+        repaint();
+    }
+
+private:
+    bool isLit { false };
+};
 
 class VoiceManagerComponent : public juce::Component,
                               public juce::ComboBox::Listener,
-                              public VoiceManagerState::Listener
+                              public VoiceManagerState::Listener,
+                              public SirenStateMonitor::Listener
 {
     juce::ComboBox category;
     juce::Label categoryLabel;
+    MonitorLedComponent monitorLed;
     juce::ComboBox inputChannel;
     juce::Label inputChannelLabel;
     juce::ComboBox outputChannel;
@@ -63,10 +94,13 @@ class VoiceManagerComponent : public juce::Component,
     };
 
 public:
-    VoiceManagerComponent(VoiceManagerState& s) :
-        voiceManagerState(s)
+    VoiceManagerComponent(VoiceManagerState& vms, SirenStateMonitor& ssm) :
+        voiceManagerState(vms),
+        sirenStateMonitor(ssm)
     {
         voiceManagerState.addListener(this);
+        sirenStateMonitor.addListener(this);
+
         updatingCategoryFromMenu.store(false);
         updatingInputChannelFromMenu.store(false);
         updatingOutputChannelFromMenu.store(false);
@@ -117,6 +151,8 @@ public:
         outputChannelLabel.setLookAndFeel(&labelLAF);
         addAndMakeVisible(&outputChannelLabel);
 
+        addAndMakeVisible(&monitorLed);
+
         for (auto* menu : menus) {
             menu->setLookAndFeel(&comboLAF);
             menu->addListener(this);
@@ -147,6 +183,14 @@ public:
         voiceManagerState.removeListener(this);
     }
 
+    int getMinWidth() const {
+        float res = categoryMenuWidth + categoryLabelWidth +
+                    monitorLedWidth +
+                    2 * (channelMenuWidth + channelLabelWidth) +
+                    5 * margin;
+        return static_cast<int>(res);
+    }
+
     // VoiceManagerState::Listener overrides -----------------------------------
     void categoryChanged(sirenCategory cat) override {
         if (updatingCategoryFromMenu.load()) { return; }
@@ -170,6 +214,14 @@ public:
         );
     }
 
+    // SirenStateMonitor::Listener callback ------------------------------------
+    void currentSirenState(const sirenId, const SirenVoice::State& s) override {
+        if (s.isNoteOn != isPlayingNote) {
+            isPlayingNote = s.isNoteOn;
+            monitorLed.enable(isPlayingNote);
+        }
+    }
+
     // juce::Component overrides -----------------------------------------------
     void paint(juce::Graphics& g) override {
         // g.setColour(juce::Colour{0xff314159});
@@ -177,9 +229,7 @@ public:
     }
 
     void resized() override {
-        const int margin = 5;
-
-        auto bounds = getLocalBounds().reduced(margin);
+        auto bounds = getLocalBounds().reduced(static_cast<int>(margin));
 
         juce::FlexBox fb;
 
@@ -189,7 +239,7 @@ public:
         fb.alignItems = juce::FlexBox::AlignItems::flexStart;
         fb.alignContent = juce::FlexBox::AlignContent::spaceBetween;
 
-        const int menuHeight = bounds.getHeight();
+        const float menuHeight = static_cast<float>(bounds.getHeight());
         juce::FlexItem item;
 
         // // Left menus //////////////////////////////////////////////////////////
@@ -235,31 +285,35 @@ public:
         fb.alignContent = juce::FlexBox::AlignContent::flexStart;
         fb.justifyContent = juce::FlexBox::JustifyContent::flexStart;
 
-        item = juce::FlexItem(category).withMinWidth(75)
+        item = juce::FlexItem(category).withMinWidth(categoryMenuWidth)
                                        .withMinHeight(menuHeight)
                                        .withFlex(0,0);
         fb.items.add(item);
-        item = juce::FlexItem(categoryLabel).withMinWidth(60)
+        item = juce::FlexItem(categoryLabel).withMinWidth(categoryLabelWidth)
                                             .withMinHeight(menuHeight)
                                             .withFlex(0,1);
         item.margin = juce::FlexItem::Margin(0.f, 0.f, 0.f, (float) margin);
         fb.items.add(item);
-        item = juce::FlexItem(inputChannel).withMinWidth(55)
-                                            .withMinHeight(menuHeight)
-                                            .withFlex(0,0);
+        item = juce::FlexItem(monitorLed).withMinWidth(monitorLedWidth)
+                                         .withMinHeight(menuHeight)
+                                         .withFlex(0,0);
+        fb.items.add(item);
+        item = juce::FlexItem(inputChannel).withMinWidth(channelMenuWidth)
+                                           .withMinHeight(menuHeight)
+                                           .withFlex(0,0);
         item.margin = juce::FlexItem::Margin(0.f, 0.f, 0.f, (float) margin);
         fb.items.add(item);
-        item = juce::FlexItem(inputChannelLabel).withMinWidth(50)
+        item = juce::FlexItem(inputChannelLabel).withMinWidth(channelLabelWidth)
                                                 .withMinHeight(menuHeight)
                                                 .withFlex(0,1);
         item.margin = juce::FlexItem::Margin(0.f, 0.f, 0.f, (float) margin);
         fb.items.add(item);
-        item = juce::FlexItem(outputChannel).withMinWidth(55)
+        item = juce::FlexItem(outputChannel).withMinWidth(channelMenuWidth)
                                             .withMinHeight(menuHeight)
                                             .withFlex(0,0);
         item.margin = juce::FlexItem::Margin(0.f, 0.f, 0.f, (float) margin);
         fb.items.add(item);
-        item = juce::FlexItem(outputChannelLabel).withMinWidth(50)
+        item = juce::FlexItem(outputChannelLabel).withMinWidth(channelLabelWidth)
                                .withMinHeight(menuHeight)
                                .withFlex(0,1);
         item.margin = juce::FlexItem::Margin(0.f, 0.f, 0.f, (float) margin);
@@ -270,6 +324,15 @@ public:
 
 private:
     VoiceManagerState& voiceManagerState;
+    SirenStateMonitor& sirenStateMonitor;
+    bool isPlayingNote { false }; // light input note monitoring led
+
+    const float categoryMenuWidth { 75.0f };
+    const float categoryLabelWidth { 60.0f };
+    const float channelMenuWidth { 55.0f };
+    const float channelLabelWidth { 55.0f };
+    const float monitorLedWidth { 16.0f };
+    const float margin { 5.0f };
 
     // juce::ComboBox::Listener ------------------------------------------------
     void comboBoxChanged(juce::ComboBox* comboBoxThatHasChanged) override {
