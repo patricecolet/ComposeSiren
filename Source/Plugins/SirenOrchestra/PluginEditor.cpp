@@ -57,15 +57,10 @@ SirenOrchestraPluginEditor::SirenOrchestraPluginEditor(SirenOrchestraPluginProce
     sirenStripMenu.setSelectedSirenTrack(sirenPropertiesByChannel.at(inch.channel)->id);
     addAndMakeVisible(midiKeyboard);
 
-    wood = juce::Drawable::createFromImageData(
-        BinaryData::boiserie_png,
-        BinaryData::boiserie_pngSize
-    );
-
     bottomColour = sirenColourById.at(sirenOrder.back());
 
     int sirenWidth = static_cast<int>(sirenTracks.at(sirenOrder[0])->getMinWidth());
-    setSize(sirenWidth + 2 * woodThickness, 630);
+    setSize(sirenWidth, 630);
 }
 
 SirenOrchestraPluginEditor::~SirenOrchestraPluginEditor()
@@ -83,40 +78,14 @@ void SirenOrchestraPluginEditor::paint(juce::Graphics& g)
     g.fillRect(getLocalBounds().toFloat());
     g.setColour(juce::Colour{mecaviv::Colours::darkTransparentBackground});
     g.fillRect(getLocalBounds().toFloat());
-
-    const int& spacer = controlStripLayout::spacerSize;
-    int sirenWidth = static_cast<int>(sirenTracks.at(sirenOrder[0])->getMinWidth());
-    const int ensembleHeight = (sirenOrder.size() - 1) * (55 + spacer) + 200;
-
-    bool drawWood = woodThickness > 0;
-    if (drawWood) {
-        // wood borders
-        auto rect1 = juce::Rectangle<float>(0, 0, woodThickness, ensembleHeight);
-        wood->drawWithin(g, rect1, juce::RectanglePlacement::stretchToFit, 1.0f);
-        auto rect2 = rect1.withX(sirenWidth + woodThickness);
-        wood->drawWithin(g, rect2, juce::RectanglePlacement::stretchToFit, 1.0f);
-
-        // wood borders inner shadows
-        juce::Path rectPath;
-        rectPath.addRectangle(rect1);
-        rectPath.addRectangle(rect2);
-        // invert the path's fill shape and enlarge it,
-        // so it casts a shadow
-        juce::Path shadowPath(rectPath);
-        shadowPath.addRectangle(shadowPath.getBounds().expanded(10));
-        shadowPath.setUsingNonZeroWinding(false);
-        // reduce clip region to avoid the shadow
-        // being drawn outside of the shape to cast the shadow on
-        g.reduceClipRegion(rectPath);
-
-        juce::DropShadow ds(juce::Colours::black, 5, {0, 0});
-        ds.drawForPath(g, shadowPath);
-    }
 }
 
 void SirenOrchestraPluginEditor::resized()
 {
-    const int& spacer = controlStripLayout::spacerSize;
+    const int spacer = static_cast<int>(controlStripLayout::spacerSize);
+    const int minSirenHeight = 55;
+    const int fullSirenHeight = static_cast<int>(controlStripLayout::minFullStripHeight);
+
     int sirenWidth = static_cast<int>(sirenTracks.at(sirenOrder[0])->getMinWidth());
     int sirenTitleWidth = static_cast<int>(sirenTracks.at(sirenOrder[0])->getTitleWidth());
     int sirenControlsWidth = static_cast<int>(sirenTracks.at(sirenOrder[0])->getSirenControlsWidth());
@@ -136,24 +105,28 @@ void SirenOrchestraPluginEditor::resized()
             track->setShowGroupLabels(true);
             track->setShowKnobLabels(true);
             track->setShowTextBox(true);
-            track->setBounds(woodThickness, tracksy, sirenWidth, controlStripLayout::minFullStripHeight);
+            track->setBounds(
+                0,
+                tracksy,
+                sirenWidth,
+                fullSirenHeight
+            );
         } else {
             track->setShowGroupLabels(false);
             track->setShowKnobLabels(false);
             track->setShowTextBox(true);
             track->setBounds(
-                woodThickness,
-                tracksy + (i - 1) * (minSirenHeight + spacer) + controlStripLayout::minFullStripHeight + spacer,
+                0,
+                tracksy + fullSirenHeight + spacer + static_cast<int>(i - 1) * (minSirenHeight + spacer),
                 sirenWidth,
                 minSirenHeight
             );
         }
     }
 
-    int reverby = tracksy +
-                  (sirenOrder.size() - 1) * (minSirenHeight + spacer) +
-                  controlStripLayout::minFullStripHeight + spacer;
-    int reverbh = controlStripLayout::minFullStripHeight - controlStripLayout::groupLabelHeight;// - 2 * controlStripLayout::spacerSize;
+    int reverby = tracksy + fullSirenHeight + spacer +
+                  static_cast<int>(sirenOrder.size() - 1) * (minSirenHeight + spacer);
+    int reverbh = fullSirenHeight - static_cast<int>(controlStripLayout::groupLabelHeight);
 
     rvbStrip.setTitle("Reverb");
     rvbStrip.setShowTitle(true);
@@ -161,9 +134,9 @@ void SirenOrchestraPluginEditor::resized()
     rvbStrip.setShowKnobLabels(true);
     rvbStrip.setShowTextBox(true);
     rvbStrip.setBounds(
-        woodThickness + controlStripLayout::spacerSize,
+        spacer,
         reverby,
-        sirenControlsWidth - 2 * controlStripLayout::spacerSize,
+        sirenControlsWidth - 2 * spacer,
         reverbh
     );
     // rvbStrip.setBackgroundColour(juce::Colours::transparentBlack);
@@ -183,9 +156,9 @@ void SirenOrchestraPluginEditor::resized()
     masterVolume.setShowKnobLabels(true);
     masterVolume.setShowTextBox(true);
     masterVolume.setBounds(
-        woodThickness + sirenControlsWidth,
+        sirenControlsWidth,
         reverby,
-        sirenTrackControlsWidth + sirenTitleWidth - controlStripLayout::spacerSize,
+        sirenTrackControlsWidth + sirenTitleWidth - spacer,
         reverbh + midiKeyboardHeight + spacer
     );
     // masterVolume.setBackgroundColour(juce::Colours::transparentBlack);
@@ -197,7 +170,7 @@ void SirenOrchestraPluginEditor::resized()
     masterVolume.setBackgroundStripColour(bottomColour);
 
     int nexty = reverby + reverbh + spacer;
-    midiKeyboard.setBounds(woodThickness, nexty, sirenControlsWidth, midiKeyboardHeight);
+    midiKeyboard.setBounds(0, nexty, sirenControlsWidth, midiKeyboardHeight);
 }
 
 void SirenOrchestraPluginEditor::midiInputChanged(AnyOrOneBasedMidiChannel inch)

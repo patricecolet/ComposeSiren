@@ -13,7 +13,6 @@
 #include <Components/MasterVolumeComponent.h>
 #include "PluginProcessor.h"
 
-constexpr int minSirenHeight = 55;
 // constexpr std::array<sirenId, 7> sirenOrder = { S3, S4, S1, S2, S5, S6, S7 };
 constexpr std::array<sirenId, 7> sirenOrder = { S7, S6, S5, S2, S1, S4, S3 };
 
@@ -112,9 +111,6 @@ public:
     void sirenStripMenuItemSelected(std::optional<sirenId> s) override;
 
 private:
-    const int woodThickness = 0;//25;
-    std::unique_ptr<juce::Drawable> wood;
-
     SirenOrchestraPluginProcessor& audioProcessor;
 
     MainButtonsComponent mainButtons;
