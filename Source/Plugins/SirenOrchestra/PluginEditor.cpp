@@ -122,10 +122,10 @@ void SirenOrchestraPluginEditor::resized()
     int sirenControlsWidth = static_cast<int>(sirenTracks.at(sirenOrder[0])->getSirenControlsWidth());
     int sirenTrackControlsWidth = static_cast<int>(sirenTracks.at(sirenOrder[0])->getTrackControlsWidth());
 
-    int mainButtonsHeight = 25;
+    int mainButtonsHeight = 30;
     mainButtons.setBounds(0, 0, sirenWidth, mainButtonsHeight);
 
-    int tracksy = 30;
+    int tracksy = mainButtonsHeight;
     for (std::size_t i = 0; i < sirenOrder.size(); ++i) {
         auto& track = sirenTracks.at(sirenOrder[i]);
         track->setBackgroundColour(juce::Colour(sirenColourById.at(sirenOrder[i])));

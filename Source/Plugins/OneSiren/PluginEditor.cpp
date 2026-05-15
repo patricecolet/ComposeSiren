@@ -11,7 +11,10 @@ OneSirenPluginEditor::OneSirenPluginEditor(OneSirenPluginProcessor& p) :
     juce::AudioProcessorEditor(&p),
     audioProcessor(p),
     mainButtons(p),
-    voiceManager(p.getVoiceManagerState()),
+    voiceManager(
+        p.getVoiceManagerState(),
+        p.getSirenStateMonitor()
+    ),
     sirenStrip(
         p.getAudioProcessorValueTreeState(),
         p.getParameterLayoutData()[0]
@@ -65,10 +68,10 @@ void OneSirenPluginEditor::paint (juce::Graphics& g)
 void OneSirenPluginEditor::resized()
 {
     int sirenWidth = static_cast<int>(sirenStrip.getMinWidth());
-    mainButtons.setBounds(0,0,sirenWidth,25);
-    voiceManager.setBounds(0,0,sirenWidth/2,30);
+    mainButtons.setBounds(0,0,sirenWidth,30);
+    voiceManager.setBounds(0,0,voiceManager.getMinWidth(),30);
     sirenStrip.setBounds(0,30,sirenWidth,controlStripLayout::minFullStripHeight);
-    midiKeyboard.setBounds(0, 130, sirenWidth, 70);
+    midiKeyboard.setBounds(0, controlStripLayout::minFullStripHeight + 30, sirenWidth, 70);
 }
 
 void OneSirenPluginEditor::categoryChanged(sirenCategory c)
