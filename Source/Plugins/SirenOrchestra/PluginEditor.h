@@ -13,14 +13,14 @@
 #include <Components/MasterVolumeComponent.h>
 #include "PluginProcessor.h"
 
-// constexpr std::array<sirenId, 7> sirenOrder = { S3, S4, S1, S2, S5, S6, S7 };
 constexpr std::array<sirenId, 7> sirenOrder = { S7, S6, S5, S2, S1, S4, S3 };
 
-// SIREN STRIP MENU (SHOULD BE MOVED TO ITS OWN FILE ===========================
+// SIREN STRIP MENU (MIGHT BE MOVED TO ITS OWN FILE) ===========================
 
 class SirenStripMenu : public SirenTrackComponent::Listener
 {
     std::map<sirenId, std::unique_ptr<SirenTrackComponent>>& tracks;
+
 public:
     class Listener
     {

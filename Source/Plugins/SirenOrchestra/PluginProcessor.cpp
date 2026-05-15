@@ -124,10 +124,6 @@ void SirenOrchestraPluginProcessor::selectedNewResourcesPath(const std::string& 
 //------------------------------------------------------------------------------
 void SirenOrchestraPluginProcessor::timerCallback()
 {
-    // if (sirenIsLoading.load(std::memory_order_acquire)) { return; }
-    // auto siren = currentSiren.load(std::memory_order_acquire);
-    // if (siren == nullptr) { return; }
-    // ensemble.update();
     ensemble.notifyListeners();
 }
 
@@ -157,12 +153,12 @@ void SirenOrchestraPluginProcessor::processBlock(juce::AudioBuffer<float>& audio
 
     for (const auto metadata : midiIn) {
         const auto& msg = metadata.getMessage();
-        // discard unknown CC messages
-        // discard messages that don't match the input MIDI channel
-        // (except if input channel is AnyMidiChannel)
-        // keep incoming MIDI events with precise timing
-        // dump them as is into scheduler
-        // forward them to UI for monitoring
+        // - discard unknown CC messages
+        // - discard messages that don't match the input MIDI channel
+        // - (except if input channel is AnyMidiChannel)
+        // - keep incoming MIDI events with precise timing
+        // - dump them as is into scheduler
+        // - forward them to UI for monitoring (with scoped guards)
         router.handleMessage(scheduler, msg, metadata.samplePosition);
     }
 
@@ -199,7 +195,7 @@ void SirenOrchestraPluginProcessor::processBlock(juce::AudioBuffer<float>& audio
         nextPosition = metadata.samplePosition;
     }
 
-    // siren is stateful so we must send the midi messsages at the right samples
+    // sirens are stateful, so we must send the midi messages sample-wise
     // and call process() on each sample
     for (int i = 0; i < audio.getNumSamples(); ++i) {
         while (nextPosition == i) {

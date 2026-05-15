@@ -70,8 +70,7 @@ SirenOrchestraPluginEditor::~SirenOrchestraPluginEditor()
                                   this);
     sirenStripMenu.removeListener();
 }
-//==============================================================================
-// AudioProcessorEditor
+
 void SirenOrchestraPluginEditor::paint(juce::Graphics& g)
 {
     g.setColour(juce::Colours::black);
@@ -82,24 +81,23 @@ void SirenOrchestraPluginEditor::paint(juce::Graphics& g)
 
 void SirenOrchestraPluginEditor::resized()
 {
-    const int spacer = static_cast<int>(controlStripLayout::spacerSize);
-    const int minSirenHeight = 55;
-    const int fullSirenHeight = static_cast<int>(controlStripLayout::minFullStripHeight);
+    constexpr int spacer = static_cast<int>(controlStripLayout::spacerSize);
+    constexpr int minSirenHeight = 55;
+    constexpr int fullSirenHeight = static_cast<int>(controlStripLayout::minFullStripHeight);
 
     int sirenWidth = static_cast<int>(sirenTracks.at(sirenOrder[0])->getMinWidth());
     int sirenTitleWidth = static_cast<int>(sirenTracks.at(sirenOrder[0])->getTitleWidth());
     int sirenControlsWidth = static_cast<int>(sirenTracks.at(sirenOrder[0])->getSirenControlsWidth());
     int sirenTrackControlsWidth = static_cast<int>(sirenTracks.at(sirenOrder[0])->getTrackControlsWidth());
 
-    int mainButtonsHeight = 30;
+    constexpr int mainButtonsHeight = 30;
     mainButtons.setBounds(0, 0, sirenWidth, mainButtonsHeight);
 
-    int tracksy = mainButtonsHeight;
+    constexpr int tracksY = mainButtonsHeight;
     for (std::size_t i = 0; i < sirenOrder.size(); ++i) {
         auto& track = sirenTracks.at(sirenOrder[i]);
         track->setBackgroundColour(juce::Colour(sirenColourById.at(sirenOrder[i])));
         track->setTitle(sirenTitleById.at(sirenOrder[i]));
-        // track->setShowTitle(true);
 
         if (i==0) {
             track->setShowGroupLabels(true);
@@ -107,7 +105,7 @@ void SirenOrchestraPluginEditor::resized()
             track->setShowTextBox(true);
             track->setBounds(
                 0,
-                tracksy,
+                tracksY,
                 sirenWidth,
                 fullSirenHeight
             );
@@ -117,16 +115,16 @@ void SirenOrchestraPluginEditor::resized()
             track->setShowTextBox(true);
             track->setBounds(
                 0,
-                tracksy + fullSirenHeight + spacer + static_cast<int>(i - 1) * (minSirenHeight + spacer),
+                tracksY + fullSirenHeight + spacer + static_cast<int>(i - 1) * (minSirenHeight + spacer),
                 sirenWidth,
                 minSirenHeight
             );
         }
     }
 
-    int reverby = tracksy + fullSirenHeight + spacer +
-                  static_cast<int>(sirenOrder.size() - 1) * (minSirenHeight + spacer);
-    int reverbh = fullSirenHeight - static_cast<int>(controlStripLayout::groupLabelHeight);
+    constexpr int reverbY = tracksY + fullSirenHeight + spacer +
+                            static_cast<int>(sirenOrder.size() - 1) * (minSirenHeight + spacer);
+    constexpr int reverbH = fullSirenHeight - static_cast<int>(controlStripLayout::groupLabelHeight);
 
     rvbStrip.setTitle("Reverb");
     rvbStrip.setShowTitle(true);
@@ -135,20 +133,15 @@ void SirenOrchestraPluginEditor::resized()
     rvbStrip.setShowTextBox(true);
     rvbStrip.setBounds(
         spacer,
-        reverby,
+        reverbY,
         sirenControlsWidth - 2 * spacer,
-        reverbh
+        reverbH
     );
-    // rvbStrip.setBackgroundColour(juce::Colours::transparentBlack);
-    // rvbStrip.setBackgroundColour(bottomColour);
     rvbStrip.setBackgroundColour(juce::Colour{0x22ffffff});
-    // rvbStrip.setBackgroundColour(juce::Colour{mecaviv::Colours::SirenPalette::darkBlue});
     rvbStrip.setCellBackgroundColour(juce::Colours::transparentBlack);
-    // rvbStrip.setCellBackgroundColour(juce::Colour{0x22ffffff});
-    // rvbStrip.setCellBackgroundColour(bottomColour);
     rvbStrip.setBackgroundStripColour(bottomColour);
 
-    int midiKeyboardHeight = 70;
+    constexpr int keyboardH = 70;
 
     masterVolume.setTitle("Master Volume");
     masterVolume.setShowTitle(true);
@@ -157,20 +150,16 @@ void SirenOrchestraPluginEditor::resized()
     masterVolume.setShowTextBox(true);
     masterVolume.setBounds(
         sirenControlsWidth,
-        reverby,
+        reverbY,
         sirenTrackControlsWidth + sirenTitleWidth - spacer,
-        reverbh + midiKeyboardHeight + spacer
+        reverbH + keyboardH + spacer
     );
-    // masterVolume.setBackgroundColour(juce::Colours::transparentBlack);
-    // masterVolume.setBackgroundColour(bottomColour);
     masterVolume.setBackgroundColour(juce::Colour{0x22ffffff});
-    // masterVolume.setBackgroundColour(juce::Colour{mecaviv::Colours::SirenPalette::darkBlue});
     masterVolume.setCellBackgroundColour(juce::Colours::transparentBlack);
-    // masterVolume.setCellBackgroundColour(bottomColour);
     masterVolume.setBackgroundStripColour(bottomColour);
 
-    int nexty = reverby + reverbh + spacer;
-    midiKeyboard.setBounds(0, nexty, sirenControlsWidth, midiKeyboardHeight);
+    constexpr int keyboardY = reverbY + reverbH + spacer;
+    midiKeyboard.setBounds(0, keyboardY, sirenControlsWidth, keyboardH);
 }
 
 void SirenOrchestraPluginEditor::midiInputChanged(AnyOrOneBasedMidiChannel inch)

@@ -36,7 +36,6 @@ OneSirenPluginEditor::OneSirenPluginEditor(OneSirenPluginProcessor& p) :
     sirenStrip.setShowTextBox(true);
     sirenStrip.setBackgroundColour(
         sirenColourById.at(defaultSirenIdByCategory.at(cat))
-        // juce::Colour(mecaviv::Colours::SirenPalette::darkBlue)
     );
     addAndMakeVisible(sirenStrip);
 
@@ -67,11 +66,13 @@ void OneSirenPluginEditor::paint (juce::Graphics& g)
 
 void OneSirenPluginEditor::resized()
 {
+    constexpr int sirenHeight = static_cast<int>(controlStripLayout::minFullStripHeight);
     int sirenWidth = static_cast<int>(sirenStrip.getMinWidth());
-    mainButtons.setBounds(0,0,sirenWidth,30);
-    voiceManager.setBounds(0,0,voiceManager.getMinWidth(),30);
-    sirenStrip.setBounds(0,30,sirenWidth,controlStripLayout::minFullStripHeight);
-    midiKeyboard.setBounds(0, controlStripLayout::minFullStripHeight + 30, sirenWidth, 70);
+
+    mainButtons.setBounds(0, 0, sirenWidth, 30);
+    voiceManager.setBounds(0, 0, voiceManager.getMinWidth(), 30);
+    sirenStrip.setBounds(0, 30, sirenWidth, sirenHeight);
+    midiKeyboard.setBounds(0, sirenHeight + 30, sirenWidth, 70);
 }
 
 void OneSirenPluginEditor::categoryChanged(sirenCategory c)

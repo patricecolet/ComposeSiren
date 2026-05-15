@@ -33,37 +33,16 @@ public:
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
 #endif
 
-    // MidiKeyboardState::Listener callbacks (called from UI thread)
-    // must write note events atomically to be sent from processBlock
-    //--------------------------------------------------------------------------
-    // void handleNoteOn(juce::MidiKeyboardState* source,
-    //                   int channel, int noteNumber, float velocity) override;
-    // void handleNoteOff(juce::MidiKeyboardState* source,
-    //                    int channel, int noteNumber, float velocity) override;
-
-    // AudioProcessorValueTreeState::Listener callback (called from UI thread)
-    // writes cc events atomically to be sent from processBlock
-    //--------------------------------------------------------------------------
-    // void parameterChanged(const juce::String& parameterID,
-    //                       float newValue) override;
-
     // MainButtonsComponents::Listener callbacks
     //--------------------------------------------------------------------------
     void resetSiren(std::optional<sirenId>) override;
     std::string getResourcesPath() override;
     void selectedNewResourcesPath(const std::string&) override;
 
-    // VoiceManagerState::Listener callbacks
-    //--------------------------------------------------------------------------
-    // void categoryChanged(sirenCategory newCategory) override;
-    // void midiInputChanged(AnyOrOneBasedMidiChannel) override;
-    // void midiOutputChanged(AnyOrOneBasedMidiChannel) override;
-
     // Timer callback (called from UI thread)
     //--------------------------------------------------------------------------
     void timerCallback() override;
 
-    // NB : FORCE CHANNEL ACCORDING TO SELECTED SIREN CATEGORY ?
     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
     //==========================================================================
@@ -91,8 +70,8 @@ public:
     //==========================================================================
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
-    //==========================================================================
 
+    //==========================================================================
     std::vector<parameterLayoutGroupData>& getParameterLayoutData();
     juce::AudioProcessorValueTreeState& getAudioProcessorValueTreeState();
     // UiState& getUiState();
@@ -125,9 +104,6 @@ private:
     SirenStateMonitor ssm;
 
 private:
-    //==========================================================================
-    // int* midiMessageIntArray;
-
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SirenOrchestraPluginProcessor)
 };
 

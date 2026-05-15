@@ -34,8 +34,6 @@ OneSirenPluginProcessor::OneSirenPluginProcessor() :
 {
     vms.addListener(this);
     ssm.subscribe(&siren);
-    // const sirenCategory defaultSirenCategory = vms.getSirenCategory();
-    // setSirenId(defaultSirenIdByCategory.at(defaultSirenCategory));
     startTimer(33);
 }
 
@@ -118,6 +116,8 @@ void OneSirenPluginProcessor::midiOutputChanged(AnyOrOneBasedMidiChannel outch)
     router.setOutputMidiChannel(outch);
 }
 
+// juce::Timer callback :
+// -----------------------------------------------------------------------------
 void OneSirenPluginProcessor::timerCallback()
 {
     // siren.update();
