@@ -829,7 +829,6 @@ class NotchedKnobLAF : public juce::LookAndFeel_V4
 {
     int notches;
     float notchAngle;
-    std::unique_ptr<juce::Drawable> rotarySliderFg;
 
     // Ramanujan formula
     static float approximateEllipsePerimeter(float a, float b)
@@ -844,11 +843,6 @@ class NotchedKnobLAF : public juce::LookAndFeel_V4
 public:
     NotchedKnobLAF(int nbNotches = 12) : notches(nbNotches) {
         setColour(juce::Slider::textBoxOutlineColourId, juce::Colour{0x00000000});
-
-        rotarySliderFg = juce::Drawable::createFromImageData(
-          BinaryData::basicknoboutline_svg,
-          BinaryData::basicknoboutline_svgSize
-        );
 
         float notchWidth = 1.0f / static_cast<float>(2 * notches);
         notchAngle = notchWidth * juce::MathConstants<float>::twoPi;
@@ -896,9 +890,7 @@ public:
         const float centreX = (float) x + (float) width * 0.5f;
         const float centreY = (float) y + (float) height * 0.5f;
 
-        auto fgRect = rotarySliderFg->getDrawableBounds();
         float dim = juce::jmin(width, height);
-        float ratio = dim / fgRect.getWidth(); // or getHeight, is square
         float myRatio = 0.75f;
 
         auto fill = juce::Colours::black;
@@ -960,25 +952,6 @@ public:
                 )
             );
         }
-
-        // FAILED : ALWAYS A SMALL OFFSET AT THE CENTRE DUE TO ROUNDING ERRORS (IN INKSCAPE ... ?)
-        //juce::Colour fgc = juce::Colours::black;//findColour(Slider::rotarySliderFillColourId);
-        // auto fg = rotarySliderFg->createCopy();
-        /*
-        rotarySliderFg->replaceColour(juce::Colours::black, fgc);
-        rotarySliderFg->draw(g, 1.f,
-          juce::AffineTransform::scale(ratio)
-          .rotated(sliderPos * 3 * M_PI * 0.5, dim * 0.5, dim * 0.5)
-          // .translated(radius / 2.0f, radius / 2.0f)
-          // .translated(bounds.getCentreX() - dim * 0.5, bounds.getCentreY() - dim * 0.5)
-          // .translated(bounds.getCentreX() - arcRadius, bounds.getCentreY() - arcRadius)
-          // .translated(centreX - dim * 0.5f, centreY - dim * 0.5f)
-          .translated(centreX - ratio * width * 0.5f, centreY - ratio * height * 0.5f)
-          // .translated(r.getTopLeft())
-          // .scaled(myRatio * 0.99f)
-          .scaled(myRatio)
-        );
-        //*/
 
         // DRAW SHADOWS ---------------------------------------
         juce::Path ellipsis;
@@ -1100,6 +1073,7 @@ public:
         //.translated(thumbWidth,thumbHeight);
         p.clear();
         return;
+
         p.addRoundedRectangle(
             markerPoint.x - markerWidth * 0.5f,
             markerPoint.y - markerHeight * 0.5f,
