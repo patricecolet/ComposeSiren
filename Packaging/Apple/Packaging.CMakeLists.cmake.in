@@ -258,6 +258,12 @@ function(_configure_files_for_standalone PLUGIN_TARGET_NAME
     )
     set(STANDALONE_APP_PATH ${app_path})
 
+    if(USE_TARGET_FORMAT_COMPONENTS)
+        set(USE_TARGET_FORMAT_COMPONENTS true)
+    else()
+        set(USE_TARGET_FORMAT_COMPONENTS false)
+    endif()
+
     configure_file(
             "${PACKAGING_SCRIPTS_DIR}/BundleNotRelocatable.plist.in"
             "${CMAKE_SOURCE_DIR}/${PLUGIN_TARGET_NAME}/BundleNotRelocatable.plist"
@@ -269,6 +275,7 @@ function(_configure_files_for_standalone PLUGIN_TARGET_NAME
             OWNER_READ OWNER_WRITE OWNER_EXECUTE
             GROUP_READ GROUP_EXECUTE
             WORLD_READ WORLD_EXECUTE
+            @ONLY
     )
 endfunction()
 
@@ -276,43 +283,46 @@ if(USE_TARGET_FORMAT_COMPONENTS)
     foreach(PLUGIN_TARGET_NAME IN LISTS PLUGIN_TARGETS)
         _configure_files_for_standalone(
             ${PLUGIN_TARGET_NAME}
-            USE_TARGET_FORMAT_COMPONENTS
+            ${USE_TARGET_FORMAT_COMPONENTS}
         )
     endforeach()
 else()
     _configure_files_for_standalone(
         ${PLUGIN_TARGET_NAME}
-        USE_TARGET_FORMAT_COMPONENTS
+        ${USE_TARGET_FORMAT_COMPONENTS}
   )
 endif()
 
 configure_file(
-  "${PACKAGING_SCRIPTS_DIR}/FixAllStandalonesRelocatable.sh.in"
-  "${CMAKE_SOURCE_DIR}/FixAllStandalonesRelocatable.sh"
-  FILE_PERMISSIONS
-  OWNER_READ OWNER_WRITE OWNER_EXECUTE
-  GROUP_READ GROUP_EXECUTE
-  WORLD_READ WORLD_EXECUTE
+    "${PACKAGING_SCRIPTS_DIR}/FixAllStandalonesRelocatable.sh.in"
+    "${CMAKE_SOURCE_DIR}/FixAllStandalonesRelocatable.sh"
+    FILE_PERMISSIONS
+    OWNER_READ OWNER_WRITE OWNER_EXECUTE
+    GROUP_READ GROUP_EXECUTE
+    WORLD_READ WORLD_EXECUTE
+    @ONLY
 )
 configure_file(
-  "${PACKAGING_SCRIPTS_DIR}/Uninstall.applescript.in"
-  "${CMAKE_SOURCE_DIR}/Uninstall.applescript"
+    "${PACKAGING_SCRIPTS_DIR}/Uninstall.applescript.in"
+    "${CMAKE_SOURCE_DIR}/Uninstall.applescript"
 )
 configure_file(
-  "${PACKAGING_SCRIPTS_DIR}/CreateDmg.sh.in"
-  "${CMAKE_SOURCE_DIR}/CreateDmg.sh"
-  FILE_PERMISSIONS
-  OWNER_READ OWNER_WRITE OWNER_EXECUTE
-  GROUP_READ GROUP_EXECUTE
-  WORLD_READ WORLD_EXECUTE
+    "${PACKAGING_SCRIPTS_DIR}/CreateDmg.sh.in"
+    "${CMAKE_SOURCE_DIR}/CreateDmg.sh"
+    FILE_PERMISSIONS
+    OWNER_READ OWNER_WRITE OWNER_EXECUTE
+    GROUP_READ GROUP_EXECUTE
+    WORLD_READ WORLD_EXECUTE
+    @ONLY
 )
 configure_file(
-  "${PACKAGING_SCRIPTS_DIR}/NotarizeDmg.sh.in"
-  "${CMAKE_SOURCE_DIR}/NotarizeDmg.sh"
-  FILE_PERMISSIONS
-  OWNER_READ OWNER_WRITE OWNER_EXECUTE
-  GROUP_READ GROUP_EXECUTE
-  WORLD_READ WORLD_EXECUTE
+    "${PACKAGING_SCRIPTS_DIR}/NotarizeDmg.sh.in"
+    "${CMAKE_SOURCE_DIR}/NotarizeDmg.sh"
+    FILE_PERMISSIONS
+    OWNER_READ OWNER_WRITE OWNER_EXECUTE
+    GROUP_READ GROUP_EXECUTE
+    WORLD_READ WORLD_EXECUTE
+    @ONLY
 )
 
 ################################################################################
