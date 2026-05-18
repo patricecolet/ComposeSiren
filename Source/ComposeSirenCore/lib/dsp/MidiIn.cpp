@@ -2,6 +2,7 @@
 // Created by joseph larralde on 08/03/2026.
 //
 
+#include <algorithm>
 #include "MidiIn.h"
 
 MidiIn::MidiIn(sirenId sid,

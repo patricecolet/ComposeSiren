@@ -6,6 +6,7 @@
 #define COMPOSESIREN_MIDIIN_H
 
 
+#include <functional>
 #include "../definitions/parameterDefinitions.h"
 #include "../dsp/Sirene.h"
 

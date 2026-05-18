@@ -6,6 +6,7 @@
 #define COMPOSESIREN_SIREN_VOICE_H
 
 #include <set>
+#include <optional>
 #include "../definitions/parameterDefinitions.h"
 #include "../dsp/MidiIn.h"
 #include "../dsp/Sirene.h"
