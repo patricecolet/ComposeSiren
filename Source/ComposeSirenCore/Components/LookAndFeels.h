@@ -1159,7 +1159,11 @@ public:
     rotarySliderFg->replaceColour(juce::Colours::white, fgc);
     rotarySliderFg->draw(g, 1.f,
       juce::AffineTransform::scale(ratio)
-      .rotated(sliderPosProportional * 3 * M_PI * 0.5, dim * 0.5, dim * 0.5)
+      .rotated(
+          sliderPosProportional * 3 * juce::MathConstants<float>::pi * 0.5,
+          dim * 0.5,
+          dim * 0.5
+      )
       .translated(transX, transY)
     );
 
