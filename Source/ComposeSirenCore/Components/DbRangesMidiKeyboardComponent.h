@@ -33,9 +33,9 @@ class SirenPitchesDisplayComponent : public juce::Component,
                                      public juce::Timer,
                                      public SirenStateMonitor::Listener
 {
-    std::vector<sirenId> sirenStateIds;
+    std::vector<sirenId> sirenStateIds{};
     std::optional<sirenId> fgSirenId{std::nullopt};
-    std::vector<sirenId> sortedSirenStateIds;
+    std::vector<sirenId> sortedSirenStateIds{};
     std::map<sirenId, SirenVoice::State> sirenStates{};
 
     juce::MidiKeyboardComponent& keyboardComponent;
@@ -63,7 +63,7 @@ public:
         fgSirenId = id;
         sortedSirenStateIds = sirenStateIds;
         if (fgSirenId.has_value()) {
-            auto last = sortedSirenStateIds.size() - 1;
+            int last = sortedSirenStateIds.size() - 1;
             for (auto i = 0; i <= last; ++i) {
                 if (sortedSirenStateIds[i] == fgSirenId.value() && i < last) {
                     std::swap(sortedSirenStateIds[i],
