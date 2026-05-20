@@ -122,6 +122,10 @@ set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
 # ${PROJECT_NAME}-${PROJECT_VERSION}, we want to avoid that
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "")
 
+# similar to default but with project version suffix
+# todo: find an elegant way to determine the target architecture and append it here instead of just win64
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${PROJECT_VERSION}${PROJECT_VERSION_SUFFIX}-win64")
+
 # we create our own install directory name
 set(CPACK_NSIS_PACKAGE_INSTALL_DIRECTORY "${BaseTargetName} ${PROJECT_VERSION}")
 set(CPACK_NSIS_PACKAGE_NAME "${BaseTargetName} ${PROJECT_VERSION}")
