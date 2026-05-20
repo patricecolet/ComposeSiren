@@ -26,6 +26,7 @@ Source/config.h
 build/
 cmake-build-debug/
 cmake-build-release/
+cmake-build-*/
 
 # private config (see Config.cmake template)
 MyConfig.cmake
