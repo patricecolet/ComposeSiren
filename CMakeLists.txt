@@ -80,4 +80,5 @@ if(APPLE) # we generate a cmake subproject to build the installer
   include(Packaging/Apple/MakePackage.cmake)
 elseif(WIN32) # we just proceed the regular way
   include(Packaging/Windows/MakePackage.cmake)
+  #include(Packaging/Wix/MakePackage.cmake)
 endif()
