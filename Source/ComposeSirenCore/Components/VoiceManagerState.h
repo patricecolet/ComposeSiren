@@ -87,6 +87,12 @@ public:
         if (notify) { notifyMidiOutput(); }
     }
 
+    void notifyListeners() {
+        notifySirenCategory();
+        notifyMidiInput();
+        notifyMidiOutput();
+    }
+
     std::unique_ptr<juce::XmlElement> toXml() const {
         juce::ValueTree state = { "VoiceManagerState", {}, {
             { "VoiceManagerParameter", {

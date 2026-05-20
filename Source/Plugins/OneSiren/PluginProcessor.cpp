@@ -33,6 +33,7 @@ OneSirenPluginProcessor::OneSirenPluginProcessor() :
     getResourcesPathFunction(getResourcesPathGetter())
 {
     vms.addListener(this);
+    vms.notifyListeners();
     ssm.subscribe(&siren);
     startTimer(33);
 }
