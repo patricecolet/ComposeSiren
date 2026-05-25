@@ -32,9 +32,9 @@ OneSirenPluginProcessor::OneSirenPluginProcessor() :
     router(parameterLayoutData[0], apvts, midiKeyboardState),
     getResourcesPathFunction(getResourcesPathGetter())
 {
+    ssm.subscribe(&siren);
     vms.addListener(this);
     vms.notifyListeners();
-    ssm.subscribe(&siren);
     startTimer(33);
 }
 
@@ -49,13 +49,13 @@ void OneSirenPluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlo
 {
     lastSampleRate = sampleRate;
     lastBlockSize = samplesPerBlock;
-
     siren.setSampleRate(sampleRate);
 }
 
 void OneSirenPluginProcessor::releaseResources()
 {
     // playback stops, good place to release unused memory
+
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations

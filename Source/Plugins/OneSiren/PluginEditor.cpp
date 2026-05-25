@@ -41,9 +41,8 @@ OneSirenPluginEditor::OneSirenPluginEditor(OneSirenPluginProcessor& p) :
 
     auto inch = audioProcessor.getVoiceManagerState().getMidiInput();
     if (inch.isAny) { inch = AnyOrOneBasedMidiChannel::specific({1}); }
-    midiKeyboard.setCurrentChannel(inch.channel);
+    midiKeyboard.setCurrentChannel({ inch.channel });
     midiKeyboard.setCurrentSirenCategory(cat);
-
     addAndMakeVisible(midiKeyboard);
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
@@ -85,5 +84,5 @@ void OneSirenPluginEditor::categoryChanged(sirenCategory c)
 void OneSirenPluginEditor::midiInputChanged(AnyOrOneBasedMidiChannel inch)
 {
     if (inch.isAny) { inch = AnyOrOneBasedMidiChannel::specific({1}); }
-    midiKeyboard.setCurrentChannel(inch.channel);
+    midiKeyboard.setCurrentChannel({ inch.channel });
 }

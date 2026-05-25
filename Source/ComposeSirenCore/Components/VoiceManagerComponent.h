@@ -180,6 +180,8 @@ public:
         inputChannelLabel.setLookAndFeel(nullptr);
         outputChannelLabel.setLookAndFeel(nullptr);
         categoryLabel.setLookAndFeel(nullptr);
+
+        sirenStateMonitor.removeListener(this);
         voiceManagerState.removeListener(this);
     }
 
