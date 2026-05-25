@@ -150,15 +150,21 @@ void Sirene::setMidicent(int note) {
   midiCentVoulue = note;
   if (midiCentVoulue >= noteMidiCentMax) midiCentVoulue = noteMidiCentMax;
   else if (midiCentVoulue % 100 == 99) midiCentVoulue++;
-  noteInf = midiCentVoulue / 100;
-  noteSup = noteInf + 1;
 
-  // Pat added :
-  // Réinitialiser les compteurs de fenêtres FFT pour les nouvelles notes
-  countP[noteInf] = 0;
-  countP[noteSup] = 0;
-  countKInf = 0;
-  countKSup = 0;
+  // Gauthier added this to enable reading all frames :
+  bool gauthierFix = false;
+  int newNoteInf = midiCentVoulue / 100;
+  if (newNoteInf != noteInf || !gauthierFix) {
+      noteInf = newNoteInf;
+      noteSup = noteInf + 1;
+
+      // Pat added :
+      // Réinitialiser les compteurs de fenêtres FFT pour les nouvelles notes
+      countP[noteInf] = 0;
+      countP[noteSup] = 0;
+      countKInf = 0;
+      countKSup = 0;
+  }
 
   pitchSchift[noteInf] = ((440.0 * pow(2., ((midiCentVoulue/100.) - 69.) / 12.))  /  (440.0 * pow(2., ((noteInf) - 69.) / 12.)))  * deuxPieSampleRate;
   pitchSchift[noteSup] = ((440.0 * pow(2., ((midiCentVoulue/100.) - 69.) / 12.))  /   (440.0 * pow(2., ((noteSup) - 69.) / 12.)))  * deuxPieSampleRate;

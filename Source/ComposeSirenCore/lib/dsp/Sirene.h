@@ -153,8 +153,11 @@ public:
         ampz[i] = 0.001 * amp[i] + 0.999 * ampz[i] ;
         waveInf += sin(phaseInf[i]) * ampz[i];
         anciennewaveInf = waveInf;
-        if (phaseInf[i] == 180.)
+        // this is totally useless, we are working in radians and it
+        // is very unlikely that phasInf[i] will equal 180 exactly.
+        if (phaseInf[i] == 180.) {
           phaseInf[i] = 0.;
+        }
 
       } else {
         phaseInf[i] += (tabFreq[noteInf][countP[noteInf]][i] * pitchSchift[noteInf]);
