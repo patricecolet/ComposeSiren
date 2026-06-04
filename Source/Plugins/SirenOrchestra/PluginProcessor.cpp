@@ -102,9 +102,20 @@ bool SirenOrchestraPluginProcessor::isBusesLayoutSupported(const BusesLayout& la
 
 // MainButtonsComponent::Listener callbacks
 //------------------------------------------------------------------------------
+void SirenOrchestraPluginProcessor::stAllSwitched(bool on)
+{
+    udpBridge.setStAll(on);
+}
+
 void SirenOrchestraPluginProcessor::resetSiren(std::optional<sirenId> id)
 {
     ensemble.stop(id);
+
+    // relayer le reset aux sirènes physiques (trame [8, 10, 0...] du patch Pd)
+    if (id.has_value())
+        udpBridge.pushReset(static_cast<int>(id.value()) + 1);
+    else
+        udpBridge.pushResetAll();
 }
 
 std::string SirenOrchestraPluginProcessor::getResourcesPath()
@@ -170,6 +181,16 @@ void SirenOrchestraPluginProcessor::processBlock(juce::AudioBuffer<float>& audio
 
     // ... THEN
     midiIn.swapWith(midiOut);
+
+    // mirror du MIDI routé vers les sirènes physiques via UDP
+    // (lock-free : les envois réseau se font sur le thread du bridge)
+    for (const auto metadata : midiIn) {
+        const auto& m = metadata.getMessage();
+        if (m.getRawDataSize() == 3)
+            udpBridge.pushMidi(m.getRawData()[0],
+                               m.getRawData()[1],
+                               m.getRawData()[2]);
+    }
 
     // AUDIO CONTROL / SYNTHESIS ///////////////////////////////////////////////
 

@@ -19,11 +19,15 @@ public:
         virtual void resetSiren(std::optional<sirenId>) = 0;
         virtual void selectedNewResourcesPath(const std::string&) = 0;
         virtual std::string getResourcesPath() = 0;
+        // optionnel : switch ST global (sirènes physiques) — no-op par défaut
+        virtual void stAllSwitched(bool) {}
     };
 
-    MainButtonsComponent(Listener& l, bool hasResetAll = false) :
+    MainButtonsComponent(Listener& l, bool hasResetAll = false,
+                         bool hasStAll = false) :
         listener(l),
-        hasResetAllButton(hasResetAll)
+        hasResetAllButton(hasResetAll),
+        hasStAllSwitch(hasStAll)
     {
         selectResourcesButton.setColour(
             juce::TextButton::buttonColourId,
@@ -48,6 +52,14 @@ public:
             resetAllButton.setButtonText ("Reset All");
             resetAllButton.addListener(this);
             addAndMakeVisible(resetAllButton);
+        }
+
+        if (hasStAllSwitch) {
+            stAllButton.setButtonText("ST");
+            stAllButton.setColour(juce::ToggleButton::textColourId, juce::Colours::whitesmoke);
+            stAllButton.setColour(juce::ToggleButton::tickColourId, juce::Colours::whitesmoke);
+            stAllButton.addListener(this);
+            addAndMakeVisible(stAllButton);
         }
     }
 
@@ -118,6 +130,14 @@ public:
             fb.items.add(item);
         }
 
+        if (hasStAllSwitch) {
+            item = juce::FlexItem(stAllButton).withMinWidth(55)
+                                              .withMinHeight(btnsHeight)
+                                              .withFlex(0,0);
+            item.margin = juce::FlexItem::Margin(0.f, 0.f, 0.f, margin);
+            fb.items.add(item);
+        }
+
         fb.performLayout(bounds);
     }
 
@@ -130,6 +150,11 @@ public:
     {
         if (btn == &resetButton) {
             listener.resetSiren(currentSirenId);
+            return;
+        }
+
+        if (btn == &stAllButton) {
+            listener.stAllSwitched(stAllButton.getToggleState());
             return;
         }
 
@@ -165,10 +190,12 @@ private:
 
     std::optional<sirenId> currentSirenId{std::nullopt};
     bool hasResetAllButton{false};
+    bool hasStAllSwitch{false};
 
     juce::TextButton resetButton;
     juce::TextButton resetAllButton;
     juce::TextButton selectResourcesButton;
+    juce::ToggleButton stAllButton;
 
     std::unique_ptr<juce::FileChooser> fileChooser;
 };

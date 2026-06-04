@@ -15,6 +15,7 @@
 #include <lib/wrappers/SirenStateMonitor.h>
 #include <ParameterBridges.h>
 #include "OrchestraMidiRouter.h"
+#include "SirenUdpBridge.h"
 
 class SirenOrchestraPluginProcessor :
     public juce::AudioProcessor,
@@ -38,6 +39,7 @@ public:
     void resetSiren(std::optional<sirenId>) override;
     std::string getResourcesPath() override;
     void selectedNewResourcesPath(const std::string&) override;
+    void stAllSwitched(bool) override;
 
     // Timer callback (called from UI thread)
     //--------------------------------------------------------------------------
@@ -78,6 +80,7 @@ public:
     juce::MidiKeyboardState& getMidiKeyboardState();
     VoiceManagerState& getVoiceManagerState();
     SirenStateMonitor& getSirenStateMonitor();
+    SirenUdpBridge& getUdpBridge() { return udpBridge; }
 
 private:
     // needed by DSP
@@ -102,6 +105,9 @@ private:
     ReverbParameterBridges reverbParameterBridges;
 
     SirenStateMonitor ssm;
+
+    // mirror du MIDI routé vers les sirènes physiques (protocole Pd sirenMidi2Udp)
+    SirenUdpBridge udpBridge;
 
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SirenOrchestraPluginProcessor)

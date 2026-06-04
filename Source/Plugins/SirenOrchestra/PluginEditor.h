@@ -15,6 +15,50 @@
 
 constexpr std::array<sirenId, 7> sirenOrder = { S7, S6, S5, S2, S1, S4, S3 };
 
+// LED D'ÉTAT ST (sirène physique, lue sur le variateur KEB) ===================
+
+class StLedComponent : public juce::Component
+{
+public:
+    StLedComponent()
+    {
+        // simple témoin visuel : ne doit pas gêner le clic sur le titre
+        setInterceptsMouseClicks(false, false);
+    }
+
+    void setState(SirenUdpBridge::StState s)
+    {
+        if (s != state) {
+            state = s;
+            repaint();
+        }
+    }
+
+    void paint(juce::Graphics& g) override
+    {
+        const auto area = getLocalBounds().toFloat().reduced(1.f);
+        switch (state) {
+            case SirenUdpBridge::StState::on:
+                g.setColour(juce::Colours::limegreen);
+                g.fillEllipse(area);
+                break;
+            case SirenUdpBridge::StState::off:
+                g.setColour(juce::Colours::darkred);
+                g.fillEllipse(area);
+                break;
+            case SirenUdpBridge::StState::unknown:
+            default:
+                // injoignable : juste un contour grisé
+                g.setColour(juce::Colours::grey.withAlpha(0.6f));
+                g.drawEllipse(area, 1.f);
+                break;
+        }
+    }
+
+private:
+    SirenUdpBridge::StState state { SirenUdpBridge::StState::unknown };
+};
+
 // SIREN STRIP MENU (MIGHT BE MOVED TO ITS OWN FILE) ===========================
 
 class SirenStripMenu : public SirenTrackComponent::Listener
@@ -93,7 +137,8 @@ private:
 
 class SirenOrchestraPluginEditor : public juce::AudioProcessorEditor,
                                    public VoiceManagerState::Listener,
-                                   public SirenStripMenu::Listener
+                                   public SirenStripMenu::Listener,
+                                   private juce::Timer
 {
 public:
     SirenOrchestraPluginEditor(SirenOrchestraPluginProcessor&);
@@ -101,6 +146,9 @@ public:
 
     void paint(juce::Graphics&) override;
     void resized() override;
+
+    // rafraîchit les LEDs d'état ST depuis le bridge UDP
+    void timerCallback() override;
 
     // VoiceManagerState::Listener
     //--------------------------------------------------------------------------
@@ -115,6 +163,7 @@ private:
 
     MainButtonsComponent mainButtons;
     std::map<sirenId, std::unique_ptr<SirenTrackComponent>> sirenTracks;
+    std::map<sirenId, std::unique_ptr<StLedComponent>> stLeds;
     ReverbStripComponent rvbStrip;
     MasterVolumeComponent masterVolume;
     DbRangesMidiKeyboardComponent midiKeyboard;

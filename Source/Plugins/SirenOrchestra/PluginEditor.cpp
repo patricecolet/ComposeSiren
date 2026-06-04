@@ -24,7 +24,7 @@ makeSirenTracks(juce::AudioProcessorValueTreeState& vts,
 SirenOrchestraPluginEditor::SirenOrchestraPluginEditor(SirenOrchestraPluginProcessor& p) :
     AudioProcessorEditor(p),
     audioProcessor(p),
-    mainButtons(p, true),
+    mainButtons(p, true, true),
     sirenTracks(
         makeSirenTracks(
             p.getAudioProcessorValueTreeState(),
@@ -45,7 +45,10 @@ SirenOrchestraPluginEditor::SirenOrchestraPluginEditor(SirenOrchestraPluginProce
 
     for (auto i : sirenOrder) {
         addAndMakeVisible(sirenTracks.at(i).get());
+        stLeds.emplace(i, std::make_unique<StLedComponent>());
+        addAndMakeVisible(stLeds.at(i).get());
     }
+    startTimerHz(4); // rafraîchissement des LEDs d'état ST
 
     addAndMakeVisible(rvbStrip);
     addAndMakeVisible(masterVolume);
@@ -65,6 +68,7 @@ SirenOrchestraPluginEditor::SirenOrchestraPluginEditor(SirenOrchestraPluginProce
 
 SirenOrchestraPluginEditor::~SirenOrchestraPluginEditor()
 {
+    stopTimer();
     audioProcessor.getVoiceManagerState()
                   .removeListener(VoiceManagerState::Listener::Key::midiInput,
                                   this);
@@ -120,6 +124,16 @@ void SirenOrchestraPluginEditor::resized()
                 minSirenHeight
             );
         }
+
+        // LED d'état ST, à gauche du nom dans la zone de titre du strip
+        constexpr int ledSize = 9;
+        const auto trackBounds = track->getBounds();
+        stLeds.at(sirenOrder[i])->setBounds(
+            trackBounds.getRight() - sirenTitleWidth + 4,
+            trackBounds.getCentreY() - ledSize / 2,
+            ledSize,
+            ledSize
+        );
     }
 
     constexpr int reverbY = tracksY + fullSirenHeight + spacer +
@@ -160,6 +174,14 @@ void SirenOrchestraPluginEditor::resized()
 
     constexpr int keyboardY = reverbY + reverbH + spacer;
     midiKeyboard.setBounds(0, keyboardY, sirenControlsWidth, keyboardH);
+}
+
+void SirenOrchestraPluginEditor::timerCallback()
+{
+    for (auto& [id, led] : stLeds) {
+        const int siren = sirenPropertiesById.at(id)->oneBasedMidiChannel.oneBased;
+        led->setState(audioProcessor.getUdpBridge().getStState(siren));
+    }
 }
 
 void SirenOrchestraPluginEditor::midiInputChanged(AnyOrOneBasedMidiChannel inch)
