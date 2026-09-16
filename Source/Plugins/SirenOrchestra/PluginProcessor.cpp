@@ -102,6 +102,16 @@ bool SirenOrchestraPluginProcessor::isBusesLayoutSupported(const BusesLayout& la
 
 // MainButtonsComponent::Listener callbacks
 //------------------------------------------------------------------------------
+void SirenOrchestraPluginProcessor::physicalSirensSwitched(bool on)
+{
+    udpBridge.setEnabled(on);
+}
+
+bool SirenOrchestraPluginProcessor::physicalSirensEnabled()
+{
+    return udpBridge.isEnabled();
+}
+
 void SirenOrchestraPluginProcessor::stAllSwitched(bool on)
 {
     udpBridge.setStAll(on);
@@ -344,6 +354,9 @@ void SirenOrchestraPluginProcessor::getStateInformation(juce::MemoryBlock& destD
     juce::XmlElement xmlState("AllParameters");
     xmlState.addChildElement(apvts.state.createXml().release());
     xmlState.addChildElement(vms.toXml().release());
+    // le pilotage des sirènes physiques suit la session, pas le plugin
+    auto* bridgeXml = xmlState.createNewChildElement("UdpBridge");
+    bridgeXml->setAttribute("enabled", udpBridge.isEnabled());
     copyXmlToBinary(xmlState, destData);
 }
 
@@ -367,6 +380,11 @@ void SirenOrchestraPluginProcessor::setStateInformation(const void* data,
             xmlSubState = xmlState->getChildByName(apvts.state.getType());
             if (xmlSubState != nullptr) {
                 apvts.replaceState(juce::ValueTree::fromXml(*xmlSubState));
+            }
+
+            xmlSubState = xmlState->getChildByName("UdpBridge");
+            if (xmlSubState != nullptr) {
+                udpBridge.setEnabled(xmlSubState->getBoolAttribute("enabled", false));
             }
         }
     }

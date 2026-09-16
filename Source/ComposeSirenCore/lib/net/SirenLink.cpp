@@ -268,6 +268,12 @@ void SirenLink::pumpKebReplies() noexcept
     }
 }
 
+void SirenLink::forgetStates() noexcept
+{
+    states.fill(StState::unknown);
+    awaitingReplies = 0;
+}
+
 StState SirenLink::stState(int siren) const noexcept
 {
     if (siren < 1 || siren > kNumSirens)

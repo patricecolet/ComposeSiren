@@ -8,6 +8,11 @@
 // sur le thread audio). Les resets et la commande ST, demandés depuis l'UI,
 // passent par des masques atomiques. L'état ST est lu sur les KEB à 1 Hz.
 //
+// Désactivé par défaut : tant que setEnabled(true) n'a pas été appelé, rien
+// ne part sur le réseau et les KEB ne sont pas interrogés — une instance en
+// studio ne doit pas parler à 14 machines qui ne sont pas là. L'activation
+// envoie le handshake ; la désactivation remet les états ST à inconnu.
+//
 
 #ifndef SIRENORCHESTRA_SIRENUDPBRIDGE_H
 #define SIRENORCHESTRA_SIRENUDPBRIDGE_H
@@ -33,6 +38,15 @@ public:
     {
         stopThread(1000);
     }
+
+    // Piloter ou non les sirènes physiques. Thread-safe.
+    void setEnabled(bool on) noexcept
+    {
+        enabled.store(on, std::memory_order_relaxed);
+        notify();
+    }
+
+    bool isEnabled() const noexcept { return enabled.load(std::memory_order_relaxed); }
 
     // Appelé depuis le thread audio : lock-free, ne touche pas au socket.
     // Le tri des messages (types, canaux 1..7, note-on de vélocité 0) est
@@ -88,15 +102,35 @@ private:
     {
         cs::net::SirenLink link; // les sockets vivent sur ce thread
 
-        // handshake, comme le message "connect" du patch Pd
-        link.sendResetAll();
-
         juce::uint32 lastPollTime = 0;
+        bool wasEnabled = false;
 
         while (!threadShouldExit()) {
             // réveil immédiat sur notify() (MIDI/reset/ST), sinon tick de 100 ms
             // pour cadencer le polling KEB et ramasser les réponses
             wait(100);
+
+            const bool on = enabled.load(std::memory_order_relaxed);
+            if (on != wasEnabled) {
+                wasEnabled = on;
+                if (on) {
+                    // handshake, comme le message "connect" du patch Pd
+                    link.sendResetAll();
+                    lastPollTime = 0; // première salve KEB tout de suite
+                } else {
+                    link.forgetStates();
+                    for (auto& st : stStates)
+                        st.store(static_cast<int>(StState::unknown), std::memory_order_relaxed);
+                }
+            }
+            if (!on) {
+                // on vide ce qui a été poussé pour ne pas l'envoyer plus tard
+                pendingResets.store(0, std::memory_order_relaxed);
+                pendingStAll.store(-1, std::memory_order_relaxed);
+                while (fifo.getNumReady() > 0)
+                    fifo.read(1);
+                continue;
+            }
 
             if (int mask = pendingResets.exchange(0, std::memory_order_relaxed))
                 for (int siren = 1; siren <= kNumSirens; ++siren)
@@ -128,6 +162,7 @@ private:
         }
     }
 
+    std::atomic<bool> enabled { false };
     juce::AbstractFifo fifo;
     std::array<MidiBytes, kFifoSize> pending;
     std::atomic<int> pendingResets { 0 };

@@ -132,6 +132,7 @@ public:
     void sendKebRequests() noexcept;
     void pumpKebReplies() noexcept;
     StState stState(int siren) const noexcept;
+    void forgetStates() noexcept; // tout repasse à inconnu (ex. pont désactivé)
 
     const Parc& parc() const noexcept { return table; }
 

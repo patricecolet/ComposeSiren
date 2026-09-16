@@ -19,7 +19,11 @@ public:
         virtual void resetSiren(std::optional<sirenId>) = 0;
         virtual void selectedNewResourcesPath(const std::string&) = 0;
         virtual std::string getResourcesPath() = 0;
-        // optionnel : switch ST global (sirènes physiques) — no-op par défaut
+        // optionnel : pilotage des sirènes physiques — no-op par défaut.
+        // physicalSirensEnabled() donne l'état courant pour initialiser la case
+        // quand l'éditeur s'ouvre (l'état vit dans le processor, pas dans l'UI).
+        virtual void physicalSirensSwitched(bool) {}
+        virtual bool physicalSirensEnabled() { return false; }
         virtual void stAllSwitched(bool) {}
     };
 
@@ -55,7 +59,16 @@ public:
         }
 
         if (hasStAllSwitch) {
+            physicalButton.setButtonText("Sirenes physiques");
+            physicalButton.setColour(juce::ToggleButton::textColourId, juce::Colours::whitesmoke);
+            physicalButton.setColour(juce::ToggleButton::tickColourId, juce::Colours::whitesmoke);
+            physicalButton.setToggleState(listener.physicalSirensEnabled(),
+                                          juce::dontSendNotification);
+            physicalButton.addListener(this);
+            addAndMakeVisible(physicalButton);
+
             stAllButton.setButtonText("ST");
+            stAllButton.setEnabled(physicalButton.getToggleState());
             stAllButton.setColour(juce::ToggleButton::textColourId, juce::Colours::whitesmoke);
             stAllButton.setColour(juce::ToggleButton::tickColourId, juce::Colours::whitesmoke);
             stAllButton.addListener(this);
@@ -131,6 +144,11 @@ public:
         }
 
         if (hasStAllSwitch) {
+            item = juce::FlexItem(physicalButton).withMinWidth(150)
+                                                 .withMinHeight(btnsHeight)
+                                                 .withFlex(0,0);
+            item.margin = juce::FlexItem::Margin(0.f, 0.f, 0.f, margin);
+            fb.items.add(item);
             item = juce::FlexItem(stAllButton).withMinWidth(55)
                                               .withMinHeight(btnsHeight)
                                               .withFlex(0,0);
@@ -150,6 +168,13 @@ public:
     {
         if (btn == &resetButton) {
             listener.resetSiren(currentSirenId);
+            return;
+        }
+
+        if (btn == &physicalButton) {
+            const bool on = physicalButton.getToggleState();
+            stAllButton.setEnabled(on);
+            listener.physicalSirensSwitched(on);
             return;
         }
 
@@ -195,6 +220,7 @@ private:
     juce::TextButton resetButton;
     juce::TextButton resetAllButton;
     juce::TextButton selectResourcesButton;
+    juce::ToggleButton physicalButton;
     juce::ToggleButton stAllButton;
 
     std::unique_ptr<juce::FileChooser> fileChooser;

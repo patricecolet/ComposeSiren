@@ -39,6 +39,8 @@ public:
     void resetSiren(std::optional<sirenId>) override;
     std::string getResourcesPath() override;
     void selectedNewResourcesPath(const std::string&) override;
+    void physicalSirensSwitched(bool) override;
+    bool physicalSirensEnabled() override;
     void stAllSwitched(bool) override;
 
     // Timer callback (called from UI thread)
