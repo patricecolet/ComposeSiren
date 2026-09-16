@@ -43,6 +43,8 @@ target_sources(ComposeSirenCore
   lib/wrappers/SirenVoice.cpp
   lib/wrappers/SirenEnsemble.cpp
 
+  lib/net/SirenLink.cpp
+
   Components/SirenStripComponent.cpp
   Components/SirenTrackComponent.cpp
   Components/ReverbStripComponent.cpp
@@ -70,6 +72,11 @@ target_link_libraries(ComposeSirenCore
     juce::juce_recommended_config_flags
     juce::juce_recommended_lto_flags
 )
+
+if(WIN32)
+  # sockets de lib/net/SirenLink
+  target_link_libraries(ComposeSirenCore PRIVATE ws2_32)
+endif()
 
 # If we need additional global compile defs, put them here
 #target_compile_definitions(ComposeSirenCore
