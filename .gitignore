@@ -34,3 +34,6 @@ MyConfig.cmake
 # handy ignored tmp folder
 tmp/
 
+
+# sauvegarde locale des donnees d origine (575 Mo), jamais a commiter
+Resources-orig/
