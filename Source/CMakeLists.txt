@@ -92,6 +92,10 @@ function(add_plugin_variant TARGET_NAME PLUGIN_CODE BUNDLE_ID)
     target_sources(${TARGET_NAME} PRIVATE "Plugins/SirenOrchestra/AboutDialog.cpp")
   endif()
 
+  if(COMPOSESIREN_SIREN_WAVES)
+    target_link_libraries(${TARGET_NAME} PRIVATE juce::juce_opengl)
+  endif()
+
   if(COMPOSESIREN_MCP AND TARGET ${TARGET_NAME}_Standalone)
     target_sources(${TARGET_NAME}_Standalone
       PRIVATE

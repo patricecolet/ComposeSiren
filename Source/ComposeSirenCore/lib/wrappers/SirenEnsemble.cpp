@@ -29,6 +29,13 @@ void SirenTrack::setOutputGain(float g) { gain.store(g, std::memory_order_relaxe
 // call this at the beginning of the audio callback
 void SirenTrack::beginProcessBlock() {
     SirenVoice::beginProcessBlock();
+#if COMPOSESIREN_SIREN_WAVES
+    if (samples > 0) {
+        level.store(static_cast<float>(std::sqrt(squares / samples)), std::memory_order_relaxed);
+        squares = 0.0;
+        samples = 0;
+    }
+#endif
     gr.setTarget(gain.load(std::memory_order_relaxed));
     pr.setTarget(panning.load(std::memory_order_relaxed));
 }
@@ -39,6 +46,10 @@ void SirenTrack::process(float *l, float* r) {
     // only recompute panning gains if needed (i.e if we are ramping) :
     if (pr.process(p)) { computePanningGains(); }
     float s = SirenVoice::process() * g;
+#if COMPOSESIREN_SIREN_WAVES
+    squares += static_cast<double>(s) * s;
+    ++samples;
+#endif
     *l = s * lp;
     *r = s * rp;
 }

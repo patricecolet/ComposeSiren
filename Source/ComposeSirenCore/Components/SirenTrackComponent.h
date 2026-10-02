@@ -49,6 +49,13 @@ class SirenTrackComponent : public juce::Component,
         void mouseDown(const juce::MouseEvent&) override {
             if (isMouseOver()) { sirenTrack->onTitleLabelClicked(); }
         }
+        // empty while the waves draw the name: only the hover background,
+        // not the look and feel's (transparent) outline, costly through OpenGL
+        void paint(juce::Graphics& g) override {
+            if (getText().isNotEmpty()) { juce::Label::paint(g); return; }
+            const auto bg = findColour(juce::Label::backgroundColourId);
+            if (!bg.isTransparent()) { g.fillAll(bg); }
+        }
     };
 
 public:
@@ -88,6 +95,14 @@ public:
     void setShowTextBox(bool s);
     void setBackgroundColour(juce::Colour c);
     void setBackgroundStripColour(juce::Colour c);
+    juce::Colour getBackgroundColour() const { return backgroundColour; }
+
+    // the coloured cell holding the siren's name, in this component
+    juce::Rectangle<float> getTitleArea() const;
+    // false when the editor paints the cell beneath (COMPOSESIREN_SIREN_WAVES):
+    // the cell's colour, and the name, which the label then leaves out
+    void setTitleFillVisible(bool v);
+    juce::String getTitleText() const { return titleText; }
 
     bool getSelected() const;
     void setSelected(bool s);
@@ -105,6 +120,8 @@ private:
     Selection selection;
     bool selected = false;
     bool isPlayingNote = false;
+    bool titleFillVisible = true;
+    juce::String titleText;
 
     juce::Colour backgroundColour{juce::Colours::black};
     juce::Colour backgroundStripColour{juce::Colour{0xff314159}};

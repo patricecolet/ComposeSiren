@@ -93,6 +93,7 @@ public:
     struct State {
         bool isNoteOn { false };
         float currentPitch { 0.0f };
+        float level { 0.0f }; // output RMS of the last block (COMPOSESIREN_SIREN_WAVES)
     };
 
     //--------------------------------------------------------------------------
@@ -162,6 +163,10 @@ public:
     // from a Timer callback to trigger notifications (calls
     // getIsNoteOn and getCurrentPitch under the hood)
     void notifyListeners();
+
+protected:
+    // output level reported to the listeners (SirenTrack measures it)
+    virtual float getLevel() { return 0.0f; }
 
 private:
     bool getIsNoteOn();

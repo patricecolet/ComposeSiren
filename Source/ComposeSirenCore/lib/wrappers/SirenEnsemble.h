@@ -28,6 +28,13 @@ class SirenTrack : public SirenVoice
     float lp{0.0f};
     float rp{0.0f};
 
+#if COMPOSESIREN_SIREN_WAVES
+    // output RMS of the previous block (after the gain, before the panning)
+    double squares{0.0};
+    int samples{0};
+    std::atomic<float> level{0.0f};
+#endif
+
 public:
     SirenTrack(sirenId id, const std::string& resourcesPath);
     ~SirenTrack() override = default;
@@ -41,6 +48,11 @@ public:
 
     // call this for each sample during the audio callback
     void process(float *l, float* r);
+
+protected:
+#if COMPOSESIREN_SIREN_WAVES
+    float getLevel() override { return level.load(std::memory_order_relaxed); }
+#endif
 
 private:
     // we can add sqrt panning law and others later if we like

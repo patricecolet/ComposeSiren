@@ -127,6 +127,41 @@ target_link_libraries(ComposeSirenCore
 )
 
 # ------------------------------------------------------------------------------
+# Generated metadata, committed: the settings and the waves need it. Generated
+# from mecaviv-dev-root/resources/metadata; mecaviv members regenerate it with
+# `franz doctor fix meta`, and `franz doctor meta` tells when it drifts.
+
+if(COMPOSESIREN_SETTINGS OR COMPOSESIREN_SIREN_WAVES)
+  foreach(_generated SirenMetadata.h SettingsMetadata.h)
+    if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/lib/definitions/generated/${_generated}")
+      message(FATAL_ERROR
+        "Source/ComposeSirenCore/lib/definitions/generated/${_generated} is missing. "
+        "It is committed: restore it from git (mecaviv members can also regenerate it "
+        "with `franz doctor fix meta`).")
+    endif()
+  endforeach()
+  target_sources(ComposeSirenCore PRIVATE lib/settings/Settings.cpp)
+endif()
+
+if(COMPOSESIREN_SETTINGS)
+  target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_SETTINGS=1)
+  target_sources(ComposeSirenCore PRIVATE lib/settings/SettingsDialog.cpp)
+else()
+  target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_SETTINGS=0)
+endif()
+
+if(COMPOSESIREN_SIREN_WAVES)
+  target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_SIREN_WAVES=1)
+  target_sources(ComposeSirenCore PRIVATE Components/waves/SirenWaveColumn.cpp)
+  target_link_libraries(ComposeSirenCore PRIVATE juce::juce_opengl)
+  # Debug builds read the shader from here and reload it when it is saved
+  target_compile_definitions(ComposeSirenCore PRIVATE
+    $<$<CONFIG:Debug>:COMPOSESIREN_WAVES_SHADER_DIR=${CMAKE_SOURCE_DIR}/Assets/shaders>)
+else()
+  target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_SIREN_WAVES=0)
+endif()
+
+# ------------------------------------------------------------------------------
 # Park bridge: compiled only when COMPOSESIREN_PARK_BRIDGE is ON. Then
 # SirenLink, or the mecaviv-bridge Rust library (see root CMakeLists.txt).
 # SirenUdpBridge.h picks the matching implementation from
