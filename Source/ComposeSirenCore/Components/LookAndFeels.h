@@ -39,6 +39,39 @@ constexpr float knobIndicatorOffThickness{2};
 constexpr float knobIndicatorOnThickness{4};
 }
 
+// SHADOWS /////////////////////////////////////////////////////////////////////
+
+// juce::DropShadow::drawForPath blurs on the CPU at every paint, and under the
+// OpenGL renderer it first reads the GPU image back: that made every knob
+// update expensive. A shadow only depends on the shape (`kind`), its size and
+// the display scale, so it is rendered once into a software image and reused.
+// Painting is serialised by the message manager lock, so one cache is enough.
+inline void drawCachedDropShadow(juce::Graphics& g, const juce::DropShadow& ds,
+                                 const juce::Path& path, int kind)
+{
+    const auto bounds = path.getBounds();
+    const float scale = g.getInternalContext().getPhysicalPixelScaleFactor();
+    const auto key = std::make_tuple(kind, juce::roundToInt(bounds.getWidth() * 16.0f),
+                                     juce::roundToInt(bounds.getHeight() * 16.0f),
+                                     juce::roundToInt(scale * 100.0f), ds.radius,
+                                     ds.offset.x, ds.offset.y, ds.colour.getARGB());
+    static std::map<decltype(key), juce::Image> cache;
+
+    const auto area = bounds.expanded(static_cast<float>(ds.radius + juce::jmax(std::abs(ds.offset.x),
+                                                                                std::abs(ds.offset.y)) + 2));
+    auto& image = cache[key];
+    if (!image.isValid()) {
+        image = juce::Image(juce::Image::ARGB,
+                            juce::jmax(1, static_cast<int>(std::ceil(area.getWidth() * scale))),
+                            juce::jmax(1, static_cast<int>(std::ceil(area.getHeight() * scale))),
+                            true, juce::SoftwareImageType());
+        juce::Graphics ig(image);
+        ig.addTransform(juce::AffineTransform::translation(-area.getX(), -area.getY()).scaled(scale));
+        ds.drawForPath(ig, path);
+    }
+    g.drawImage(image, area, juce::RectanglePlacement::stretchToFit);
+}
+
 // MIDI KEYBOARD ///////////////////////////////////////////////////////////////
 
 class MidiKeyboardLookAndFeel : public juce::LookAndFeel_V3
@@ -692,7 +725,7 @@ public:
         // g.reduceClipRegion(ellipsis);
 
         juce::DropShadow ds(juce::Colours::black, 10, {3, 2});
-        ds.drawForPath(g, shadowPath);
+        drawCachedDropShadow(g, ds, shadowPath, 1); // an ellipse
         //-----------------------------------------------------
 
         // actual white circle bg
@@ -864,7 +897,7 @@ public:
         // g.reduceClipRegion(ellipsis);
 
         juce::DropShadow ds(juce::Colours::black, 10, {3, 2});
-        ds.drawForPath(g, shadowPath);
+        drawCachedDropShadow(g, ds, shadowPath, 1); // an ellipse
         //-----------------------------------------------------
 
         // actual white circle bg
