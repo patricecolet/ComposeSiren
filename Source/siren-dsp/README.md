@@ -30,6 +30,21 @@ ComposeSiren's synthesis in Rust:
   `.sirendata`, the same values).
 - `ffi`: a C ABI (`sdsp_*`) for C, C++ or anything that calls C.
 
+## In the plugin
+
+Configure with `-DCOMPOSESIREN_RUST_DSP=ON` (default OFF). The plugin's voice
+(`Source/ComposeSirenCore/lib/wrappers/SirenVoice`) then plays this crate's synthesis in place
+of the C++ `Sirene` when the global `dsp.variant` setting names a Rust variant (`cpp`, the
+default, keeps the C++ one), on the `dsp.dataset` data set: `<resources>/<dataset>/` when the
+build ships it, else the resources folder. The plugin's C++ MIDI handling drives it, through
+`include/siren_dsp_plugin.h` (`src/plugin.rs`); the data is loaded once per folder and shared by
+every voice. A change applies to the sirens loaded after it. Without the settings,
+`COMPOSESIREN_DSP_VARIANT` and `COMPOSESIREN_DSP_DATASET` pick them.
+
+With `-DBUILD_TESTING=ON`, `ctest -R rust-dsp-parity` checks that `cpp` and `rust-exact` give
+the same samples, bit for bit, through the voice (every siren, 44.1 and 48 kHz), and that the
+other variants play.
+
 ## Tests
 
 ```sh
