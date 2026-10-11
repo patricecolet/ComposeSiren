@@ -8,6 +8,24 @@ ComposeSiren's synthesis in Rust:
 - the variants on the same voice: frame control that walks each note's frames (`FrameControl::Lab`,
   speed, interpolation, freeze), the trio of data notes around the pitch (`Trio`: kernels, gains,
   edges, tuning), and `layout` / `kernels`, a cache-friendly layout with faster partial sums.
+- `settings`: `DspSettings`, every switch of the Rust voice keyed by id (`dsp.timing`,
+  `frames.legacy`, `frames.speed`, `frames.interpolate`, `synth.crossfade`, `synth.bit16`,
+  `synth.glide`, `synth.smoothing`, `trio.kernel`, `trio.gains`, `trio.edge`, `trio.scale_frames`,
+  `trio.lock`, `trio.spacing`, `trio.origin`, `trio.envelope`, `trio.envelope_at_harmonic`), set
+  from text and applied to a voice. The defaults are the plugin's behaviour (bit-exact).
+- `variants`: the named variants, an engine and settings over the defaults:
+
+  | id | engine | what |
+  |---|---|---|
+  | `cpp` | C++ | the plugin's DSP (the default) |
+  | `rust-exact` | Rust | the port, bit-exact with `cpp` |
+  | `rust-time` | Rust | timers and frames in seconds: the same at 44.1 kHz, right at other rates |
+  | `frames` | Rust | each note loops over its frames (no plugin frame reset) |
+  | `trio` | Rust | three data notes around the pitch, B-spline weights, phase-locked |
+  | `trio-linear` | Rust | the two notes around the pitch, phase-locked |
+  | `trio-nearest` | Rust | the nearest note alone, pitch-shifted |
+
+  DSP variant and data set are app settings (global), not host-automatable parameters.
 - `data`: the data sets through [`siren-data`](../siren-data) (raw `Resources/` or compact
   `.sirendata`, the same values).
 - `ffi`: a C ABI (`sdsp_*`) for C, C++ or anything that calls C.

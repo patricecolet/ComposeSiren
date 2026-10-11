@@ -127,13 +127,13 @@ pub struct Trio {
     /// (E(f · ratio) / E(f))^envelope, E the spectral envelope of its note
     /// ([`Envelope`]). 0: the levels follow the harmonic number (a source
     /// scaling with the period); 1: they stay where they are in frequency (a
-    /// fixed filter, what timbre-report.md finds closer). The note's f0 for E
+    /// fixed filter, which sounds closer). The note's f0 for E
     /// is its nominal pitch with `tuning` and `octave`
     pub envelope: f64,
     /// With `lock`: read the envelope correction at the harmonic each partial
     /// sounds on (h·F at the target, h·F/ratio in its note) instead of at the
     /// slot's own frequency, so the frames' frequency jitter and slot swaps do
-    /// not move the correction (sparse-report.md's motion)
+    /// not move the correction
     pub harmonic_envelope: bool,
 }
 
@@ -238,8 +238,7 @@ impl Bank {
 
 /// A note's spectral envelope, for `Trio::envelope`: the level of each harmonic
 /// over the note's loop (the energy of the slots nearest to it, from their
-/// mean amplitude and amplitude-weighted mean frequency, as
-/// scripts/timbre-model.fsx does), joined linearly in dB over log-frequency
+/// mean amplitude and amplitude-weighted mean frequency), joined linearly in dB over log-frequency
 /// through the harmonics that have energy (a missing harmonic is a gap
 /// bridged, not a notch), flat past the first and the last.
 #[derive(Clone, Debug, PartialEq)]
