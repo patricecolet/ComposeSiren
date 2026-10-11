@@ -1,0 +1,16 @@
+[package]
+name = "siren-data"
+version = "0.1.0"
+description = "Loads ComposeSiren's siren data sets, raw (Resources/) or compact (.sirendata), as the C++ DSP sees them"
+edition = "2024"
+rust-version = "1.88"
+license = "GPL-3.0-or-later"
+publish = false
+
+# A standalone package inside ComposeSiren, not a member of any workspace.
+[workspace]
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
