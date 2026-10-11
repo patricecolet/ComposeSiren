@@ -3,9 +3,9 @@
 //! for bit, `rust-time` is `rust-exact` at 44.1 kHz, and the settings refuse what they don't know.
 
 use siren_dsp::Library;
-use siren_dsp::settings::{DspSettings, Engine};
+use siren_dsp::settings::{DspSettings, Engine, variant};
 use siren_dsp::siren::SirenId;
-use siren_dsp::variants::{VARIANTS, variant};
+use siren_dsp::variants::{DATASETS, SWITCHES, VARIANTS};
 use siren_dsp_oracle::CppVoice;
 
 fn render(lib: &Library, id: SirenId, s: &DspSettings, sr: f64, note: i32, samples: usize) -> Vec<f32> {
@@ -82,4 +82,18 @@ fn settings_refuse_what_they_do_not_know() {
     assert!(s.trio.is_some());
     s.set("trio.kernel", "off").unwrap();
     assert!(s.trio.is_none());
+}
+
+/// The generated tables agree with this crate: the metadata's switches are exactly the keys
+/// `DspSettings` knows, each default parses, and the default data set is the fixed one.
+#[test]
+fn the_metadata_matches_the_settings() {
+    let ids: Vec<&str> = SWITCHES.iter().map(|s| s.id).collect();
+    assert_eq!(ids, DspSettings::KEYS, "siren-dsp-switches.csv against DspSettings::KEYS");
+    let mut s = DspSettings::default();
+    for w in SWITCHES {
+        s.set(w.id, w.default).unwrap_or_else(|e| panic!("{e}"));
+    }
+    assert_eq!(DATASETS[0].id, "fixed");
+    assert!(siren_dsp::settings::dataset("raw").is_some());
 }

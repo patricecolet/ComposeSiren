@@ -193,14 +193,16 @@ impl DspSettings {
     }
 }
 
-/// A named variant: an engine and the settings it runs with.
+/// A named variant: an engine and the settings it runs with (`variants.rs`, generated).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Variant {
     pub id: &'static str,
-    /// `cpp`: the plugin's C++ DSP (nothing here runs); `rust`: this crate's voice
+    pub label: &'static str,
+    /// `Cpp`: the plugin's C++ DSP (nothing here runs); `Rust`: this crate's voice
     pub engine: Engine,
     /// switch id = value pairs over [`DspSettings::default`]
     pub settings: &'static [(&'static str, &'static str)],
+    pub description: &'static str,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -213,4 +215,40 @@ impl Variant {
     pub fn dsp_settings(&self) -> Result<DspSettings, SettingError> {
         DspSettings::from_pairs(self.settings.iter().copied())
     }
+}
+
+/// A data set the DSP can play (`variants.rs`, generated).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Dataset {
+    pub id: &'static str,
+    pub label: &'static str,
+    pub processing: Processing,
+    pub description: &'static str,
+}
+
+/// How a data set comes from `Resources/`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Processing {
+    /// the files as recorded
+    None,
+    /// through the crossfade fix (`ResourcesProcessing/fix_data.fsx`)
+    FixData,
+}
+
+/// A switch of the voice and its default in the shared metadata, as text (the metadata's
+/// defaults are those of the exploration tools; [`DspSettings::default`] is the plugin's).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Switch {
+    pub id: &'static str,
+    pub default: &'static str,
+}
+
+/// The variant called `id`.
+pub fn variant(id: &str) -> Option<&'static Variant> {
+    crate::variants::VARIANTS.iter().find(|v| v.id == id)
+}
+
+/// The data set called `id`.
+pub fn dataset(id: &str) -> Option<&'static Dataset> {
+    crate::variants::DATASETS.iter().find(|d| d.id == id)
 }
