@@ -12,6 +12,7 @@ pub mod ffi;
 pub mod kernels;
 pub mod layout;
 pub mod midi_in;
+pub mod plugin;
 pub mod settings;
 pub mod variants;
 pub mod siren;

@@ -5,7 +5,7 @@
 //! plugin's own behaviour: a voice with `DspSettings::default()` applied is bit-exact with the C++
 //! DSP (`tests/oracle.rs`).
 
-use crate::sirene::{Edge, FrameControl, Gains, Kernel, LabFrames, Timing, Trio, Voice};
+use crate::sirene::{Edge, FrameControl, Gains, Kernel, LabFrames, Sirene, Timing, Trio, Voice};
 use std::fmt;
 
 /// Every switch, with the plugin's behaviour as the default.
@@ -171,7 +171,13 @@ impl DspSettings {
     pub fn apply(&self, v: &mut Voice) {
         v.set_timing(self.timing);
         v.glide = self.glide;
-        let s = &mut v.siren;
+        self.apply_synthesis(&mut v.siren);
+    }
+
+    /// What `apply` sets on the synthesis alone (not the timing, nor the glide, which live in
+    /// the voice): for a host that drives a bare [`Sirene`] with its own MIDI handling. Set the
+    /// timing with [`Sirene::set_timing`] before the sample rate.
+    pub fn apply_synthesis(&self, s: &mut Sirene) {
         if let Some(on) = self.crossfade {
             s.set_crossfade(on);
         }
