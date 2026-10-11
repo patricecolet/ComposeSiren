@@ -1,2 +1,0 @@
-# stable API, large enough python version support (from 3.9 to 3.14+)
-numpy>=1.22,<3.0

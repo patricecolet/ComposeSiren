@@ -35,6 +35,29 @@ used to model the sirens' audio.
 
 
 
+# The crossfade fix (`fix_data.fsx`)
+
+With `PROCESS_RESOURCES=ON` (the default) the build does not ship `Resources/` itself but
+a fixed copy, written to `<build>/Resources-processed` by `fix_data.fsx` (`FixData.fs`):
+
+1. the partials are re-indexed by physical harmonic number, slot `h` holding harmonic `h+1`
+   of the data set's grid fundamental (on a collision the stronger one is kept);
+2. the frequencies are set to exact harmonics `f0*(h+1)`, keeping the amplitudes.
+
+Every step between adjacent notes is then exactly a semitone for every harmonic, so the
+plugin's crossfade between notes no longer produces ghost frequencies. The grid is detected per
+data set by an amplitude-weighted vote (S7 sits an octave above the others). `Resources/` is
+only read.
+
+```sh
+dotnet fsi ResourcesProcessing/fix_data.fsx [--resources <dir>] [--output <dir>] [--dry-run]
+dotnet fsi ResourcesProcessing/tests/fix-data.fsx    # output vs tests/fix-data-expected.sha256
+```
+
+The F# replaced an earlier numpy script; `tests/fix-data-expected.sha256` is that script's
+output on the current `Resources/`, which the F# reproduces byte for byte (about 2 s for all
+data sets).
+
 # The compact format
 
 [compact-format.md](compact-format.md): an optional, lossless single-file packing of each data

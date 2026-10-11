@@ -200,7 +200,7 @@ endif()
 add_custom_target(dist DEPENDS ${COMPONENTS_LIST})
 
 if(PROCESS_RESOURCES)
-    add_dependencies(dist run_py_resources)
+    add_dependencies(dist process_resources)
 endif()
 
 add_custom_command(TARGET dist POST_BUILD

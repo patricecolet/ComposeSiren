@@ -54,7 +54,7 @@ endforeach()
 
 add_custom_target(package DEPENDS ${ALL_TARGETS})
 if(PROCESS_RESOURCES)
-    add_dependencies(package run_py_resources)
+    add_dependencies(package process_resources)
 endif()
 
 add_custom_command(

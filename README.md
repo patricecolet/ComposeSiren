@@ -45,8 +45,9 @@ files required for the simulation.
 The project is based on `CMake`.
 
 In order to build it, you should have **`CMake 3.22+`**,
-a **`C++20`** compiler, and (for optional Resource files processing build step)
-**`Python 3`** installed on your system.  
+a **`C++20`** compiler, and (for the Resource files processing build step, on by default
+with `PROCESS_RESOURCES`) the **`.NET SDK`** (8 or later, for `dotnet fsi`) installed on your
+system; configure with `-DPROCESS_RESOURCES=OFF` to build without it from the original files.  
 It is also recommended to have `Ninja` but you can use `XCode` and
 `Visual Studio` generators for MacOS and Windows respectively.
 You will also need `NSIS` for Windows installer generation.
