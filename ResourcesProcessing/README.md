@@ -34,3 +34,13 @@ used to model the sirens' audio.
 
 
 
+
+# The compact format
+
+[compact-format.md](compact-format.md): an optional, lossless single-file packing of each data
+set (603 MB → 57 MB), unpacked back to the raw files byte for byte. F# tools (.NET SDK):
+
+```sh
+dotnet fsi ResourcesProcessing/compact.fsx pack Resources <out dir>
+dotnet fsi ResourcesProcessing/tests/compact-roundtrip.fsx
+```
