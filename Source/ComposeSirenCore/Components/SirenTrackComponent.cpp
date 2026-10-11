@@ -19,6 +19,7 @@ SirenTrackComponent::SirenTrackComponent(sirenId sid,
     std::string title = sirenTitleById.at(sid)
                         + "\nch"
                         + std::to_string(sirenPropertiesById.at(sid)->oneBasedMidiChannel.oneBased);
+    titleText = title;
     titleLabel.setText(title, juce::dontSendNotification);
     titleLabel.setJustificationType(juce::Justification::centred);
     titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
@@ -70,14 +71,30 @@ SirenTrackComponent::~SirenTrackComponent()
     listeners.clear();
 }
 
-void SirenTrackComponent::paint(juce::Graphics& g)
+juce::Rectangle<float> SirenTrackComponent::getTitleArea() const
 {
     auto area = getLocalBounds().toFloat();
-
     area = area.removeFromRight(controlStripLayout::titleAreaWidth);
-    area -= { controlStripLayout::spacerSize, 0 };
-    g.setColour(backgroundColour);
-    g.fillRoundedRectangle(area, controlStripLayout::cornerSize);
+    return area - juce::Point<float>{ controlStripLayout::spacerSize, 0 };
+}
+
+void SirenTrackComponent::setTitleFillVisible(bool v)
+{
+    if (v != titleFillVisible) {
+        titleFillVisible = v;
+        // an empty label: nothing to lay out at every frame of the waves
+        titleLabel.setText(v ? titleText : juce::String(), juce::dontSendNotification);
+        repaint();
+    }
+}
+
+void SirenTrackComponent::paint(juce::Graphics& g)
+{
+    const auto area = getTitleArea();
+    if (titleFillVisible) {
+        g.setColour(backgroundColour);
+        g.fillRoundedRectangle(area, controlStripLayout::cornerSize);
+    }
 
     // draw midi note playing monitor led
     float ledAreaWidth = 16;

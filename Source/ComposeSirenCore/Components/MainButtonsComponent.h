@@ -68,12 +68,9 @@ public:
 #if !COMPOSESIREN_PARK_BRIDGE
         juce::ignoreUnused(hasStAll);
 #endif
-        // Secondary actions live in one Menu so the 30px top bar stays readable
+        // Secondary actions live in one hamburger so the 30px top bar stays readable
         // when Settings, Record, About and Reset All are all present.
-        menuButton.setColour(juce::TextButton::buttonColourId, juce::Colour { 0xff37474f });
-        menuButton.setColour(juce::TextButton::textColourOffId, juce::Colours::whitesmoke);
-        menuButton.setButtonText("Menu");
-        menuButton.setTooltip("Settings, Record, resources directory, About");
+        menuButton.setTooltip("Menu");
         menuButton.onClick = [this] { showMenu(); };
         addAndMakeVisible(menuButton);
 
@@ -90,9 +87,6 @@ public:
             resetAllButton.addListener(this);
             addAndMakeVisible(resetAllButton);
         }
-
-        selectResourcesButton.setButtonText("Set resources directory");
-        selectResourcesButton.addListener(this);
 
 #if COMPOSESIREN_PARK_BRIDGE
         if (hasStAllSwitch) {
@@ -179,7 +173,7 @@ public:
         if (hasResetAllButton)
             add(resetAllButton, 88.f);
         add(resetButton, 70.f);
-        add(menuButton, 64.f);
+        add(menuButton, btnsHeight + 10.f);
 
         fb.performLayout(bounds);
     }
@@ -311,26 +305,6 @@ public:
             listener.resetSiren(std::nullopt);
             return;
         }
-
-        if (btn == &selectResourcesButton) {
-            const std::string resourcesPath = listener.getResourcesPath();
-            fileChooser = std::make_unique<juce::FileChooser>(
-                "Select a file", juce::File(resourcesPath), ""
-            );
-
-            auto flags =
-                juce::FileBrowserComponent::openMode
-                | juce::FileBrowserComponent::canSelectDirectories;
-
-            fileChooser->launchAsync(flags,[this](const juce::FileChooser& chooser) {
-                juce::File newResourcesPath = chooser.getResult();
-                listener.selectedNewResourcesPath(
-                    juce::File::addTrailingSeparator(
-                        newResourcesPath.getFullPathName()
-                    ).toStdString()
-                );
-            });
-        }
     }
 
     void showMenu()
@@ -340,21 +314,59 @@ public:
         menu.addItem("Settings...", [this] { cs::SettingsDialog::show(getTopLevelComponent()); });
 #endif
 #if COMPOSESIREN_RECORD
-        if (listener.getRecorder() != nullptr)
-            menu.addItem("Record...", [this] {
-                if (auto* recorder = listener.getRecorder())
-                    RecordDialog::show(*recorder, getTopLevelComponent());
-            });
+        if (auto* recorder = listener.getRecorder())
+            menu.addItem("Record...", [this, recorder] { RecordDialog::show(*recorder, getTopLevelComponent()); });
 #endif
 #if COMPOSESIREN_DEV_BUILD
-        menu.addItem("Set resources directory...", [this] { buttonClicked(&selectResourcesButton); });
+        menu.addItem("Set resources directory...", [this] { chooseResourcesDirectory(); });
 #endif
-        if (listener.hasAbout())
+        if (listener.hasAbout()) {
+            menu.addSeparator();
             menu.addItem("About...", [this] { listener.showAbout(getTopLevelComponent()); });
+        }
         menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&menuButton));
     }
 
+    void chooseResourcesDirectory()
+    {
+        const std::string resourcesPath = listener.getResourcesPath();
+        fileChooser = std::make_unique<juce::FileChooser>(
+            "Select a file", juce::File(resourcesPath), ""
+        );
+
+        auto flags =
+            juce::FileBrowserComponent::openMode
+            | juce::FileBrowserComponent::canSelectDirectories;
+
+        fileChooser->launchAsync(flags,[this](const juce::FileChooser& chooser) {
+            juce::File newResourcesPath = chooser.getResult();
+            listener.selectedNewResourcesPath(
+                juce::File::addTrailingSeparator(
+                    newResourcesPath.getFullPathName()
+                ).toStdString()
+            );
+        });
+    }
+
 private:
+    class HamburgerButton : public juce::Button
+    {
+    public:
+        HamburgerButton() : juce::Button("Menu") {}
+        void paintButton(juce::Graphics& g, bool highlighted, bool down) override
+        {
+            auto area = getLocalBounds().toFloat().reduced(0.5f);
+            g.setColour(juce::Colour { 0xff37474f }.brighter(down ? 0.3f : highlighted ? 0.15f : 0.0f));
+            g.fillRoundedRectangle(area, 4.0f);
+            g.setColour(juce::Colours::whitesmoke);
+            const float w = juce::jmin(16.0f, area.getWidth() - 10.0f);
+            const float gap = juce::jmin(5.0f, area.getHeight() / 5.0f);
+            const auto c = area.getCentre();
+            for (int i = -1; i <= 1; ++i)
+                g.fillRoundedRectangle(c.x - w / 2, c.y + float(i) * gap - 1.0f, w, 2.0f, 1.0f);
+        }
+    };
+
     Listener& listener;
 
     std::optional<sirenId> currentSirenId{std::nullopt};
@@ -363,10 +375,9 @@ private:
     bool hasStAllSwitch{false};
 #endif
 
-    juce::TextButton menuButton;
+    HamburgerButton menuButton;
     juce::TextButton resetButton;
     juce::TextButton resetAllButton;
-    juce::TextButton selectResourcesButton;
 #if COMPOSESIREN_PARK_BRIDGE
     juce::ToggleButton physicalButton;
     juce::ToggleButton stAllButton;

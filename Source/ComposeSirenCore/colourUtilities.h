@@ -8,6 +8,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "lib/definitions/palette.h"
 #include "lib/definitions/sirenProperties.h"
+#include "lib/definitions/generated/SirenMetadata.h"
 
 static inline std::vector<juce::Colour> makeHslInterpolatedPalette(
     juce::Colour start,
@@ -50,5 +51,16 @@ inline const std::map<sirenId, juce::Colour> sirenColourById = []() {
     return res;
 }();
 
+
+// Each siren's own colour (the waves, the keyboard), from the siren metadata:
+// mecaviv-dev-root/resources/metadata/sirens.csv, generated into SirenMetadata.h.
+inline const std::map<sirenId, juce::Colour> sirenAccentColourById = []() {
+    std::map<sirenId, juce::Colour> res;
+    for (const auto& [id, strId] : sirenStrIdById)
+        for (const auto& s : mecaviv::metadata::sirens)
+            if (s.id == strId)
+                res.emplace(id, juce::Colour(s.colourArgb));
+    return res;
+}();
 
 #endif //COMPOSESIREN_COLOURUTILITIES_H

@@ -15,6 +15,10 @@
 #include <Components/ClicPane.h>
 #endif
 #include "PluginProcessor.h"
+#if COMPOSESIREN_SIREN_WAVES
+#include <juce_opengl/juce_opengl.h>
+#include <Components/waves/SirenWaveColumn.h>
+#endif
 
 constexpr std::array<sirenId, 7> sirenOrder = { S7, S6, S5, S2, S1, S4, S3 };
 
@@ -146,6 +150,10 @@ class SirenOrchestraPluginEditor : public juce::AudioProcessorEditor,
 #if COMPOSESIREN_PARK_BRIDGE
                                    , private juce::Timer
 #endif
+#if COMPOSESIREN_SIREN_WAVES
+                                   , private SirenStateMonitor::Listener
+                                   , private cs::Settings::Listener
+#endif
 {
 public:
     SirenOrchestraPluginEditor(SirenOrchestraPluginProcessor&);
@@ -186,6 +194,52 @@ private:
     // uses sirenTracks as menu items and provides callback
     SirenStripMenu sirenStripMenu;
     juce::Colour bottomColour;
+
+#if COMPOSESIREN_SIREN_WAVES
+    // The waves in the title cells (see SirenWaveColumn). The cells are
+    // painted by paint(), beneath the tracks, which then draw the names, the
+    // LEDs and the selection on top. Overflow paints what goes past the
+    // cells, over the strips.
+    class WavesOverflow : public juce::Component
+    {
+    public:
+        explicit WavesOverflow(SirenOrchestraPluginEditor& e) : editor(e)
+        {
+            setInterceptsMouseClicks(false, false);
+        }
+        void paint(juce::Graphics& g) override;
+    private:
+        SirenOrchestraPluginEditor& editor;
+    };
+
+    // SirenStateMonitor::Listener
+    void currentSirenState(const sirenId, const SirenVoice::State&) override;
+    // cs::Settings::Listener
+    void settingChanged(cs::Settings::Id) override;
+
+    void updateWavesSetup();
+    void updateWaveCells();
+    void advanceWaves(double now);
+    juce::Rectangle<int> waveColumnBounds() const;
+
+    juce::SharedResourcePointer<cs::Settings> settings;
+    cs::waves::Tuning waveTuning;
+    cs::waves::SirenWaveColumn waveColumn;
+    WavesOverflow wavesOverflow { *this };
+    juce::OpenGLContext glContext;
+    std::unique_ptr<juce::VBlankAttachment> vblank;
+    double lastWaveFrame = 0.0;
+    bool wavesMoving = false;
+
+    // COMPOSESIREN_WAVES_STATS=1 in the environment: once a second on stderr,
+    // the animation and paint rates, the cells' paint time, each siren's peak level
+    struct WaveStats {
+        bool on = false;
+        int frames = 0, paints = 0;
+        double paintMs = 0.0, paintMaxMs = 0.0, since = 0.0;
+        std::map<sirenId, float> peakDb;
+    } waveStats;
+#endif
 };
 
 

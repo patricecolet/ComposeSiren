@@ -116,13 +116,15 @@ public:
 
         for (auto i = 0; i < sirenStates.size(); ++i) {
             const auto& id = sortedSirenStateIds[i];
-            const auto& [ isNoteOn, currentPitch ] = sirenStates[id];
+            const auto& state = sirenStates[id];
+            const bool isNoteOn = state.isNoteOn;
+            const float currentPitch = state.currentPitch;
             float pos = getPositionFromFloatNote(currentPitch);
             area = area.withCentre({pos, y})
                        .withSizeKeepingCentre(s, s)
                        .reduced((hasFgSiren && i < sirenStates.size() - 1) ? 1 : 0);
             float alpha = isNoteOn ? 0.12f : 0.5f;
-            g.setColour(sirenColourById.at(id));
+            g.setColour(sirenAccentColourById.at(id));
             g.fillEllipse(area);
             g.setColour(juce::Colours::white.withAlpha(alpha));
             g.fillEllipse(area.reduced(2));
@@ -372,14 +374,14 @@ private:
                 const sirenId id = it->second->id;
                 const auto& active = sirenStateMonitor.getActiveSirenIds();
                 if (std::find(active.begin(), active.end(), id) != active.end()) {
-                    c = sirenColourById.at(id);
+                    c = sirenAccentColourById.at(id);
                     return true;
                 }
             }
         }
 
         if (currentSirenId.has_value()) {
-            c = sirenColourById.at(*currentSirenId);
+            c = sirenAccentColourById.at(*currentSirenId);
             return true;
         }
 

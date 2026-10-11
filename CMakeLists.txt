@@ -180,6 +180,17 @@ composesiren_option(COMPOSESIREN_SONG_TITLE
         "Song title bar: show the playing song (MCP set_song_title / clear_song_title)"
         OFF)
 
+# DEAL WITH THE SIREN WAVES ####################################################
+# Animated waves in SirenOrchestra's siren title cells, following each siren's
+# output level and pitch, in the sirens' colours from the siren metadata
+# (generated/SirenMetadata.h, committed). OpenGL (juce_opengl, Assets/shaders/
+# SirenWave.frag) with a software fallback. Tuned by the waves.* settings
+# (COMPOSESIREN_SETTINGS). See Source/ComposeSirenCore/Components/waves.
+
+composesiren_option(COMPOSESIREN_SIREN_WAVES
+        "Animated waves in SirenOrchestra's title cells (OpenGL, software fallback)"
+        OFF)
+
 #set(PLUGIN_TARGETS OneSiren)
 set(PLUGIN_TARGETS OneSiren SirenOrchestra)
 #set(PLUGIN_TARGETS CustomMix)
