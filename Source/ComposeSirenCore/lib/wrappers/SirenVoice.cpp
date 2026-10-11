@@ -4,8 +4,13 @@
 
 #include <ranges>
 #include "SirenVoice.h"
+#include <cstdio>
 
+#if COMPOSESIREN_RUST_DSP
+SirenVoiceUnit::SirenVoiceUnit(sirenId sid, const std::string& resourcesPath, const cs::DspChoice& choice) :
+#else
 SirenVoiceUnit::SirenVoiceUnit(sirenId sid, const std::string& resourcesPath) :
+#endif
     id(sid),
     sampleCountForMidiInTimer(0),
     setNoteSampleCounter(0)
@@ -19,6 +24,25 @@ SirenVoiceUnit::SirenVoiceUnit(sirenId sid, const std::string& resourcesPath) :
     // is the legacy DSP code the source of truth ? this means JUCE is WRONG ?
     maxNote = get<1>(maxRange) + 12;
 
+#if COMPOSESIREN_RUST_DSP
+    if (!choice.isCpp()) {
+        const std::string name = "S" + std::to_string(static_cast<int>(id) + 1);
+        rustSiren.reset(csr_siren_new(resourcesPath.c_str(), name.c_str(), choice.variant.c_str(), choice.dataset.c_str()));
+        if (!rustSiren) {
+            char err[512];
+            sdsp_last_error(reinterpret_cast<uint8_t*>(err), sizeof err);
+            std::fprintf(stderr, "ComposeSiren: Rust DSP %s/%s for %s failed (%s), playing the C++ one\n",
+                         choice.variant.c_str(), choice.dataset.c_str(), name.c_str(), err);
+        }
+    }
+    if (rustSiren) {
+        // the C++ MidiIn passes floats on to Sirene's int setters: the same conversion
+        auto onVolumeChanged = [this](float v) { csr_siren_set_velocite(rustSiren.get(), static_cast<int>(v)); };
+        auto onNoteChanged   = [this](float v) { csr_siren_set_note_from_ext(rustSiren.get(), static_cast<int>(v)); };
+        midiIn = std::make_unique<MidiIn>(id, onVolumeChanged, onNoteChanged);
+        return;
+    }
+#endif
     siren = std::make_unique<Sirene>(id, resourcesPath);
     // attempt to get rid of aliasing-like sounds in last note of soprano/piccolo
     // siren->changeQualite(20);
@@ -38,6 +62,9 @@ void SirenVoiceUnit::setSampleRate(double newSampleRate) {
     float updateFrequency = 1000.0f;
     setNoteCallbackPeriodSamples = static_cast<int>(sampleRate / updateFrequency);
     midiIn->setSampleRate(sampleRate);
+#if COMPOSESIREN_RUST_DSP
+    if (rustSiren) { csr_siren_set_sample_rate(rustSiren.get(), sampleRate); return; }
+#endif
     siren->setSampleRate(sampleRate);
 }
 
@@ -111,6 +138,17 @@ float SirenVoiceUnit::process() {
     }
     ++sampleCountForMidiInTimer;
 
+#if COMPOSESIREN_RUST_DSP
+    if (rustSiren) {
+        if (setNoteSampleCounter % setNoteCallbackPeriodSamples == 0) {
+            csr_siren_setnote(rustSiren.get());
+            cp = csr_siren_current_pitch(rustSiren.get()) * 0.01f; // pitch is in cents
+            setNoteSampleCounter = 0;
+        }
+        ++setNoteSampleCounter;
+        return csr_siren_calculwave(rustSiren.get());
+    }
+#endif
     if (setNoteSampleCounter % setNoteCallbackPeriodSamples == 0) {
         siren->setnote();
         cp = siren->getCurrentPitch() * 0.01f; // pitch is in cents
@@ -130,6 +168,9 @@ float SirenVoiceUnit::process() {
 //  see the 512 samples period above for the execution of midiIn->timerAudio()
 //  are those kind of related -> try other values and listen to the difference
 void SirenVoiceUnit::update() {
+#if COMPOSESIREN_RUST_DSP
+    if (rustSiren) { csr_siren_setnote(rustSiren.get()); return; }
+#endif
     siren->setnote();
 }
 

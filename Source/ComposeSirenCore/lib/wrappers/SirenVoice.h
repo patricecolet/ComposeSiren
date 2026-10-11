@@ -11,6 +11,14 @@
 #include "../dsp/MidiIn.h"
 #include "../dsp/Sirene.h"
 
+#ifndef COMPOSESIREN_RUST_DSP
+#define COMPOSESIREN_RUST_DSP 0
+#endif
+#if COMPOSESIREN_RUST_DSP
+#include "DspChoice.h"
+#include "siren_dsp_plugin.h"
+#endif
+
 // VOICE UNIT BASED ON FILE RESOURCES SET
 // TO BE SWAPPED WITH ANOTHER INSTANCE
 
@@ -19,7 +27,12 @@ class SirenVoiceUnit {
     std::shared_ptr<const sirenData> data;
     int maxNote; // as defined in velocityRanges
     std::unique_ptr<MidiIn> midiIn;
-    std::unique_ptr<Sirene> siren;
+    std::unique_ptr<Sirene> siren; // the C++ synthesis (null when a Rust one plays)
+#if COMPOSESIREN_RUST_DSP
+    // the Rust synthesis (dsp.variant other than "cpp"), driven exactly like `siren`
+    struct RustSirenDeleter { void operator()(CsrSiren* s) const { csr_siren_free(s); } };
+    std::unique_ptr<CsrSiren, RustSirenDeleter> rustSiren;
+#endif
     double sampleRate;
     int sampleCountForMidiInTimer;
     int setNoteCallbackPeriodSamples;
@@ -31,7 +44,14 @@ class SirenVoiceUnit {
     float cp = 0.0f;
 
 public:
+#if COMPOSESIREN_RUST_DSP
+    // `choice`: which synthesis plays, on which data set (DspChoice.h); an unknown or failing
+    // Rust variant falls back to the C++ one, with a message on stderr
+    SirenVoiceUnit(sirenId id, const std::string& resourcesPath, const cs::DspChoice& choice = cs::currentDspChoice());
+    bool isRust() const { return rustSiren != nullptr; }
+#else
     SirenVoiceUnit(sirenId id, const std::string& resourcesPath);
+#endif
     ~SirenVoiceUnit() = default;
 
     // this method should check if siren is nullptr

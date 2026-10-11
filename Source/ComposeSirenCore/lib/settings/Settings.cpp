@@ -1,5 +1,12 @@
 #include "Settings.h"
 
+#ifndef COMPOSESIREN_RUST_DSP
+#define COMPOSESIREN_RUST_DSP 0
+#endif
+#if COMPOSESIREN_RUST_DSP
+#include "../wrappers/DspChoice.h"
+#endif
+
 #ifndef COMPOSESIREN_SIREN_WAVES
 #define COMPOSESIREN_SIREN_WAVES 0
 #endif
@@ -7,6 +14,31 @@
 namespace cs {
 
 namespace meta = mecaviv::metadata;
+
+#if COMPOSESIREN_RUST_DSP
+namespace {
+// the choice at `index` of a Choice setting, as its id
+std::string choiceAt(const meta::Setting& s, int index)
+{
+    std::string_view rest = s.choices;
+    for (int i = 0;; ++i) {
+        const auto bar = rest.find('|');
+        if (i == index) return std::string(rest.substr(0, bar));
+        if (bar == std::string_view::npos) return {};
+        rest.remove_prefix(bar + 1);
+    }
+}
+} // namespace
+
+// the dsp.* settings, for the voices (DspChoice.h)
+static void publishDspChoice(const Settings& s)
+{
+    DspChoice c;
+    c.variant = choiceAt(Settings::describe(meta::SettingId::dspVariant), s.getInt(meta::SettingId::dspVariant));
+    c.dataset = choiceAt(Settings::describe(meta::SettingId::dspDataset), s.getInt(meta::SettingId::dspDataset));
+    setDspChoice(c);
+}
+#endif
 
 Settings::Settings()
 {
@@ -37,6 +69,9 @@ Settings::Settings()
         tree.setProperty(key(id), normalised(id, v), nullptr);
     }
     tree.addListener(this);
+#if COMPOSESIREN_RUST_DSP && COMPOSESIREN_SETTINGS
+    publishDspChoice(*this);
+#endif
 }
 
 Settings::~Settings()
@@ -116,6 +151,7 @@ bool Settings::isAvailable(Id id)
     if (option == "COMPOSESIREN_RECORD") return COMPOSESIREN_RECORD != 0;
     if (option == "COMPOSESIREN_PARK_BRIDGE") return COMPOSESIREN_PARK_BRIDGE != 0;
     if (option == "COMPOSESIREN_CLIC") return COMPOSESIREN_CLIC != 0;
+    if (option == "COMPOSESIREN_RUST_DSP") return COMPOSESIREN_RUST_DSP != 0;
 #if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
     if (option == "COMPOSESIREN_RESETALLCONTROLLERS") return true;
 #endif
@@ -200,6 +236,10 @@ void Settings::valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier
             file->setValue(property.toString(), clean.toString());
         else
             file->setValue(property.toString(), static_cast<double>(clean));
+#endif
+#if COMPOSESIREN_RUST_DSP && COMPOSESIREN_SETTINGS
+        if (id == meta::SettingId::dspVariant || id == meta::SettingId::dspDataset)
+            publishDspChoice(*this);
 #endif
         listeners.call([id](Listener& l) { l.settingChanged(id); });
         return;

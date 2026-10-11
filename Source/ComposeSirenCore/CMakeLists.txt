@@ -82,6 +82,15 @@ else()
   target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_RECORD=0)
 endif()
 
+if(COMPOSESIREN_RUST_DSP)
+  include("${CMAKE_CURRENT_LIST_DIR}/RustDsp.cmake")
+  target_link_libraries(ComposeSirenCore PUBLIC siren_dsp)
+  target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_RUST_DSP=1)
+  target_sources(ComposeSirenCore PRIVATE lib/wrappers/DspChoice.cpp)
+else()
+  target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_RUST_DSP=0)
+endif()
+
 # Settings metadata (committed) + power-user Settings / Settings.... The clic
 # secondary output device is one of the settings, so CLIC needs Settings too.
 if(COMPOSESIREN_SETTINGS OR COMPOSESIREN_CLIC)
@@ -192,6 +201,15 @@ if(BUILD_TESTING AND COMPOSESIREN_RESETALLCONTROLLERS)
   target_link_libraries(ComposeSirenControllerResetTests PRIVATE
     ComposeSirenCore juce::juce_audio_processors)
   add_test(NAME controller-reset COMMAND ComposeSirenControllerResetTests)
+endif()
+
+# The Rust synthesis plays as the C++ one, bit for bit, in the plugin's voice.
+if(BUILD_TESTING AND COMPOSESIREN_RUST_DSP)
+  add_executable(ComposeSirenRustDspParityTests tests/RustDspParityTests.cpp)
+  target_link_libraries(ComposeSirenRustDspParityTests PRIVATE
+    ComposeSirenCore juce::juce_audio_processors)
+  add_test(NAME rust-dsp-parity
+    COMMAND ComposeSirenRustDspParityTests "${CMAKE_SOURCE_DIR}/Resources/")
 endif()
 
 # If we need additional global compile defs, put them here

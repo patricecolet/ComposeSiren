@@ -158,6 +158,15 @@ composesiren_option(COMPOSESIREN_RECORD
         "Record the audio output to FLAC or WAV (dialog, and MCP tools with COMPOSESIREN_MCP)"
         OFF)
 
+# DEAL WITH THE RUST DSP #######################################################
+# The Rust synthesis (Rust crate Source/siren-dsp): its bit-exact port of the C++ DSP and
+# the variants, chosen with the global dsp.variant and dsp.dataset settings (the C++ DSP
+# stays the default). See Source/ComposeSirenCore/RustDsp.cmake and Source/siren-dsp.
+
+composesiren_option(COMPOSESIREN_RUST_DSP
+        "The Rust synthesis and its variants, chosen in the settings (dsp.variant, dsp.dataset)"
+        OFF)
+
 # DEAL WITH THE SETTINGS #######################################################
 # Power-user settings of the plugins. What they are (type, range, default,
 # description) comes from Source/ComposeSirenCore/lib/definitions/generated/
