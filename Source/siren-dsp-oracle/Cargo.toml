@@ -1,0 +1,15 @@
+[package]
+name = "siren-dsp-oracle"
+version = "0.1.0"
+description = "ComposeSiren's C++ DSP (Sirene + MidiIn) compiled without JUCE, the reference siren-dsp's tests compare against"
+edition = "2024"
+rust-version = "1.88"
+license = "GPL-3.0-only"
+publish = false
+build = "build.rs"
+
+# A standalone package, only a dev-dependency of siren-dsp.
+[workspace]
+
+[build-dependencies]
+cc = "1"

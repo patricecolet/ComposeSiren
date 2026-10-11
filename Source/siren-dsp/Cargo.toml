@@ -1,0 +1,25 @@
+[package]
+name = "siren-dsp"
+version = "0.1.0"
+description = "ComposeSiren's synthesis in Rust: the C++ DSP ported sample for sample, and its variants"
+edition = "2024"
+rust-version = "1.88"
+license = "GPL-3.0-only"
+publish = false
+
+# A standalone package inside ComposeSiren, not a member of any workspace.
+[workspace]
+
+# rlib for Rust users and the tests, staticlib/cdylib for C and C++ through src/ffi.rs
+[lib]
+crate-type = ["rlib", "staticlib", "cdylib"]
+
+[dependencies]
+siren-data = { path = "../siren-data" }
+
+[dev-dependencies]
+siren-dsp-oracle = { path = "../siren-dsp-oracle" }
+
+[profile.release]
+debug = 1
+codegen-units = 1
