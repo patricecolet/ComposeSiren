@@ -12,7 +12,10 @@ fn main() {
         "lib/definitions/parameterDefinitions.cpp",
     ];
     let mut b = cc::Build::new();
-    b.cpp(true).std("c++20").opt_level(2).warnings(false).include(&core).include(core.join("lib")).file(here.join("oracle.cpp"));
+    // -O2 for the tests; SIREN_ORACLE_OPT=3 for the plugin's Release flags (examples/perf.rs)
+    let opt = std::env::var("SIREN_ORACLE_OPT").ok().and_then(|o| o.parse().ok()).unwrap_or(2);
+    println!("cargo:rerun-if-env-changed=SIREN_ORACLE_OPT");
+    b.cpp(true).std("c++20").opt_level(opt).warnings(false).include(&core).include(core.join("lib")).file(here.join("oracle.cpp"));
     // Sirene.cpp calls memset without <cstring> (JUCE builds get it transitively)
     if b.get_compiler().is_like_msvc() {
         b.flag("/FIcstring");
