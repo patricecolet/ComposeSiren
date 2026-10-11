@@ -162,6 +162,42 @@ impl DataSet {
         Ok(set)
     }
 
+    /// A data set built from memory: `dure` (up to `NOTES * 3` floats), each of the first
+    /// `file_notes` notes' kept frame count in `kept`, and `frames` holding, note after note,
+    /// its kept frames' amp then freq (`kept * SLOTS` little-endian f32 each): a compact file's
+    /// body without its header, for a host with no filesystem (a web page, say).
+    pub fn from_frames(
+        name: &str,
+        dure: &[f32],
+        kept: &[usize],
+        file_notes: usize,
+        frames: &[u8],
+        vector_interval: [f32; VECTOR_INTERVAL],
+    ) -> Result<DataSet, Error> {
+        if kept.len() < file_notes || file_notes > NOTES {
+            return Err(format_err(name, format!("{file_notes} notes, {} kept counts, at most {NOTES}", kept.len())));
+        }
+        let mut notes = vec![Note::default(); NOTES];
+        let mut pos = 0;
+        for (n, &k) in kept.iter().take(file_notes).enumerate() {
+            if k > FRAMES {
+                return Err(format_err(name, format!("note {n}: {k} frames")));
+            }
+            let len = k * SLOTS * 4;
+            let mut take = || -> Result<Vec<f32>, Error> {
+                let b = frames.get(pos..pos + len).ok_or_else(|| format_err(name, format!("frames end in note {n}")))?;
+                pos += len;
+                Ok(f32s(b).collect())
+            };
+            let (amp, freq) = (take()?, take()?);
+            notes[n] = Note { kept: k, amp, freq };
+        }
+        if pos != frames.len() {
+            return Err(format_err(name, "trailing bytes after the last note"));
+        }
+        Ok(DataSet { name: name.to_string(), file_notes, notes, dure: dure_table(dure.iter().copied()), vector_interval })
+    }
+
     /// A compact file's contents (the vector interval rates stay zero: they are a separate file).
     pub fn from_compact(name: &str, bytes: &[u8]) -> Result<DataSet, Error> {
         if bytes.len() < 28 || &bytes[..4] != MAGIC {

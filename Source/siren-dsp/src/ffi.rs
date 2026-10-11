@@ -27,11 +27,13 @@ thread_local! {
     static LAST_ERROR: RefCell<String> = const { RefCell::new(String::new()) };
 }
 
-pub(crate) fn set_error(e: impl Into<String>) {
+#[doc(hidden)]
+pub fn set_error(e: impl Into<String>) {
     LAST_ERROR.with(|l| *l.borrow_mut() = e.into());
 }
 
-pub(crate) fn guard<T>(fallback: T, f: impl FnOnce() -> Result<T, String>) -> T {
+#[doc(hidden)] // for crates adding their own C entry points
+pub fn guard<T>(fallback: T, f: impl FnOnce() -> Result<T, String>) -> T {
     match catch_unwind(AssertUnwindSafe(f)) {
         Ok(Ok(v)) => v,
         Ok(Err(e)) => {
@@ -50,7 +52,8 @@ pub(crate) fn guard<T>(fallback: T, f: impl FnOnce() -> Result<T, String>) -> T 
     }
 }
 
-pub(crate) unsafe fn str_arg<'a>(p: *const c_char) -> Result<&'a str, String> {
+#[doc(hidden)]
+pub unsafe fn str_arg<'a>(p: *const c_char) -> Result<&'a str, String> {
     if p.is_null() {
         return Err("null string".into());
     }

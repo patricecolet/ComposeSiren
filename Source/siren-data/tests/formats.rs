@@ -98,3 +98,36 @@ fn damaged_compact_file_is_refused() {
     let err = DataSet::from_compact("S7", &bytes).unwrap_err().to_string();
     assert!(err.contains("CRC"), "{err}");
 }
+
+#[test]
+fn from_frames_rebuilds_a_set() {
+    let res = repo().join("Resources");
+    for name in DATA_SETS {
+        let set = DataSet::load_raw(&res, name, name).unwrap();
+        let mut dure = Vec::new();
+        for n in 0..NOTES {
+            dure.extend(set.dure(n));
+        }
+        let kept: Vec<usize> = (0..set.file_notes()).map(|n| set.kept_frames(n)).collect();
+        let mut frames = Vec::new();
+        for (n, &k) in kept.iter().enumerate() {
+            for f in 0..k {
+                frames.extend(set.frame_amp(n, f).unwrap().iter().flat_map(|x| x.to_le_bytes()));
+            }
+            for f in 0..k {
+                frames.extend(set.frame_freq(n, f).unwrap().iter().flat_map(|x| x.to_le_bytes()));
+            }
+        }
+        let back = DataSet::from_frames(name, &dure, &kept, set.file_notes(), &frames, *set.vector_interval()).unwrap();
+        for n in 0..NOTES {
+            assert_eq!(back.dure(n).map(f32::to_bits), set.dure(n).map(f32::to_bits));
+            for f in 0..FRAMES {
+                for s in 0..SLOTS {
+                    assert_eq!(back.amp(n, f, s).to_bits(), set.amp(n, f, s).to_bits(), "{name} amp {n} {f} {s}");
+                    assert_eq!(back.freq(n, f, s).to_bits(), set.freq(n, f, s).to_bits(), "{name} freq {n} {f} {s}");
+                }
+            }
+        }
+        assert_eq!(back.vector_interval(), set.vector_interval());
+    }
+}
