@@ -154,8 +154,11 @@ if(COMPOSESIREN_SIREN_WAVES)
   target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_SIREN_WAVES=1)
   target_sources(ComposeSirenCore PRIVATE Components/waves/SirenWaveColumn.cpp)
   target_link_libraries(ComposeSirenCore PRIVATE juce::juce_opengl)
-  # Debug builds read the shader from here and reload it when it is saved
-  target_compile_definitions(ComposeSirenCore PRIVATE
+  # Debug builds read the shader from here and reload it when it is saved.
+  # PUBLIC: SirenWaveColumn.h has members under this define, so every target
+  # that includes it (the plugin editors) must see it too, or the class has
+  # two layouts and the core code writes past the editor's member.
+  target_compile_definitions(ComposeSirenCore PUBLIC
     $<$<CONFIG:Debug>:COMPOSESIREN_WAVES_SHADER_DIR=${CMAKE_SOURCE_DIR}/Assets/shaders>)
 else()
   target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_SIREN_WAVES=0)
