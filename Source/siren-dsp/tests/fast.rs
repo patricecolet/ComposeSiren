@@ -106,3 +106,29 @@ fn harmonic_sines_within_5e_4() {
     println!("harmonic_sines: max |error| {worst:.2e} up to h = {}", out.len() - 1);
     assert!(worst < 5e-4, "{worst:e}"); // measured 2.2e-4 at h up to 511
 }
+
+/// The C ABI's `sdsp_voice_apply_variant` and `sdsp_voice_set_trio_fast` play what the settings do.
+#[test]
+fn the_c_abi_sets_variants() {
+    use siren_dsp::ffi::{sdsp_voice_apply_variant, sdsp_voice_set_trio_fast};
+    let lib = Library::new(siren_dsp::default_resources());
+    for id in ["trio-f32", "trio-fast", "frames", "rust-exact"] {
+        let want = render(&lib, SirenId::S3, &variant(id).unwrap().dsp_settings().unwrap(), 48000.0, 66, 48000);
+        let mut v = lib.voice(SirenId::S3, 48000.0).unwrap();
+        let c = std::ffi::CString::new(id).unwrap();
+        assert_eq!(unsafe { sdsp_voice_apply_variant(&mut v, c.as_ptr()) }, 1, "{id}");
+        v.note_on(66, 127);
+        let got: Vec<f32> = (0..48000).map(|_| v.process()).collect();
+        assert!(got.iter().zip(&want).all(|(a, b)| a.to_bits() == b.to_bits()), "{id}");
+    }
+    let mut v = lib.voice(SirenId::S3, 48000.0).unwrap();
+    let c = std::ffi::CString::new("cpp").unwrap();
+    assert_eq!(unsafe { sdsp_voice_apply_variant(&mut v, c.as_ptr()) }, 0);
+    // trio → trio-f32 by the switch
+    variant("trio").unwrap().dsp_settings().unwrap().apply(&mut v);
+    unsafe { sdsp_voice_set_trio_fast(&mut v, true, true) };
+    v.note_on(66, 127);
+    let got: Vec<f32> = (0..48000).map(|_| v.process()).collect();
+    let want = render(&lib, SirenId::S3, &variant("trio-f32").unwrap().dsp_settings().unwrap(), 48000.0, 66, 48000);
+    assert!(got.iter().zip(&want).all(|(a, b)| a.to_bits() == b.to_bits()));
+}

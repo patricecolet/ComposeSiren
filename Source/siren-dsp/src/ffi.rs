@@ -312,6 +312,42 @@ pub unsafe extern "C" fn sdsp_voice_set_harmonic_envelope(v: *mut Voice, on: boo
     })
 }
 
+/// The trio's fast paths (`sirene::Trio::fast`, `f32_phasors`): `fast` the
+/// vectorized f64 sines, `f32` (with `fast` and the lock) the f32 harmonic
+/// phasors. Only with the trio on.
+///
+/// # Safety
+/// see `sdsp_voice_set_partials`
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn sdsp_voice_set_trio_fast(v: *mut Voice, fast: bool, f32: bool) {
+    with_voice!(v, |v: &mut Voice| {
+        if let Some(t) = v.siren.trio() {
+            let t = Trio { fast, f32_phasors: f32, ..t.clone() };
+            v.siren.set_trio(Some(t))
+        }
+    })
+}
+
+/// Puts a named variant's settings on the voice (`settings::variant`, the ids
+/// of `variants.rs`), as the plugin does before a voice plays. Returns 1, or 0
+/// with the reason in `sdsp_last_error` (an unknown id, the C++ engine's id).
+///
+/// # Safety
+/// see `sdsp_voice_set_partials`; `id` is NUL-terminated
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn sdsp_voice_apply_variant(v: *mut Voice, id: *const c_char) -> i32 {
+    guard(0, || {
+        let v = unsafe { v.as_mut() }.ok_or("null voice")?;
+        let id = unsafe { str_arg(id) }?;
+        let var = crate::settings::variant(id).ok_or_else(|| format!("unknown variant {id}"))?;
+        if var.engine == crate::settings::Engine::Cpp {
+            return Err(format!("{id} is the C++ engine"));
+        }
+        var.dsp_settings().map_err(|e| e.to_string())?.apply(v);
+        Ok(1)
+    })
+}
+
 /// Per data note, the cents its partials sit above its nominal pitch, for the
 /// trio's pitch shift (`n` = 0 clears it). Only with the trio on.
 ///
