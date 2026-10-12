@@ -135,6 +135,10 @@ pub struct Trio {
     /// slot's own frequency, so the frames' frequency jitter and slot swaps do
     /// not move the correction
     pub harmonic_envelope: bool,
+    /// The fast path: the phases kept within a few turns and their sines from
+    /// [`crate::fastsin`] (vectorized) instead of libm's. Not bit-exact with the
+    /// trio without it: within the bound `tests/fast.rs` checks
+    pub fast: bool,
 }
 
 impl Default for Trio {
@@ -151,6 +155,7 @@ impl Default for Trio {
             origin: 0,
             envelope: 0.0,
             harmonic_envelope: false,
+            fast: false,
         }
     }
 }
@@ -344,6 +349,9 @@ pub struct Sirene {
     trio: Option<Trio>,
     banks: [Bank; 4],
     trio_notes: [(i32, f64); 3],
+    /// `note_hz` of MIDI notes 0..128 for the trio, computed in `set_trio` (the same
+    /// values: the glide changes the pitch every sample, and these are seven `powf`)
+    trio_hz: [f64; 128],
     trio_mc: i32,
     trio_wave: f64,
     /// with `Trio::lock`: the phase of the target fundamental, and its step
@@ -412,6 +420,7 @@ impl Sirene {
             trio: None,
             banks: [Bank::new(), Bank::new(), Bank::new(), Bank::new()],
             trio_notes: [(-1, 0.0); 3],
+            trio_hz: [0.0; 128],
             trio_mc: i32::MIN,
             trio_wave: 0.0,
             trio_phi: 0.0,
@@ -494,6 +503,11 @@ impl Sirene {
                 .collect(),
             _ => Vec::new(),
         };
+        if let Some(t) = &trio {
+            for (n, hz) in self.trio_hz.iter_mut().enumerate() {
+                *hz = note_hz(n as i32, t);
+            }
+        }
         self.trio = trio;
         for b in self.banks.iter_mut() {
             b.note = -1;
@@ -885,8 +899,11 @@ impl Sirene {
             let octave = self.trio.as_ref().map_or(0, |t| t.octave);
             self.trio_f0 = wanted * 2f64.powi(octave);
             self.trio_dphi = self.trio_f0 * self.deux_pie_sample_rate;
-            let tuning = self.trio.as_ref().map_or(&[][..], |t| &t.tuning[..]);
-            let tune = |n: i32| tuning.get(n.max(0) as usize).map_or(1.0, |&c| 2f64.powf(c as f64 / 1200.0));
+            let hz = |n: i32| match self.trio_hz.get(n as usize) {
+                Some(&hz) if n >= 0 => hz,
+                _ => self.trio.as_ref().map_or(0.0, |t| note_hz(n, t)),
+            };
+            let hzs = gains.map(|(n, _)| hz(n));
             let firsts = gains.map(|(n, _)| self.first_frame(n));
             self.trio_notes = gains;
             let (origin, spacing) = self.trio.as_ref().map_or((0, 1), |t| (t.origin, t.spacing.max(1)));
@@ -909,7 +926,7 @@ impl Sirene {
                     changed = true;
                 }
                 b.gain = g;
-                b.ratio = wanted / (440.0 * 2f64.powf((n as f64 - 69.0) / 12.0) * tune(n));
+                b.ratio = wanted / hzs[k];
                 b.ps = b.ratio * self.deux_pie_sample_rate;
             }
         }
@@ -921,7 +938,12 @@ impl Sirene {
         let lock = self.trio.as_ref().is_some_and(|t| t.lock);
         let alpha = self.trio.as_ref().map_or(0.0, |t| t.envelope);
         let harmonic_envelope = self.trio.as_ref().is_some_and(|t| t.harmonic_envelope);
+        let fast = self.trio.as_ref().is_some_and(|t| t.fast);
         self.trio_phi += self.trio_dphi;
+        if fast && self.trio_phi >= std::f64::consts::TAU {
+            // h·Φ moves by whole turns: the same sines, and Φ stays small
+            self.trio_phi -= std::f64::consts::TAU;
+        }
         let (phi, f0) = (self.trio_phi, self.trio_f0);
         let time_scale = self.time_scale;
         let (data, frames, envelopes) = (&self.data, &self.frames, &self.envelopes);
@@ -956,6 +978,32 @@ impl Sirene {
                 }
             }
             let view = FrameView::new(data, frames, n, b.frame, b.count_k, clock, b.carry);
+            if fast {
+                if lock && !compute {
+                    // a locked phase is h·Φ, made afresh when it is read: nothing to keep
+                    continue;
+                }
+                let q = q.min(MAX_PARTIEL);
+                let to_h = b.ratio / f0;
+                let (gain, ps) = (b.gain, b.ps);
+                for i in 0..q {
+                    let (f, a) = view.at(i);
+                    b.phase[i] = if lock {
+                        crate::fastsin::round(f as f64 * to_h).max(1.0) * phi
+                    } else {
+                        let p = b.phase[i] + f as f64 * ps;
+                        p - crate::fastsin::round(p * (0.5 * std::f64::consts::FRAC_1_PI)) * std::f64::consts::TAU
+                    };
+                    if compute {
+                        let a = if alpha != 0.0 { a as f64 * b.corr[i] } else { a as f64 };
+                        b.ampz[i] = sa * (gain * a) + sb * b.ampz[i];
+                    }
+                }
+                if compute {
+                    wave += crate::fastsin::sin_dot(&b.phase[..q], &b.ampz[..q]);
+                }
+                continue;
+            }
             for i in 0..q {
                 let (f, a) = view.at(i);
                 if lock {

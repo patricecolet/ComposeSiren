@@ -269,6 +269,7 @@ pub unsafe extern "C" fn sdsp_voice_set_trio(
                 origin: kept.origin,
                 envelope: kept.envelope,
                 harmonic_envelope: kept.harmonic_envelope,
+                fast: kept.fast,
             }),
             _ => None,
         };

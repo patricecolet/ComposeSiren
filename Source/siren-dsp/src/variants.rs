@@ -55,6 +55,27 @@ pub const VARIANTS: &[Variant] = &[
         settings: &[("dsp.timing", "time"), ("frames.legacy", "false"), ("trio.kernel", "nearest"), ("trio.scale_frames", "true"), ("trio.lock", "true")],
         description: "The nearest data note alone, pitch-shifted.",
     },
+    Variant {
+        id: "trio-fast",
+        label: "Trio (fast)",
+        engine: Engine::Rust,
+        settings: &[("dsp.timing", "time"), ("frames.legacy", "false"), ("trio.kernel", "b-spline"), ("trio.gains", "linear"), ("trio.scale_frames", "true"), ("trio.lock", "true"), ("trio.fast", "true")],
+        description: "The trio with vectorized sines: the same sound within about 1e-9, several times cheaper.",
+    },
+    Variant {
+        id: "trio-linear-fast",
+        label: "Trio (two notes; fast)",
+        engine: Engine::Rust,
+        settings: &[("dsp.timing", "time"), ("frames.legacy", "false"), ("trio.kernel", "linear"), ("trio.gains", "linear"), ("trio.scale_frames", "true"), ("trio.lock", "true"), ("trio.fast", "true")],
+        description: "The two-note trio with vectorized sines.",
+    },
+    Variant {
+        id: "trio-nearest-fast",
+        label: "Nearest note (fast)",
+        engine: Engine::Rust,
+        settings: &[("dsp.timing", "time"), ("frames.legacy", "false"), ("trio.kernel", "nearest"), ("trio.scale_frames", "true"), ("trio.lock", "true"), ("trio.fast", "true")],
+        description: "The nearest note with vectorized sines.",
+    },
 ];
 
 /// Every data set; the first is the default.
@@ -82,4 +103,5 @@ pub const SWITCHES: &[Switch] = &[
     Switch { id: "trio.origin", default: "0" },
     Switch { id: "trio.envelope", default: "0" },
     Switch { id: "trio.envelope_at_harmonic", default: "false" },
+    Switch { id: "trio.fast", default: "false" },
 ];

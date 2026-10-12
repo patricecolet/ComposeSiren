@@ -8,6 +8,7 @@
 //!   faster ways to sum the partials (the kernel variants).
 
 pub mod data;
+pub mod fastsin;
 pub mod ffi;
 pub mod kernels;
 pub mod layout;
