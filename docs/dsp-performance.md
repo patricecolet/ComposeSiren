@@ -38,8 +38,20 @@ brackets the real-time factor (how many such voices one core could play).
   bit: `tests/fast.rs` checks the sine within 1e-9 of libm's (measured 6.6e-10) and every
   siren within 1e-6 of the peak of the trio it speeds up (measured 1.1e-7, the f32 output's
   rounding). The lab's phasor kernels (`kernels.rs`, f32 phasors re-anchored per frame) would
-  be faster still, but drift further from this voice (bounded per frame, about −46 dB
-  before re-anchoring); not used.
+  re-anchor per frame and can't follow the voice's glide, which changes the pitch every
+  sample; the f32 variants below take their idea instead.
+- The f32 phasor trio variants (`trio-f32`, `trio-linear-f32`, `trio-nearest-f32`:
+  `trio.fast` and `trio.f32`) cost about 1.6× the C++ at 30 partials and 1.3× at 200 (S3: 328
+  against 446 for the fast trio and 1056 for the trio; 1780 against 2257 and 7453 at 200), 64
+  voices per core at 30 partials. With the phase lock, every bank's partial sounds harmonic h on
+  h·Φ, so one f32 polynomial cos/sin of Φ per computed sample (the kernels' `anchor`) and
+  complex products, eight harmonics at a time, give every sin(h·Φ); with the fixed data, slot
+  i is harmonic i + 1 and the sines are read as one slice. Plain Rust, vectorized by the
+  compiler; nothing allocated on the audio thread (the table is 512 floats in the voice).
+  Deviation from the trio (`tests/fast.rs`, 7 sirens at 44.1 and 48 kHz, 4 s each): at most
+  6.1e-6 of the peak, an SNR of at least 116.3 dB; the test bounds are 3e-5 and 100 dB. The
+  harmonic sines alone are within 2.2e-4 of libm's up to h = 511 (bound 5e-4); the low
+  harmonics, which carry the energy, are much closer.
 - Block size, from 64 to 512 samples, changes nothing; time per sample doesn't depend on the
   sample rate, so the real-time factor halves at 96 kHz.
 - Loading: the C++ loader takes 7.0 s and 854 MiB for every siren's data. The Rust raw loader
@@ -61,46 +73,100 @@ Load every siren's data once and measure the growth in resident memory (median o
 
 ns per sample (real-time factor: voices one core could play), median of 7 runs of 2 s.
 
-| case | cpp | rust-exact | rust-time | frames | trio | trio-linear | trio-nearest | trio-fast | trio-linear-fast | trio-nearest-fast |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| S1 | 138 (151x) | 134 (155x) | 133 (156x) | 133 (157x) | 985 (21x) | 988 (21x) | 984 (21x) | 455 (46x) | 453 (46x) | 453 (46x) |
-| S2 | 137 (152x) | 133 (157x) | 132 (158x) | 133 (156x) | 987 (21x) | 985 (21x) | 985 (21x) | 454 (46x) | 454 (46x) | 456 (46x) |
-| S3 | 211 (99x) | 202 (103x) | 201 (104x) | 203 (103x) | 1042 (20x) | 1036 (20x) | 1038 (20x) | 468 (45x) | 467 (45x) | 467 (45x) |
-| S4 | 228 (91x) | 220 (95x) | 218 (95x) | 220 (95x) | 1070 (19x) | 1062 (20x) | 1067 (20x) | 469 (44x) | 468 (45x) | 469 (44x) |
-| S5 | 286 (73x) | 274 (76x) | 273 (76x) | 278 (75x) | 1150 (18x) | 1175 (18x) | 1164 (18x) | 478 (44x) | 479 (44x) | 481 (43x) |
-| S6 | 289 (72x) | 277 (75x) | 273 (76x) | 279 (75x) | 1154 (18x) | 1152 (18x) | 1154 (18x) | 478 (44x) | 475 (44x) | 475 (44x) |
-| S7 | 255 (82x) | 243 (86x) | 242 (86x) | 249 (84x) | 1258 (17x) | 1254 (17x) | 1261 (17x) | 471 (44x) | 471 (44x) | 471 (44x) |
+| case | cpp | rust-exact | rust-time | frames | trio | trio-linear | trio-nearest | trio-fast | trio-linear-fast | trio-nearest-fast | trio-f32 | trio-linear-f32 | trio-nearest-f32 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| S1 | 137 (152x) | 124 (168x) | 123 (170x) | 128 (163x) | 990 (21x) | 990 (21x) | 992 (21x) | 431 (48x) | 430 (48x) | 431 (48x) | 341 (61x) | 343 (61x) | 342 (61x) |
+| S2 | 137 (152x) | 124 (168x) | 124 (169x) | 127 (164x) | 991 (21x) | 987 (21x) | 991 (21x) | 430 (48x) | 429 (49x) | 431 (48x) | 342 (61x) | 343 (61x) | 343 (61x) |
+| S3 | 209 (100x) | 197 (106x) | 198 (105x) | 203 (103x) | 1056 (20x) | 1052 (20x) | 1056 (20x) | 446 (47x) | 446 (47x) | 447 (47x) | 328 (64x) | 322 (65x) | 328 (64x) |
+| S4 | 228 (91x) | 218 (95x) | 218 (96x) | 223 (94x) | 1087 (19x) | 1083 (19x) | 1086 (19x) | 446 (47x) | 446 (47x) | 448 (46x) | 358 (58x) | 358 (58x) | 358 (58x) |
+| S5 | 286 (73x) | 281 (74x) | 280 (74x) | 286 (73x) | 1176 (18x) | 1171 (18x) | 1177 (18x) | 455 (46x) | 453 (46x) | 452 (46x) | 360 (58x) | 358 (58x) | 358 (58x) |
+| S6 | 287 (73x) | 277 (75x) | 280 (74x) | 286 (73x) | 1178 (18x) | 1169 (18x) | 1176 (18x) | 455 (46x) | 454 (46x) | 454 (46x) | 360 (58x) | 359 (58x) | 357 (58x) |
+| S7 | 253 (82x) | 244 (86x) | 246 (85x) | 252 (83x) | 1288 (16x) | 1278 (16x) | 1288 (16x) | 449 (46x) | 449 (46x) | 448 (46x) | 404 (52x) | 404 (52x) | 403 (52x) |
 
 ### Sample rates (S3, 30 partials, 256-sample blocks)
 
 ns per sample (real-time factor: voices one core could play), median of 7 runs of 2 s.
 
-| case | cpp | rust-exact | rust-time | frames | trio | trio-linear | trio-nearest | trio-fast | trio-linear-fast | trio-nearest-fast |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 44.1 kHz | 211 (108x) | 204 (111x) | 203 (112x) | 204 (111x) | 1037 (22x) | 1034 (22x) | 1038 (22x) | 465 (49x) | 464 (49x) | 465 (49x) |
-| 48 kHz | 210 (99x) | 202 (103x) | 203 (103x) | 203 (102x) | 1039 (20x) | 1051 (20x) | 1049 (20x) | 478 (44x) | 471 (44x) | 467 (45x) |
-| 96 kHz | 205 (51x) | 198 (53x) | 194 (54x) | 196 (53x) | 1028 (10x) | 1025 (10x) | 1032 (10x) | 465 (22x) | 465 (22x) | 466 (22x) |
+| case | cpp | rust-exact | rust-time | frames | trio | trio-linear | trio-nearest | trio-fast | trio-linear-fast | trio-nearest-fast | trio-f32 | trio-linear-f32 | trio-nearest-f32 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 44.1 kHz | 210 (108x) | 199 (114x) | 198 (115x) | 203 (111x) | 1052 (22x) | 1051 (22x) | 1052 (22x) | 444 (51x) | 442 (51x) | 444 (51x) | 324 (70x) | 318 (71x) | 322 (70x) |
+| 48 kHz | 209 (100x) | 199 (105x) | 199 (105x) | 204 (102x) | 1056 (20x) | 1051 (20x) | 1055 (20x) | 446 (47x) | 445 (47x) | 446 (47x) | 329 (63x) | 324 (64x) | 329 (63x) |
+| 96 kHz | 205 (51x) | 193 (54x) | 190 (55x) | 194 (54x) | 1044 (10x) | 1041 (10x) | 1046 (10x) | 445 (23x) | 443 (24x) | 445 (23x) | 327 (32x) | 322 (32x) | 328 (32x) |
 
 ### Quality (S3, 48 kHz, 256-sample blocks)
 
 ns per sample (real-time factor: voices one core could play), median of 7 runs of 2 s.
 
-| case | cpp | rust-exact | rust-time | frames | trio | trio-linear | trio-nearest | trio-fast | trio-linear-fast | trio-nearest-fast |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 30 partials | 209 (100x) | 201 (103x) | 201 (104x) | 203 (103x) | 1041 (20x) | 1038 (20x) | 1046 (20x) | 474 (44x) | 465 (45x) | 467 (45x) |
-| 120 partials | 884 (24x) | 798 (26x) | 795 (26x) | 798 (26x) | 4132 (5x) | 4125 (5x) | 4107 (5x) | 1556 (13x) | 1558 (13x) | 1558 (13x) |
-| 200 partials | 1377 (15x) | 1253 (17x) | 1231 (17x) | 1283 (16x) | 7360 (3x) | 7333 (3x) | 7530 (3x) | 2544 (8x) | 2559 (8x) | 2576 (8x) |
+| case | cpp | rust-exact | rust-time | frames | trio | trio-linear | trio-nearest | trio-fast | trio-linear-fast | trio-nearest-fast | trio-f32 | trio-linear-f32 | trio-nearest-f32 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 30 partials | 210 (99x) | 198 (105x) | 198 (105x) | 203 (102x) | 1056 (20x) | 1051 (20x) | 1055 (20x) | 446 (47x) | 445 (47x) | 447 (47x) | 329 (63x) | 324 (64x) | 329 (63x) |
+| 120 partials | 877 (24x) | 803 (26x) | 799 (26x) | 812 (26x) | 4163 (5x) | 4149 (5x) | 4165 (5x) | 1402 (15x) | 1402 (15x) | 1404 (15x) | 1133 (18x) | 1133 (18x) | 1134 (18x) |
+| 200 partials | 1367 (15x) | 1224 (17x) | 1237 (17x) | 1294 (16x) | 7453 (3x) | 7415 (3x) | 7445 (3x) | 2257 (9x) | 2258 (9x) | 2260 (9x) | 1780 (12x) | 1778 (12x) | 1777 (12x) |
 
 ### Block size (S3, 48 kHz, 30 partials)
 
 ns per sample (real-time factor: voices one core could play), median of 7 runs of 2 s.
 
-| case | cpp | rust-exact | rust-time | frames | trio | trio-linear | trio-nearest | trio-fast | trio-linear-fast | trio-nearest-fast |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 64 samples | 209 (100x) | 202 (103x) | 200 (104x) | 203 (103x) | 1042 (20x) | 1037 (20x) | 1038 (20x) | 470 (44x) | 475 (44x) | 479 (43x) |
-| 128 samples | 209 (99x) | 203 (103x) | 204 (102x) | 206 (101x) | 1051 (20x) | 1042 (20x) | 1053 (20x) | 482 (43x) | 481 (43x) | 480 (43x) |
-| 256 samples | 209 (100x) | 203 (103x) | 202 (103x) | 207 (101x) | 1043 (20x) | 1039 (20x) | 1040 (20x) | 469 (44x) | 470 (44x) | 466 (45x) |
-| 512 samples | 209 (99x) | 202 (103x) | 201 (104x) | 204 (102x) | 1043 (20x) | 1044 (20x) | 1039 (20x) | 469 (44x) | 469 (44x) | 473 (44x) |
+| case | cpp | rust-exact | rust-time | frames | trio | trio-linear | trio-nearest | trio-fast | trio-linear-fast | trio-nearest-fast | trio-f32 | trio-linear-f32 | trio-nearest-f32 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 64 samples | 209 (100x) | 196 (106x) | 198 (105x) | 204 (102x) | 1055 (20x) | 1052 (20x) | 1055 (20x) | 445 (47x) | 446 (47x) | 447 (47x) | 329 (63x) | 325 (64x) | 330 (63x) |
+| 128 samples | 209 (100x) | 197 (106x) | 199 (105x) | 204 (102x) | 1056 (20x) | 1051 (20x) | 1056 (20x) | 445 (47x) | 444 (47x) | 446 (47x) | 328 (64x) | 325 (64x) | 331 (63x) |
+| 256 samples | 209 (100x) | 197 (106x) | 197 (106x) | 203 (102x) | 1056 (20x) | 1052 (20x) | 1056 (20x) | 447 (47x) | 446 (47x) | 447 (47x) | 330 (63x) | 324 (64x) | 329 (63x) |
+| 512 samples | 208 (100x) | 198 (105x) | 197 (106x) | 204 (102x) | 1056 (20x) | 1051 (20x) | 1057 (20x) | 445 (47x) | 445 (47x) | 445 (47x) | 327 (64x) | 323 (64x) | 329 (63x) |
+
+## MacBook Air M4 (aarch64)
+
+The same tables on a MacBook Air, Apple M4, macOS 15.3, rustc 1.94.1, Release, from a fresh
+clone at 3b4b308. The crate tests (`tests/fast.rs` included, with the same measured
+deviations), the C++ Release builds with `COMPOSESIREN_RUST_DSP` OFF and ON and their ctests
+(`rust-dsp-parity` included) pass there too. Everything is 2.3 to 3.4× faster than on the
+Mac mini; the fast trio costs 1.6× the C++ there, and the f32 trio about the C++'s cost at
+30 partials (95 against 89 ns per sample) and less than it at 200 (621 against 654).
+
+#### Each siren (48 kHz, 30 partials, 256-sample blocks)
+
+ns per sample (real-time factor: voices one core could play), median of 7 runs of 2 s.
+
+| case | cpp | rust-exact | rust-time | frames | trio | trio-linear | trio-nearest | trio-fast | trio-linear-fast | trio-nearest-fast | trio-f32 | trio-linear-f32 | trio-nearest-f32 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| S1 | 56 (374x) | 48 (437x) | 47 (439x) | 47 (439x) | 263 (79x) | 261 (80x) | 263 (79x) | 138 (151x) | 138 (151x) | 138 (151x) | 96 (217x) | 96 (216x) | 93 (225x) |
+| S2 | 56 (373x) | 48 (438x) | 48 (436x) | 47 (441x) | 263 (79x) | 263 (79x) | 263 (79x) | 138 (151x) | 138 (151x) | 138 (151x) | 92 (227x) | 91 (228x) | 92 (228x) |
+| S3 | 89 (235x) | 78 (267x) | 78 (266x) | 76 (274x) | 305 (68x) | 300 (69x) | 306 (68x) | 139 (150x) | 139 (149x) | 139 (150x) | 95 (220x) | 94 (221x) | 94 (221x) |
+| S4 | 101 (207x) | 89 (234x) | 91 (230x) | 84 (247x) | 338 (62x) | 332 (63x) | 336 (62x) | 139 (150x) | 139 (150x) | 141 (148x) | 98 (212x) | 99 (211x) | 98 (212x) |
+| S5 | 126 (165x) | 112 (186x) | 113 (184x) | 104 (200x) | 373 (56x) | 371 (56x) | 369 (57x) | 141 (148x) | 141 (148x) | 142 (147x) | 101 (207x) | 101 (206x) | 101 (206x) |
+| S6 | 126 (165x) | 112 (187x) | 112 (185x) | 103 (201x) | 388 (54x) | 386 (54x) | 388 (54x) | 140 (149x) | 141 (148x) | 140 (149x) | 101 (206x) | 110 (190x) | 110 (190x) |
+| S7 | 122 (170x) | 106 (197x) | 106 (197x) | 105 (198x) | 466 (45x) | 462 (45x) | 467 (45x) | 140 (148x) | 140 (148x) | 140 (148x) | 116 (180x) | 115 (181x) | 115 (180x) |
+
+#### Sample rates (S3, 30 partials, 256-sample blocks)
+
+ns per sample (real-time factor: voices one core could play), median of 7 runs of 2 s.
+
+| case | cpp | rust-exact | rust-time | frames | trio | trio-linear | trio-nearest | trio-fast | trio-linear-fast | trio-nearest-fast | trio-f32 | trio-linear-f32 | trio-nearest-f32 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 44.1 kHz | 89 (253x) | 78 (290x) | 78 (291x) | 76 (297x) | 316 (72x) | 313 (72x) | 319 (71x) | 139 (163x) | 140 (163x) | 139 (163x) | 99 (228x) | 97 (234x) | 96 (236x) |
+| 48 kHz | 89 (235x) | 78 (267x) | 78 (266x) | 76 (274x) | 318 (66x) | 310 (67x) | 308 (68x) | 140 (149x) | 139 (150x) | 139 (150x) | 95 (220x) | 94 (221x) | 95 (219x) |
+| 96 kHz | 86 (121x) | 76 (137x) | 74 (140x) | 73 (142x) | 305 (34x) | 303 (34x) | 306 (34x) | 139 (75x) | 140 (75x) | 140 (75x) | 94 (111x) | 94 (111x) | 95 (110x) |
+
+#### Quality (S3, 48 kHz, 256-sample blocks)
+
+ns per sample (real-time factor: voices one core could play), median of 7 runs of 2 s.
+
+| case | cpp | rust-exact | rust-time | frames | trio | trio-linear | trio-nearest | trio-fast | trio-linear-fast | trio-nearest-fast | trio-f32 | trio-linear-f32 | trio-nearest-f32 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 30 partials | 89 (234x) | 78 (267x) | 79 (265x) | 76 (273x) | 315 (66x) | 301 (69x) | 306 (68x) | 140 (149x) | 140 (149x) | 140 (148x) | 95 (219x) | 95 (220x) | 95 (219x) |
+| 120 partials | 420 (50x) | 359 (58x) | 359 (58x) | 357 (58x) | 1366 (15x) | 1350 (15x) | 1360 (15x) | 474 (44x) | 473 (44x) | 476 (44x) | 370 (56x) | 369 (56x) | 370 (56x) |
+| 200 partials | 654 (32x) | 549 (38x) | 553 (38x) | 590 (35x) | 2491 (8x) | 2471 (8x) | 2504 (8x) | 760 (27x) | 760 (27x) | 759 (27x) | 621 (34x) | 627 (33x) | 625 (33x) |
+
+#### Block size (S3, 48 kHz, 30 partials)
+
+ns per sample (real-time factor: voices one core could play), median of 7 runs of 2 s.
+
+| case | cpp | rust-exact | rust-time | frames | trio | trio-linear | trio-nearest | trio-fast | trio-linear-fast | trio-nearest-fast | trio-f32 | trio-linear-f32 | trio-nearest-f32 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 64 samples | 89 (234x) | 79 (263x) | 79 (264x) | 77 (271x) | 306 (68x) | 302 (69x) | 306 (68x) | 139 (150x) | 139 (149x) | 139 (150x) | 95 (220x) | 94 (221x) | 95 (219x) |
+| 128 samples | 90 (232x) | 79 (265x) | 79 (265x) | 77 (272x) | 309 (67x) | 302 (69x) | 306 (68x) | 139 (150x) | 139 (150x) | 139 (150x) | 96 (218x) | 95 (219x) | 95 (220x) |
+| 256 samples | 89 (234x) | 79 (265x) | 79 (263x) | 76 (274x) | 313 (67x) | 311 (67x) | 316 (66x) | 140 (149x) | 140 (149x) | 140 (149x) | 95 (220x) | 95 (220x) | 95 (218x) |
+| 512 samples | 89 (234x) | 78 (266x) | 79 (264x) | 76 (272x) | 309 (68x) | 300 (69x) | 310 (67x) | 140 (149x) | 140 (149x) | 139 (150x) | 95 (220x) | 94 (221x) | 94 (222x) |
 
 ## Before the fast trio (764d194)
 
