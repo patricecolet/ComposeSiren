@@ -5,6 +5,9 @@
 #ifndef ONESIREN_PLUGINPROCESSOR_H
 #define ONESIREN_PLUGINPROCESSOR_H
 
+// the processor listens to the settings for the controller reset and for the DSP choice
+#define ONESIREN_SETTINGS_LISTENER (COMPOSESIREN_SETTINGS && (COMPOSESIREN_RESETALLCONTROLLERS || COMPOSESIREN_RUST_DSP))
+
 // #include <JuceHeader.h>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <MidiScheduler.h>
@@ -25,7 +28,7 @@ class OneSirenPluginProcessor :
     public juce::Timer,
     public MainButtonsComponent::Listener,
     public VoiceManagerState::Listener
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if ONESIREN_SETTINGS_LISTENER
     , private cs::Settings::Listener
 #endif
 {
@@ -119,11 +122,13 @@ private:
 
     McpControl mcp;
 
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if ONESIREN_SETTINGS_LISTENER
     void settingChanged(cs::Settings::Id id) override;
+    juce::SharedResourcePointer<cs::Settings> settings;
+#endif
+#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
     void applyControllerResetSetting();
     std::atomic<std::uint32_t> channelModePolicy { cs::DspChannelModePolicy{}.packed() };
-    juce::SharedResourcePointer<cs::Settings> settings;
 #endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OneSirenPluginProcessor)

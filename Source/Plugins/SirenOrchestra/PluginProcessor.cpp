@@ -511,6 +511,11 @@ void SirenOrchestraPluginProcessor::settingChanged(cs::Settings::Id id)
     if (cs::Settings::isControllerResetSetting(id))
         applyControllerResetSetting();
 #endif
+#if COMPOSESIREN_RUST_DSP
+    // app-wide: every siren rebuilt off the audio thread, swapped at its next free note-on
+    if (id == cs::Settings::Id::dspVariant || id == cs::Settings::Id::dspDataset)
+        ensemble.reloadDsp();
+#endif
 #if COMPOSESIREN_CLIC
     if (id == cs::Settings::Id::clicOutputDevice)
         applyClicOutputSetting();

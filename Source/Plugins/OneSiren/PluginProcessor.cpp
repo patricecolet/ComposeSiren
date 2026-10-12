@@ -43,8 +43,10 @@ OneSirenPluginProcessor::OneSirenPluginProcessor() :
 #endif
     vms.addListener(this);
     vms.notifyListeners();
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if ONESIREN_SETTINGS_LISTENER
     settings->addListener(this);
+#endif
+#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
     applyControllerResetSetting();
 #endif
     startTimer(33);
@@ -52,7 +54,7 @@ OneSirenPluginProcessor::OneSirenPluginProcessor() :
 
 OneSirenPluginProcessor::~OneSirenPluginProcessor()
 {
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if ONESIREN_SETTINGS_LISTENER
     settings->removeListener(this);
 #endif
     vms.removeListener(this);
@@ -76,10 +78,21 @@ void OneSirenPluginProcessor::applyControllerResetSetting()
     mcp.setControllerResetEnabled(policy.enabled);
 }
 
+#endif
+
+#if ONESIREN_SETTINGS_LISTENER
 void OneSirenPluginProcessor::settingChanged(cs::Settings::Id id)
 {
+#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
     if (cs::Settings::isControllerResetSetting(id))
         applyControllerResetSetting();
+#endif
+#if COMPOSESIREN_RUST_DSP
+    // app-wide: every instance rebuilds its voice off the audio thread (SirenVoice::reloadDsp)
+    if (id == cs::Settings::Id::dspVariant || id == cs::Settings::Id::dspDataset)
+        siren.reloadDsp();
+#endif
+    juce::ignoreUnused(id);
 }
 #endif
 
