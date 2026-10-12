@@ -21,16 +21,20 @@ brackets the real-time factor (how many such voices one core could play).
 - The default build (`COMPOSESIREN_RUST_DSP` OFF) has no regression: its voice and settings
   sources preprocess to the same code as before the Rust work (`763107c`), apart from one
   constant check in `Settings::isAvailable`, which isn't on the audio path.
-- `rust-exact`, which plays the same samples as the C++ bit for bit, costs about 1.6× the C++
-  (S3 at 48 kHz: 352 against 217 ns per sample). That's still about 59 voices per core at 30
-  partials and 9 at 200. `rust-time` and `frames` cost the same as `rust-exact`.
-- The trio variants cost about 8× the C++ (about 12 voices per core at 30 partials).
+- `rust-exact`, which plays the same samples as the C++ bit for bit, now costs about 0.9× the
+  C++ (S3 at 48 kHz: 198 against 220 ns per sample; 1211 against 1454 at 200 partials). It used to cost
+  about 1.6× (352 ns per sample). The gain is from reading each note's frame once per sample
+  instead of once per partial, with the arithmetic unchanged, so the parity tests still pass.
+  `rust-time` and `frames` cost the same as `rust-exact`.
+- The trio variants went from about 8× to about 5× the C++ (S3: 1720 down to 1117 ns per
+  sample, about 19 voices per core at 30 partials). They play up to four banks of partials,
+  each with its own `sin` per partial per sample. The lab's phasor kernels (`kernels.rs`) could
+  take the `sin` out, but they don't round like this voice, so that would be a new, non-exact
+  variant: not done yet.
 - Block size, from 64 to 512 samples, changes nothing; time per sample doesn't depend on the
   sample rate, so the real-time factor halves at 96 kHz.
-- Loading: the C++ loader takes 6.7 s and 854 MiB for every siren's data. The Rust raw loader
-  takes 0.44 s and 299 MiB, and the compact `.sirendata` files take 0.17 s and 94 MiB.
-
-Making the Rust voices faster is left for later work. The lab's SIMD kernels are a lead.
+- Loading: the C++ loader takes 7.0 s and 854 MiB for every siren's data. The Rust raw loader
+  takes 0.5 s and 300 MiB, and the compact `.sirendata` files take 0.18 s and 94 MiB.
 
 ## Load time and memory
 
@@ -38,11 +42,60 @@ Load every siren's data once and measure the growth in resident memory (median o
 
 | loader | data | time | memory |
 |---|---|---:|---:|
-| C++ (`cpp`) | raw `Resources/` | 6.7 s | 854 MiB |
-| Rust `siren-data` | raw `Resources/` | 0.44 s | 299 MiB |
-| Rust `siren-data` | compact `.sirendata` (57 MB on disk) | 0.17 s | 94 MiB |
+| C++ (`cpp`) | raw `Resources/` | 7.0 s | 854 MiB |
+| Rust `siren-data` | raw `Resources/` | 0.50 s | 301 MiB |
+| Rust `siren-data` | compact `.sirendata` (57 MB on disk) | 0.18 s | 94 MiB |
 
 ## Time per sample
+
+### Each siren (48 kHz, 30 partials, 256-sample blocks)
+
+ns per sample (real-time factor: voices one core could play), median of 7 runs of 2 s.
+
+| case | cpp | rust-exact | rust-time | frames | trio | trio-linear | trio-nearest |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| S1 | 142 (147x) | 128 (163x) | 127 (164x) | 130 (161x) | 1041 (20x) | 1035 (20x) | 1166 (18x) |
+| S2 | 149 (139x) | 131 (159x) | 127 (164x) | 132 (158x) | 1098 (19x) | 1083 (19x) | 1080 (19x) |
+| S3 | 221 (94x) | 198 (105x) | 200 (104x) | 208 (100x) | 1139 (18x) | 1125 (19x) | 1125 (19x) |
+| S4 | 244 (85x) | 223 (93x) | 214 (98x) | 217 (96x) | 1131 (18x) | 1153 (18x) | 1248 (17x) |
+| S5 | 306 (68x) | 272 (77x) | 273 (76x) | 279 (75x) | 1255 (17x) | 1256 (17x) | 1212 (17x) |
+| S6 | 304 (69x) | 271 (77x) | 271 (77x) | 278 (75x) | 1203 (17x) | 1197 (17x) | 1203 (17x) |
+| S7 | 270 (77x) | 241 (87x) | 240 (87x) | 245 (85x) | 1314 (16x) | 1306 (16x) | 1325 (16x) |
+
+### Sample rates (S3, 30 partials, 256-sample blocks)
+
+ns per sample (real-time factor: voices one core could play), median of 7 runs of 2 s.
+
+| case | cpp | rust-exact | rust-time | frames | trio | trio-linear | trio-nearest |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 44.1 kHz | 223 (102x) | 202 (112x) | 199 (114x) | 201 (113x) | 1105 (21x) | 1094 (21x) | 1092 (21x) |
+| 48 kHz | 220 (94x) | 199 (105x) | 198 (105x) | 205 (102x) | 1124 (19x) | 1115 (19x) | 1093 (19x) |
+| 96 kHz | 214 (49x) | 193 (54x) | 188 (55x) | 193 (54x) | 1090 (10x) | 1089 (10x) | 1092 (10x) |
+
+### Quality (S3, 48 kHz, 256-sample blocks)
+
+ns per sample (real-time factor: voices one core could play), median of 7 runs of 2 s.
+
+| case | cpp | rust-exact | rust-time | frames | trio | trio-linear | trio-nearest |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 30 partials | 219 (95x) | 199 (105x) | 197 (106x) | 202 (103x) | 1117 (19x) | 1100 (19x) | 1106 (19x) |
+| 120 partials | 951 (22x) | 808 (26x) | 799 (26x) | 802 (26x) | 4396 (5x) | 4389 (5x) | 4388 (5x) |
+| 200 partials | 1454 (14x) | 1211 (17x) | 1222 (17x) | 1289 (16x) | 7775 (3x) | 7779 (3x) | 7729 (3x) |
+
+### Block size (S3, 48 kHz, 30 partials)
+
+ns per sample (real-time factor: voices one core could play), median of 7 runs of 2 s.
+
+| case | cpp | rust-exact | rust-time | frames | trio | trio-linear | trio-nearest |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 64 samples | 219 (95x) | 197 (106x) | 196 (106x) | 200 (104x) | 1097 (19x) | 1100 (19x) | 1104 (19x) |
+| 128 samples | 218 (96x) | 197 (106x) | 198 (105x) | 200 (104x) | 1090 (19x) | 1102 (19x) | 1108 (19x) |
+| 256 samples | 220 (95x) | 198 (105x) | 197 (106x) | 201 (104x) | 1091 (19x) | 1089 (19x) | 1103 (19x) |
+| 512 samples | 219 (95x) | 198 (105x) | 200 (104x) | 204 (102x) | 1103 (19x) | 1098 (19x) | 1103 (19x) |
+
+## Before the frame lookups were hoisted (1100c9e)
+
+The same tables on the same machine before `25fc802`.
 ### Each siren (48 kHz, 30 partials, 256-sample blocks)
 
 ns per sample (real-time factor: voices one core could play), median of 7 runs of 2 s.
