@@ -38,12 +38,42 @@ of the C++ `Sirene` when the global `dsp.variant` setting names a Rust variant (
 default, keeps the C++ one), on the `dsp.dataset` data set: `<resources>/<dataset>/` when the
 build ships it, else the resources folder. The plugin's C++ MIDI handling drives it, through
 `include/siren_dsp_plugin.h` (`src/plugin.rs`); the data is loaded once per folder and shared by
-every voice. A change applies to the sirens loaded after it. Without the settings,
-`COMPOSESIREN_DSP_VARIANT` and `COMPOSESIREN_DSP_DATASET` pick them.
+every voice. Without the settings, `COMPOSESIREN_DSP_VARIANT` and `COMPOSESIREN_DSP_DATASET`
+pick them.
+
+### Changing the variant or the data set while playing
+
+A change in Settings (or through MCP) applies live, in every instance of OneSiren and
+SirenOrchestra and to every voice, without a restart (`SirenVoice::reloadDsp`):
+
+- Each voice builds its new synthesis on its own loader thread, off the audio thread
+  (loading every siren takes seconds with the C++ one), and publishes it with an atomic
+  exchange. A newer request drops an older one still loading.
+- The audio thread takes it just before the next note-on that finds no note held, so a
+  change never cuts a held note, and a release only where the next note starts anyway. Until
+  then the voice keeps the previous synthesis.
+- At the swap the voice replays the last value of each controller (0 to 119) and the pitch
+  wheel into the new synthesis, and fades the previous one out over 20 ms
+  (`SirenVoice::fadeSeconds`), so a release still sounding doesn't click. The fade costs a
+  second voice for 20 ms; a crossfade into the new note isn't needed, since it starts from
+  silence. The next note starts from rest, as after loading a siren.
+- The previous unit is then handed back and freed on the message thread (`collectGarbage`,
+  from the plugins' timer). The audio thread takes no lock, allocates nothing and frees
+  nothing.
+- A siren change (another category, another resources folder) uses the same path but swaps
+  at the next block, as before, now with the same 20 ms fade.
+
+The choice is stored as before (the settings file), and the Settings window shows a change
+made elsewhere (its rows are bound to the settings tree). The OFF build keeps the previous
+voice, unchanged.
 
 With `-DBUILD_TESTING=ON`, `ctest -R rust-dsp-parity` checks that `cpp` and `rust-exact` give
 the same samples, bit for bit, through the voice (every siren, 44.1 and 48 kHz), and that the
 other variants play.
+`ctest -R dsp-hot-swap` plays a voice as a host would while the choice moves cpp -> rust-exact
+-> trio-f32 -> trio -> cpp: each change is built off the audio thread, swaps only at a note-on
+with no note held, the voice keeps playing, and after the swaps to rust-exact and cpp it plays
+bit for bit what a fresh C++ voice plays (once the 20 ms fade is over).
 
 ## Tests
 
