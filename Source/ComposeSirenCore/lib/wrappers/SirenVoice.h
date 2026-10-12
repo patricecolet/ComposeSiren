@@ -15,6 +15,11 @@
 #define COMPOSESIREN_RUST_DSP 0
 #endif
 #if COMPOSESIREN_RUST_DSP
+#include <array>
+#include <condition_variable>
+#include <cstdint>
+#include <mutex>
+#include <thread>
 #include "DspChoice.h"
 #include "siren_dsp_plugin.h"
 #endif
@@ -49,6 +54,11 @@ public:
     // Rust variant falls back to the C++ one, with a message on stderr
     SirenVoiceUnit(sirenId id, const std::string& resourcesPath, const cs::DspChoice& choice = cs::currentDspChoice());
     bool isRust() const { return rustSiren != nullptr; }
+    // audio thread: a note is held (what the voice waits for before a DSP swap)
+    bool isHeld() const { return ino; }
+    // set before the unit is handed to the audio thread: take its place at once (a siren
+    // change), not at the next note-on with no note held (a DSP change)
+    bool adoptAtOnce = false;
 #else
     SirenVoiceUnit(sirenId id, const std::string& resourcesPath);
 #endif
@@ -98,6 +108,39 @@ class SirenVoice
     std::atomic<bool> sirenIsLoading { false };
 
     SirenVoiceUnit* rawSiren;
+#if COMPOSESIREN_RUST_DSP
+    // Hot swap (COMPOSESIREN_RUST_DSP). A new unit (another siren, or the same siren with
+    // another dsp.variant / dsp.dataset) is built off the audio thread and published in
+    // pendingSiren (a siren change on the message thread, as before; a DSP change on a
+    // loader thread). The audio thread adopts a siren change at the next block start, a
+    // DSP change just before the next note-on that finds no note held, so the change never
+    // cuts a held note, and a release only where the next note starts. It replays the
+    // controllers and the pitch wheel into it, and fades the previous unit out over
+    // fadeSeconds, then hands it to retiredSiren, which collectGarbage() frees on the
+    // message thread. No allocation, lock or free on the audio thread.
+    std::atomic<SirenVoiceUnit*> pendingSiren { nullptr };
+    std::atomic<SirenVoiceUnit*> retiredSiren { nullptr };
+    SirenVoiceUnit* fadingSiren = nullptr; // audio thread
+    int fadeLeft = 0;                      // audio thread
+    float fadeStep = 0.0f;                 // audio thread
+    std::atomic<double> sampleRateForNew { 44100.0 };
+    std::atomic<std::uint32_t> swaps { 0 };
+    std::array<std::int8_t, 120> ccs {};   // audio thread: last value of each controller, -1 none
+    int wheel1 = -1, wheel2 = -1;          // audio thread: last pitch wheel
+    // guards the fields below and publishing (message and loader threads)
+    std::mutex controlLock;
+    std::condition_variable loaderWake;
+    std::thread loader;
+    bool loaderStop = false;
+    bool loaderRequested = false;
+    std::uint64_t generation = 0; // a publish of an older request is dropped
+    std::string resourcesPathForNew;
+    cs::DspChoice choiceForNew;
+    std::atomic<bool> reloading { false };
+    void publish(SirenVoiceUnit* unit, std::uint64_t forGeneration);
+    void adoptPending(bool atNoteOn);
+    void loaderLoop();
+#endif
 #if COMPOSESIREN_RESETALLCONTROLLERS
     // set from any thread, consumed by the audio thread in beginProcessBlock
     std::atomic<bool> resetRequested { false };
@@ -151,6 +194,17 @@ public:
     // bool getRawSirenHandle(SirenVoiceUnit* target = nullptr);
     // use this at the end of the processBlock function.
     void deleteDiscarded();
+#if COMPOSESIREN_RUST_DSP
+    // message thread: rebuild this voice's siren with the current DSP choice on a
+    // background thread; it plays from the next note-on with no note held
+    void reloadDsp();
+    // message thread (notifyListeners calls it): free the units done playing
+    void collectGarbage();
+    bool hasPendingSwap() const { return pendingSiren.load(std::memory_order_acquire) != nullptr; }
+    bool isReloading() const { return reloading.load(std::memory_order_acquire); }
+    std::uint32_t swapCount() const { return swaps.load(std::memory_order_acquire); }
+    static constexpr double fadeSeconds = 0.02;
+#endif
 
     // those are using getRawSirenHandle internally :
     virtual void setSampleRate(double newSampleRate);

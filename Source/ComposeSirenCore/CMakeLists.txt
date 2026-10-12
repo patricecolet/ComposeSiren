@@ -210,6 +210,11 @@ if(BUILD_TESTING AND COMPOSESIREN_RUST_DSP)
     ComposeSirenCore juce::juce_audio_processors)
   add_test(NAME rust-dsp-parity
     COMMAND ComposeSirenRustDspParityTests "${CMAKE_SOURCE_DIR}/Resources/")
+  add_executable(ComposeSirenDspHotSwapTests tests/DspHotSwapTests.cpp)
+  target_link_libraries(ComposeSirenDspHotSwapTests PRIVATE
+    ComposeSirenCore juce::juce_audio_processors)
+  add_test(NAME dsp-hot-swap
+    COMMAND ComposeSirenDspHotSwapTests "${CMAKE_SOURCE_DIR}/Resources/")
 endif()
 
 # If we need additional global compile defs, put them here

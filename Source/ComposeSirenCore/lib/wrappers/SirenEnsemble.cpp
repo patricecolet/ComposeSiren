@@ -203,3 +203,16 @@ void SirenEnsemble::process(float* l, float* r) {
 void SirenEnsemble::deleteDiscarded() const {
     for (auto& t : tracks | std::views::values) { t->deleteDiscarded(); }
 }
+
+#if COMPOSESIREN_RUST_DSP
+void SirenEnsemble::reloadDsp() {
+    for (auto& t : tracks | std::views::values) { t->reloadDsp(); }
+}
+
+bool SirenEnsemble::isSwapping() const {
+    for (auto& t : tracks | std::views::values) {
+        if (t->isReloading() || t->hasPendingSwap()) { return true; }
+    }
+    return false;
+}
+#endif

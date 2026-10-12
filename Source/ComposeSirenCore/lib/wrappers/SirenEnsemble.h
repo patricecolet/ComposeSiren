@@ -100,6 +100,11 @@ public:
     void beginProcessBlock();
     void process(float* l, float* r);
     void deleteDiscarded() const;
+#if COMPOSESIREN_RUST_DSP
+    // message thread: every siren rebuilt with the current DSP choice (SirenVoice::reloadDsp)
+    void reloadDsp();
+    bool isSwapping() const; // a reload is building or waits for its note-on
+#endif
 
 private:
     std::atomic<float> masterVolume = 1.0f;

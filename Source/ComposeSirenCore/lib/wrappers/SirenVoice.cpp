@@ -4,6 +4,7 @@
 
 #include <ranges>
 #include "SirenVoice.h"
+#include <algorithm>
 #include <cstdio>
 
 #if COMPOSESIREN_RUST_DSP
@@ -184,6 +185,8 @@ float SirenVoiceUnit::getCurrentPitch() const {
 
 // SIREN VOICE WRAPPER =========================================================
 
+#if !COMPOSESIREN_RUST_DSP
+
 SirenVoice::SirenVoice() :
     lastSampleRate(44100.0), rawSiren(nullptr)
 {}
@@ -334,3 +337,270 @@ void SirenVoice::notifyListeners()
         });
     }
 }
+#else // COMPOSESIREN_RUST_DSP: the hot-swapping voice (SirenVoice.h)
+
+SirenVoice::SirenVoice() :
+    lastSampleRate(44100.0), rawSiren(nullptr)
+{
+    ccs.fill(-1);
+}
+
+SirenVoice::~SirenVoice()
+{
+    {
+        std::lock_guard g(controlLock);
+        loaderStop = true;
+    }
+    loaderWake.notify_all();
+    if (loader.joinable()) loader.join();
+    delete currentSiren.load();
+    delete pendingSiren.load();
+    delete retiredSiren.load();
+    delete fadingSiren;
+    delete discardedSiren.load();
+    removeAllListeners();
+}
+
+void SirenVoice::addListener(Listener* listener)
+{
+    listeners.insert(listener);
+}
+
+void SirenVoice::removeListener(Listener* listener)
+{
+    if (listeners.find(listener) != listeners.end()) {
+        listeners.erase(listener);
+    }
+}
+
+void SirenVoice::removeAllListeners()
+{
+    listeners.clear();
+}
+
+// message or loader thread, controlLock held: hand `unit` to the audio thread, unless a
+// newer request came meanwhile; a unit published but not yet adopted is still ours
+void SirenVoice::publish(SirenVoiceUnit* unit, std::uint64_t forGeneration)
+{
+    if (forGeneration != generation) { delete unit; return; }
+    if (auto* old = pendingSiren.exchange(unit, std::memory_order_acq_rel)) {
+        unit->adoptAtOnce = unit->adoptAtOnce || old->adoptAtOnce; // a siren change still pending
+        delete old;
+    }
+}
+
+void SirenVoice::setSirenId(
+    sirenId sid,
+    const std::string& resourcesPath
+) {
+    sirenIsLoading.store(true, std::memory_order_release);
+    // built here, as before; the DSP choice is the current one (DspChoice.h)
+    auto* newSiren = new SirenVoiceUnit(sid, resourcesPath);
+    newSiren->setSampleRate(sampleRateForNew.load(std::memory_order_acquire));
+    newSiren->adoptAtOnce = true;
+    {
+        std::lock_guard g(controlLock);
+        id = sid;
+        resourcesPathForNew = resourcesPath;
+        publish(newSiren, ++generation);
+    }
+    sirenIsLoading.store(false, std::memory_order_release);
+    for (const auto& l : listeners) { l->currentSirenId(id.value()); }
+}
+
+void SirenVoice::reloadDsp()
+{
+    if (!id.has_value()) return;
+    {
+        std::lock_guard g(controlLock);
+        if (resourcesPathForNew.empty()) return;
+        choiceForNew = cs::currentDspChoice();
+        ++generation;
+        loaderRequested = true;
+        reloading.store(true, std::memory_order_release);
+        if (!loader.joinable()) loader = std::thread([this] { loaderLoop(); });
+    }
+    loaderWake.notify_all();
+}
+
+// the loader thread: builds the unit of the latest request, off the audio thread
+void SirenVoice::loaderLoop()
+{
+    std::unique_lock g(controlLock);
+    for (;;) {
+        loaderWake.wait(g, [this] { return loaderStop || loaderRequested; });
+        if (loaderStop) return;
+        loaderRequested = false;
+        const auto gen = generation;
+        const auto sid = id.value();
+        const auto path = resourcesPathForNew;
+        const auto choice = choiceForNew;
+        g.unlock();
+        auto* unit = new SirenVoiceUnit(sid, path, choice);
+        unit->setSampleRate(sampleRateForNew.load(std::memory_order_acquire));
+        g.lock();
+        publish(unit, gen);
+        if (!loaderRequested) reloading.store(false, std::memory_order_release);
+    }
+}
+
+// audio thread: take the pending unit's place when allowed (SirenVoice.h)
+void SirenVoice::adoptPending(bool atNoteOn)
+{
+    auto* p = pendingSiren.load(std::memory_order_acquire);
+    if (p == nullptr) return;
+    auto* cur = currentSiren.load(std::memory_order_relaxed);
+    if (cur != nullptr) {
+        if (fadingSiren != nullptr) return;           // the previous fade isn't over
+        // a DSP change waits for a note-on with no note held: the previous unit keeps its
+        // release until a new note would cut it anyway
+        if (!p->adoptAtOnce && (!atNoteOn || cur->isHeld())) return;
+    }
+    p = pendingSiren.exchange(nullptr, std::memory_order_acq_rel);
+    if (p == nullptr) return;
+    for (int c = 0; c < static_cast<int>(ccs.size()); ++c)
+        if (ccs[static_cast<size_t>(c)] >= 0) p->handleMidi(0xB0, c, ccs[static_cast<size_t>(c)]);
+    if (wheel1 >= 0) p->handleMidi(0xE0, wheel1, wheel2);
+    currentSiren.store(p, std::memory_order_release);
+    rawSiren = p;
+#if COMPOSESIREN_RESETALLCONTROLLERS
+    p->setChannelModePolicy(cs::DspChannelModePolicy::unpack(channelModePolicy.load(std::memory_order_acquire)));
+#endif
+    if (cur != nullptr) {
+        fadingSiren = cur;
+        fadeLeft = std::max(1, static_cast<int>(fadeSeconds * lastSampleRate));
+        fadeStep = 1.0f / static_cast<float>(fadeLeft);
+    }
+    swaps.fetch_add(1, std::memory_order_acq_rel);
+}
+
+#if COMPOSESIREN_RESETALLCONTROLLERS
+void SirenVoice::requestReset()
+{
+    if (resetRequestsEnabled.load(std::memory_order_acquire))
+        resetRequested.store(true, std::memory_order_release);
+}
+#endif
+
+void SirenVoice::collectGarbage()
+{
+    delete retiredSiren.exchange(nullptr, std::memory_order_acq_rel);
+}
+
+bool SirenVoice::getSirenId(sirenId& sid)
+{
+    if (id.has_value()) {
+        sid = id.value();
+        return true;
+    }
+    return false;
+}
+
+bool SirenVoice::isSirenLoading() const
+{
+    return sirenIsLoading.load(std::memory_order_acquire);
+}
+
+// audio thread, at the start of a block
+bool SirenVoice::getRawSirenHandle()
+{
+    adoptPending(false);
+    rawSiren = currentSiren.load(std::memory_order_acquire);
+    return rawSiren != nullptr;
+}
+
+// units are freed by collectGarbage, off the audio thread
+void SirenVoice::deleteDiscarded() {}
+
+// not while the audio thread runs (prepareToPlay)
+void SirenVoice::setSampleRate(double sampleRate)
+{
+    lastSampleRate = sampleRate;
+    sampleRateForNew.store(sampleRate, std::memory_order_release);
+    if (auto* cur = currentSiren.load(std::memory_order_acquire)) cur->setSampleRate(sampleRate);
+    if (fadingSiren != nullptr) fadingSiren->setSampleRate(sampleRate);
+    std::lock_guard g(controlLock);
+    if (auto* p = pendingSiren.load(std::memory_order_acquire)) p->setSampleRate(sampleRate);
+}
+
+void SirenVoice::stop()
+{
+    if (auto* cur = currentSiren.load(std::memory_order_acquire)) cur->stopSiren();
+}
+
+void SirenVoice::update()
+{
+    if (auto* cur = currentSiren.load(std::memory_order_acquire)) cur->update();
+}
+
+void SirenVoice::handleMidi(int status, int value1, int value2)
+{
+    const int kind = status >> 4;
+    if (kind == 0x9 && value2 > 0) {
+        adoptPending(true);
+    } else if (kind == 0xB && value1 >= 0 && value1 < static_cast<int>(ccs.size())) {
+        ccs[static_cast<size_t>(value1)] = static_cast<std::int8_t>(value2 & 0x7F);
+    } else if (kind == 0xB && value1 == 121) { // reset all controllers
+        ccs.fill(-1);
+        wheel1 = wheel2 = -1;
+    } else if (kind == 0xE) {
+        wheel1 = value1 & 0x7F;
+        wheel2 = value2 & 0x7F;
+    }
+    rawSiren->handleMidi(status, value1, value2);
+}
+
+void SirenVoice::beginProcessBlock()
+{
+    if (fadingSiren != nullptr && fadeLeft == 0) {
+        SirenVoiceUnit* none = nullptr;
+        if (retiredSiren.compare_exchange_strong(none, fadingSiren, std::memory_order_acq_rel))
+            fadingSiren = nullptr;
+    }
+#if COMPOSESIREN_RESETALLCONTROLLERS
+    const auto policy = cs::DspChannelModePolicy::unpack(channelModePolicy.load(std::memory_order_acquire));
+    rawSiren->setChannelModePolicy(policy);
+    if (resetRequested.exchange(false, std::memory_order_acq_rel) && policy.enabled) {
+        rawSiren->resetSiren();
+    }
+#endif
+    rawSiren->beginProcessBlock();
+}
+
+float SirenVoice::process()
+{
+    float s = rawSiren->process();
+    if (fadeLeft > 0) {
+        s += fadingSiren->process() * (static_cast<float>(fadeLeft) * fadeStep);
+        --fadeLeft;
+    }
+    return s;
+}
+
+bool SirenVoice::getIsNoteOn()
+{
+    if (auto* cur = currentSiren.load(std::memory_order_acquire)) return cur->getIsNoteOn();
+    return false;
+}
+
+float SirenVoice::getCurrentPitch()
+{
+    if (auto* cur = currentSiren.load(std::memory_order_acquire)) return cur->getCurrentPitch();
+    return 0.0;
+}
+
+void SirenVoice::notifyListeners()
+{
+    collectGarbage();
+    if (!id.has_value()) { return; }
+
+    for (const auto& l : listeners) {
+        l->currentSirenState(id.value(), {
+            getIsNoteOn(),
+            getCurrentPitch(),
+            getLevel()
+        });
+    }
+}
+
+#endif // COMPOSESIREN_RUST_DSP
