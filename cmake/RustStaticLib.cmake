@@ -19,7 +19,7 @@
 #
 # Debug builds use cargo's dev profile, other configurations release.
 # MACOSX_DEPLOYMENT_TARGET is passed to cargo when CMAKE_OSX_DEPLOYMENT_TARGET
-# is set (rustc rejects an empty one).
+# is set (rustc rejects an empty one), and RUSTC is the rustc next to that cargo.
 
 include_guard(GLOBAL)
 
@@ -72,6 +72,15 @@ function(composesiren_add_rust_staticlib)
   set(cargo_env "")
   if(APPLE AND CMAKE_OSX_DEPLOYMENT_TARGET)
     list(APPEND cargo_env "MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}")
+  endif()
+  # The rustc next to the cargo found above (rustup's, whose std is built for an old macOS),
+  # not whichever rustc comes first on the PATH: a std built on the build machine (Homebrew's)
+  # targets that machine's macOS and the linker warns against CMAKE_OSX_DEPLOYMENT_TARGET.
+  if(COMPOSESIREN_RUST_APPLE_CARGO)
+    cmake_path(GET COMPOSESIREN_CARGO PARENT_PATH cargo_dir)
+    if(EXISTS "${cargo_dir}/rustc")
+      list(APPEND cargo_env "RUSTC=${cargo_dir}/rustc")
+    endif()
   endif()
 
   if(COMPOSESIREN_RUST_APPLE_CARGO)
