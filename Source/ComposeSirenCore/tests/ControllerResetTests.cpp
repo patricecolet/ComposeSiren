@@ -1,9 +1,7 @@
 #include "lib/dsp/MidiIn.h"
 #include "lib/settings/Settings.h"
-#if COMPOSESIREN_SETTINGS
 #include "../../Plugins/SirenOrchestra/OrchestraMidiRouter.h"
 #include "../../Plugins/OneSiren/OneMidiRouter.h"
-#endif
 
 #include <iostream>
 #include <stdexcept>
@@ -59,7 +57,6 @@ void checkMidi(bool enabled)
 
 void checkSettings()
 {
-#if COMPOSESIREN_SETTINGS
     const auto& row = cs::Settings::describe(cs::Settings::controllerResetEnabled);
     check(row.id == "reset_all_controllers.enabled", "stable setting storage key");
     check(row.group == "Controller reset" && row.type == mecaviv::metadata::SettingType::Bool,
@@ -83,9 +80,6 @@ void checkSettings()
                      cs::Settings::bridgeResetControllersOutput, cs::Settings::bridgeAllNotesOffOutput })
         check(cs::Settings::isAvailable(id) == (COMPOSESIREN_PARK_BRIDGE != 0),
               "bridge choices require a compiled bridge");
-#else
-    check(cs::Settings::settingCount == mecaviv::metadata::settingCount, "no row without settings");
-#endif
 }
 
 void checkValueRules()
@@ -171,7 +165,6 @@ void checkBridgeRules()
           && !bridge.forwardedValue(123, 1), "bridge rules and output values are independent per controller");
 }
 
-#if COMPOSESIREN_SETTINGS
 class TestProcessor : public juce::AudioProcessor {
 public:
     const juce::String getName() const override { return "Test"; }
@@ -239,7 +232,6 @@ void checkKnobRouting()
         }
     }
 }
-#endif
 
 } // namespace
 
@@ -251,9 +243,7 @@ int main()
         checkSettings();
         checkValueRules();
         checkBridgeRules();
-#if COMPOSESIREN_SETTINGS
         checkKnobRouting();
-#endif
         std::cout << "Controller reset runtime and MIDI characterization checks passed\n";
         return 0;
     } catch (const std::exception& e) {

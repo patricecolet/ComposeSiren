@@ -42,7 +42,6 @@ static void publishDspChoice(const Settings& s)
 
 Settings::Settings()
 {
-#if COMPOSESIREN_SETTINGS
     juce::PropertiesFile::Options options;
     options.applicationName = "ComposeSiren";
     options.filenameSuffix = ".settings";
@@ -51,25 +50,22 @@ Settings::Settings()
     options.storageFormat = juce::PropertiesFile::storeAsXML;
     options.millisecondsBeforeSaving = 500;
     file = std::make_unique<juce::PropertiesFile>(options);
-#endif
 
     for (std::size_t i = 0; i < settingCount; ++i) {
         const auto id = idAt(i);
         juce::var v = describe(id).type == meta::SettingType::String
                           ? juce::var(juce::String())
                           : juce::var(describe(id).defaultValue);
-#if COMPOSESIREN_SETTINGS
         if (file->containsKey(key(id).toString())) {
             if (describe(id).type == meta::SettingType::String)
                 v = file->getValue(key(id).toString());
             else
                 v = file->getValue(key(id).toString()).getDoubleValue();
         }
-#endif
         tree.setProperty(key(id), normalised(id, v), nullptr);
     }
     tree.addListener(this);
-#if COMPOSESIREN_RUST_DSP && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RUST_DSP
     publishDspChoice(*this);
 #endif
 }
@@ -77,14 +73,12 @@ Settings::Settings()
 Settings::~Settings()
 {
     tree.removeListener(this);
-#if COMPOSESIREN_SETTINGS
     file->saveIfNeeded();
-#endif
 }
 
 const meta::Setting& Settings::describe(Id id)
 {
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
     if (isControllerResetSetting(id)) {
         static constexpr std::string_view receiveChoices = "Ignore|Zero only|Positive only|Any value";
         static constexpr std::string_view outputChoices = "Preserve|Send 0|Send 127";
@@ -120,7 +114,7 @@ const meta::Setting& Settings::describe(Id id)
     return meta::settings[static_cast<std::size_t>(id)];
 }
 
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
 DspChannelModePolicy Settings::getDspChannelModePolicy() const
 {
     return { getBool(controllerResetEnabled), {
@@ -146,13 +140,13 @@ bool Settings::isAvailable(Id id)
     const auto option = describe(id).requiredOption;
     if (option.empty()) return true;
     if (option == "COMPOSESIREN_SIREN_WAVES") return COMPOSESIREN_SIREN_WAVES != 0;
-    if (option == "COMPOSESIREN_SETTINGS") return COMPOSESIREN_SETTINGS != 0;
+    if (option == "COMPOSESIREN_SETTINGS") return true;
     if (option == "COMPOSESIREN_MCP") return COMPOSESIREN_MCP != 0;
     if (option == "COMPOSESIREN_RECORD") return COMPOSESIREN_RECORD != 0;
     if (option == "COMPOSESIREN_PARK_BRIDGE") return COMPOSESIREN_PARK_BRIDGE != 0;
     if (option == "COMPOSESIREN_CLIC") return COMPOSESIREN_CLIC != 0;
     if (option == "COMPOSESIREN_RUST_DSP") return COMPOSESIREN_RUST_DSP != 0;
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
     if (option == "COMPOSESIREN_RESETALLCONTROLLERS") return true;
 #endif
     return false; // an option this build doesn't know about
@@ -231,13 +225,11 @@ void Settings::valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier
             const juce::ScopedValueSetter<bool> guard(normalising, true);
             tree.setProperty(property, clean, nullptr);
         }
-#if COMPOSESIREN_SETTINGS
         if (describe(id).type == meta::SettingType::String)
             file->setValue(property.toString(), clean.toString());
         else
             file->setValue(property.toString(), static_cast<double>(clean));
-#endif
-#if COMPOSESIREN_RUST_DSP && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RUST_DSP
         if (id == meta::SettingId::dspVariant || id == meta::SettingId::dspDataset)
             publishDspChoice(*this);
 #endif

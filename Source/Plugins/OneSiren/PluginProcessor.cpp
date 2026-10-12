@@ -46,7 +46,7 @@ OneSirenPluginProcessor::OneSirenPluginProcessor() :
 #if ONESIREN_SETTINGS_LISTENER
     settings->addListener(this);
 #endif
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
     applyControllerResetSetting();
 #endif
     startTimer(33);
@@ -69,7 +69,7 @@ void OneSirenPluginProcessor::prepareToPlay(double sampleRate, int samplesPerBlo
     siren.setSampleRate(sampleRate);
 }
 
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
 void OneSirenPluginProcessor::applyControllerResetSetting()
 {
     const auto policy = settings->getDspChannelModePolicy();
@@ -83,7 +83,7 @@ void OneSirenPluginProcessor::applyControllerResetSetting()
 #if ONESIREN_SETTINGS_LISTENER
 void OneSirenPluginProcessor::settingChanged(cs::Settings::Id id)
 {
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
     if (cs::Settings::isControllerResetSetting(id))
         applyControllerResetSetting();
 #endif
@@ -195,7 +195,7 @@ void OneSirenPluginProcessor::setSirenId(sirenId id)
 void OneSirenPluginProcessor::processBlock(juce::AudioBuffer<float>& audio,
                                            juce::MidiBuffer& midiIn)
 {
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
     const auto policy = cs::DspChannelModePolicy::unpack(channelModePolicy.load(std::memory_order_acquire));
     router.setChannelModePolicy(policy);
     siren.setChannelModePolicy(policy);

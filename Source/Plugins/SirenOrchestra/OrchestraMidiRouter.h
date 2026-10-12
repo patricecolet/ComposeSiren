@@ -32,7 +32,7 @@ public:
 
     ~OrchestraMidiRouter() = default;
 
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
     void setChannelModePolicy(cs::DspChannelModePolicy policy) {
         for (auto& bridges : midiBridges | std::ranges::views::values)
             bridges->setChannelModePolicy(policy);

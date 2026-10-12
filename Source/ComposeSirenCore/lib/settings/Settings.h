@@ -6,9 +6,10 @@
 // resources/metadata/composesiren-settings.csv by `franz doctor fix meta`.
 // The compile-gated controller-reset rows extend it in Settings::describe().
 //
-// With COMPOSESIREN_SETTINGS the values are stored per user (a properties
-// file next to the other Mecanique Vivante settings) and the Settings...
-// button edits them; without it every setting keeps its default. Message
+// The values are stored per user (a properties file next to the other
+// Mecanique Vivante settings) and the Settings... menu item edits them, in
+// every build; a setting whose option this build lacks keeps its default and
+// isn't shown (isAvailable). Message
 // thread only. Share one instance per process with
 // juce::SharedResourcePointer<cs::Settings>.
 
@@ -23,7 +24,7 @@ class Settings : private juce::ValueTree::Listener
 public:
     using Id = mecaviv::metadata::SettingId;
 
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
     // Optional extension: leave the generated base table and disabled builds
     // unchanged. Stored by name, like the generated settings.
     static constexpr Id controllerResetEnabled = static_cast<Id>(mecaviv::metadata::settingCount);
@@ -87,9 +88,7 @@ private:
     juce::ValueTree tree { "ComposeSirenSettings" };
     juce::ListenerList<Listener> listeners;
     bool normalising = false;
-#if COMPOSESIREN_SETTINGS
     std::unique_ptr<juce::PropertiesFile> file;
-#endif
 };
 
 } // namespace cs

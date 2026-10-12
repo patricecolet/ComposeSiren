@@ -94,7 +94,6 @@ SirenOrchestraPluginProcessor::SirenOrchestraPluginProcessor() :
     clicBiasParam = apvts.getRawParameterValue(ParameterIdGet::toJuceParameterId("C", ParameterId::ClicBias));
     clicDecayParam = apvts.getRawParameterValue(ParameterIdGet::toJuceParameterId("C", ParameterId::ClicDecay));
 #endif
-#if COMPOSESIREN_SETTINGS
     settings->addListener(this);
 #if COMPOSESIREN_RESETALLCONTROLLERS
     applyControllerResetSetting();
@@ -102,15 +101,12 @@ SirenOrchestraPluginProcessor::SirenOrchestraPluginProcessor() :
 #if COMPOSESIREN_CLIC
     applyClicOutputSetting();
 #endif
-#endif
     startTimer(33);
 }
 
 SirenOrchestraPluginProcessor::~SirenOrchestraPluginProcessor()
 {
-#if COMPOSESIREN_SETTINGS
     settings->removeListener(this);
-#endif
     stopTimer();
     // reads the MCP server and the bridge, which are destroyed with this object
     delete aboutWindow.getComponent();
@@ -267,7 +263,7 @@ void SirenOrchestraPluginProcessor::timerCallback()
 void SirenOrchestraPluginProcessor::processBlock(juce::AudioBuffer<float>& audio,
                                                  juce::MidiBuffer& midiIn)
 {
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
     const auto policyBits = channelModePolicy.load(std::memory_order_acquire);
     const auto policy = cs::DspChannelModePolicy::unpack(policyBits);
     router.setChannelModePolicy(policy);
@@ -320,7 +316,7 @@ void SirenOrchestraPluginProcessor::processBlock(juce::AudioBuffer<float>& audio
     for (const auto metadata : midiIn) {
         const auto& m = metadata.getMessage();
         if (m.getRawDataSize() == 3) {
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
             if (m.isController()) {
                 const auto value = bridgePolicy.forwardedValue(m.getControllerNumber(), m.getControllerValue());
                 if (value.has_value())
@@ -429,9 +425,7 @@ void SirenOrchestraPluginProcessor::collectClicMidi(const juce::MidiBuffer& midi
 
 void SirenOrchestraPluginProcessor::applyClicOutputSetting()
 {
-#if COMPOSESIREN_SETTINGS
     clicSecondary.setDevice(settings->getString(cs::Settings::Id::clicOutputDevice));
-#endif
 }
 
 void SirenOrchestraPluginProcessor::renderClic(juce::AudioBuffer<float>& audio)
@@ -490,7 +484,6 @@ void SirenOrchestraPluginProcessor::renderClic(juce::AudioBuffer<float>& audio)
 }
 #endif
 
-#if COMPOSESIREN_SETTINGS
 #if COMPOSESIREN_RESETALLCONTROLLERS
 void SirenOrchestraPluginProcessor::applyControllerResetSetting()
 {
@@ -523,7 +516,6 @@ void SirenOrchestraPluginProcessor::settingChanged(cs::Settings::Id id)
     juce::ignoreUnused(id);
 #endif
 }
-#endif
 
 //==============================================================================
 bool SirenOrchestraPluginProcessor::hasEditor() const

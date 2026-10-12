@@ -138,7 +138,7 @@ composesiren_option(COMPOSESIREN_MCP
 # With COMPOSESIREN_MCP, also adds reset_controllers (the reset-all-controllers
 # Rust feature in Source/composesiren-mcp). Off: retain the main branch's DSP
 # behaviour and MCP tools. See Source/ComposeSirenCore/Mcp.cmake.
-# With COMPOSESIREN_SETTINGS, an Enable checkbox controls it at runtime.
+# An Enable checkbox in Settings... controls it at runtime.
 
 option(COMPOSESIREN_RESETALLCONTROLLERS
         "Thread-safe controller reset, MIDI CC 120/123, and the MCP reset_controllers tool"
@@ -167,17 +167,13 @@ composesiren_option(COMPOSESIREN_RUST_DSP
         "The Rust synthesis and its variants, chosen in the settings (dsp.variant, dsp.dataset)"
         OFF)
 
-# DEAL WITH THE SETTINGS #######################################################
-# Power-user settings of the plugins. What they are (type, range, default,
-# description) comes from Source/ComposeSirenCore/lib/definitions/generated/
-# SettingsMetadata.h, committed, generated from mecaviv-dev-root's
-# resources/metadata/composesiren-settings.csv (`franz doctor fix meta`).
-# On: stored per user, edited in a Settings... window. Off: every setting
-# keeps its default. See Source/ComposeSirenCore/lib/settings.
-
-composesiren_option(COMPOSESIREN_SETTINGS
-        "Power-user settings from the settings metadata, stored per user, Settings... window"
-        ON)
+# THE SETTINGS #################################################################
+# Power-user settings of the plugins, in every build: stored per user, edited in the
+# Settings... window (top-bar menu). What they are (type, range, default, description)
+# comes from Source/ComposeSirenCore/lib/definitions/generated/SettingsMetadata.h,
+# committed, generated from mecaviv-dev-root's resources/metadata/composesiren-settings.csv
+# (`franz doctor fix meta`). An option gates only its own rows (the controller reset
+# rows need COMPOSESIREN_RESETALLCONTROLLERS). See Source/ComposeSirenCore/lib/settings.
 
 # DEAL WITH THE SONG TITLE BAR #################################################
 # Shows the playing song in the top bar and the window title, set over MCP
@@ -194,7 +190,7 @@ composesiren_option(COMPOSESIREN_SONG_TITLE
 # output level and pitch, in the sirens' colours from the siren metadata
 # (generated/SirenMetadata.h, committed). OpenGL (juce_opengl, Assets/shaders/
 # SirenWave.frag) with a software fallback. Tuned by the waves.* settings
-# (COMPOSESIREN_SETTINGS). See Source/ComposeSirenCore/Components/waves.
+# (the settings). See Source/ComposeSirenCore/Components/waves.
 
 composesiren_option(COMPOSESIREN_SIREN_WAVES
         "Animated waves in SirenOrchestra's title cells (OpenGL, software fallback)"

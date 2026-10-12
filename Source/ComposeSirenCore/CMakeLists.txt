@@ -91,17 +91,9 @@ else()
   target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_RUST_DSP=0)
 endif()
 
-# Settings metadata (committed) + power-user Settings / Settings.... The clic
-# secondary output device is one of the settings, so CLIC needs Settings too.
-if(COMPOSESIREN_SETTINGS OR COMPOSESIREN_CLIC)
-  target_sources(ComposeSirenCore PRIVATE lib/settings/Settings.cpp)
-endif()
-if(COMPOSESIREN_SETTINGS)
-  target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_SETTINGS=1)
-  target_sources(ComposeSirenCore PRIVATE lib/settings/SettingsDialog.cpp)
-else()
-  target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_SETTINGS=0)
-endif()
+# Settings metadata (committed) + power-user Settings and the Settings... window: in
+# every build (each option gates only its own rows, Settings::isAvailable).
+target_sources(ComposeSirenCore PRIVATE lib/settings/Settings.cpp lib/settings/SettingsDialog.cpp)
 
 if(COMPOSESIREN_SONG_TITLE)
   target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_SONG_TITLE=1)
@@ -140,24 +132,14 @@ target_link_libraries(ComposeSirenCore
 # from mecaviv-dev-root/resources/metadata; mecaviv members regenerate it with
 # `franz doctor fix meta`, and `franz doctor meta` tells when it drifts.
 
-if(COMPOSESIREN_SETTINGS OR COMPOSESIREN_SIREN_WAVES)
-  foreach(_generated SirenMetadata.h SettingsMetadata.h)
-    if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/lib/definitions/generated/${_generated}")
-      message(FATAL_ERROR
-        "Source/ComposeSirenCore/lib/definitions/generated/${_generated} is missing. "
-        "It is committed: restore it from git (mecaviv members can also regenerate it "
-        "with `franz doctor fix meta`).")
-    endif()
-  endforeach()
-  target_sources(ComposeSirenCore PRIVATE lib/settings/Settings.cpp)
-endif()
-
-if(COMPOSESIREN_SETTINGS)
-  target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_SETTINGS=1)
-  target_sources(ComposeSirenCore PRIVATE lib/settings/SettingsDialog.cpp)
-else()
-  target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_SETTINGS=0)
-endif()
+foreach(_generated SirenMetadata.h SettingsMetadata.h)
+  if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/lib/definitions/generated/${_generated}")
+    message(FATAL_ERROR
+      "Source/ComposeSirenCore/lib/definitions/generated/${_generated} is missing. "
+      "It is committed: restore it from git (mecaviv members can also regenerate it "
+      "with `franz doctor fix meta`).")
+  endif()
+endforeach()
 
 if(COMPOSESIREN_SIREN_WAVES)
   target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_SIREN_WAVES=1)
@@ -201,6 +183,14 @@ if(BUILD_TESTING AND COMPOSESIREN_RESETALLCONTROLLERS)
   target_link_libraries(ComposeSirenControllerResetTests PRIVATE
     ComposeSirenCore juce::juce_audio_processors)
   add_test(NAME controller-reset COMMAND ComposeSirenControllerResetTests)
+endif()
+
+# The Settings... window, in every build.
+if(BUILD_TESTING)
+  add_executable(ComposeSirenSettingsDialogTests tests/SettingsDialogTests.cpp)
+  target_link_libraries(ComposeSirenSettingsDialogTests PRIVATE
+    ComposeSirenCore juce::juce_audio_processors)
+  add_test(NAME settings-dialog COMMAND ComposeSirenSettingsDialogTests)
 endif()
 
 # The Rust synthesis plays as the C++ one, bit for bit, in the plugin's voice.

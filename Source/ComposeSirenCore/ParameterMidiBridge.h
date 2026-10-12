@@ -118,7 +118,7 @@ public:
     handleIncomingEvent(const juce::MidiMessage& msg,
                         int samplePosition,
                         MidiScheduler& scheduler
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
                         , bool preserveIncomingValue = false
 #endif
                         ) {
@@ -135,7 +135,7 @@ public:
             audioParam.setValueNotifyingHost(value);
         }
 
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
         if (preserveIncomingValue) {
             auto routed = msg;
             routed.setChannel(mapChannel(channel));

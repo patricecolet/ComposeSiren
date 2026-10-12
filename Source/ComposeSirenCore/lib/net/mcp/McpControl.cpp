@@ -5,9 +5,7 @@
 #include <cstring>
 #include <optional>
 
-#if COMPOSESIREN_SETTINGS || COMPOSESIREN_CLIC
 #include "lib/settings/Settings.h"
-#endif
 
 namespace {
 
@@ -200,7 +198,6 @@ std::string McpControl::handle(const juce::var& request)
         return clearSongTitle();
 #endif
 
-#if COMPOSESIREN_SETTINGS || COMPOSESIREN_CLIC
     if (op == "list_settings")
         return listSettings();
     if (op == "get_setting")
@@ -208,7 +205,6 @@ std::string McpControl::handle(const juce::var& request)
     if (op == "set_setting")
         return setSetting(request.getProperty("id", {}).toString(),
                           request.getProperty("value", {}));
-#endif
 
 #if COMPOSESIREN_RESETALLCONTROLLERS
     if (op == "reset_controllers")
@@ -305,7 +301,6 @@ std::string McpControl::setParameter(const juce::String& id, double value) const
     return jsonOf(object).toStdString();
 }
 
-#if COMPOSESIREN_SETTINGS || COMPOSESIREN_CLIC
 namespace {
 
 std::optional<cs::Settings::Id> settingIdFromString(const juce::String& name)
@@ -384,7 +379,6 @@ std::string McpControl::setSetting(const juce::String& id, const juce::var& valu
     object.getDynamicObject()->setProperty("ok", true);
     return jsonOf(object).toStdString();
 }
-#endif
 
 std::string McpControl::sendMidi(int status, int data1, int data2) const
 {

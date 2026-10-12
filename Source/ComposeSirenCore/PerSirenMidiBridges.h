@@ -21,7 +21,7 @@ class PerSirenMidiBridges
     std::unique_ptr<KeyboardMidiBridge> noteBridge;
     std::unique_ptr<ParameterMidiBridge<PitchBendParam>> pitchBendBridge;
     std::map<int, std::unique_ptr<ParameterMidiBridge<CCParam>>> bridgeByCCNumber;
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
     cs::DspChannelModePolicy channelModePolicy;
 #endif
 
@@ -70,7 +70,7 @@ public:
     }
     ~PerSirenMidiBridges() = default;
 
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
     // Audio thread: the processor supplies the same block snapshot to the DSP.
     void setChannelModePolicy(cs::DspChannelModePolicy policy) { channelModePolicy = policy; }
 #endif
@@ -136,12 +136,12 @@ public:
     {
         if (msg.isController() && bridgeByCCNumber.contains(msg.getControllerNumber())) {
             bridgeByCCNumber[msg.getControllerNumber()]->handleIncomingEvent(msg, samplePosition, scheduler
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
                 , channelModePolicy.enabled && cs::channelModeIndex(msg.getControllerNumber()) >= 0
 #endif
             );
             if (msg.getControllerNumber() == 121
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
                 && channelModePolicy.accepts(121, msg.getControllerValue())
 #endif
             ) { resetKnobs(); }

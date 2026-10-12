@@ -1,7 +1,5 @@
 #include "SettingsDialog.h"
 
-#if COMPOSESIREN_SETTINGS
-
 #include <juce_audio_devices/juce_audio_devices.h>
 
 namespace cs {
@@ -127,11 +125,17 @@ SettingsDialog::SettingsDialog()
         panel.addSection(group, rows);
     }
     addAndMakeVisible(panel);
+    if (groups.isEmpty()) {
+        empty.setText("This build has no settings to change: they come with its options "
+                      "(Rust DSP, siren waves, clic, controller reset).", juce::dontSendNotification);
+        empty.setJustificationType(juce::Justification::centred);
+        addAndMakeVisible(empty);
+    }
 
     reset.onClick = [this] { settings->resetToDefaults(); };
     addAndMakeVisible(reset);
 
-    setSize(460, juce::jmin(640, panel.getTotalContentHeight() + 48));
+    setSize(460, juce::jmin(640, juce::jmax(120, panel.getTotalContentHeight() + 48)));
 }
 
 void SettingsDialog::show(juce::Component* parent)
@@ -153,8 +157,8 @@ void SettingsDialog::resized()
     reset.setBounds(area.removeFromBottom(28).removeFromRight(150));
     area.removeFromBottom(8);
     panel.setBounds(area);
+    empty.setBounds(area);
 }
 
 } // namespace cs
 
-#endif

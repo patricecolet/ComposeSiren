@@ -22,7 +22,7 @@ public:
     }
     ~OneMidiRouter() = default;
 
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
     void setChannelModePolicy(cs::DspChannelModePolicy policy) {
         midiBridges->setChannelModePolicy(policy);
     }

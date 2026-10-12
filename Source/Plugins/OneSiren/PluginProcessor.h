@@ -6,7 +6,7 @@
 #define ONESIREN_PLUGINPROCESSOR_H
 
 // the processor listens to the settings for the controller reset and for the DSP choice
-#define ONESIREN_SETTINGS_LISTENER (COMPOSESIREN_SETTINGS && (COMPOSESIREN_RESETALLCONTROLLERS || COMPOSESIREN_RUST_DSP))
+#define ONESIREN_SETTINGS_LISTENER (COMPOSESIREN_RESETALLCONTROLLERS || COMPOSESIREN_RUST_DSP)
 
 // #include <JuceHeader.h>
 #include <juce_audio_processors/juce_audio_processors.h>
@@ -18,7 +18,7 @@
 #include "OneMidiRouter.h"
 #include "lib/wrappers/SirenStateMonitor.h"
 #include <lib/net/mcp/McpControl.h>
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
 #include <lib/settings/Settings.h>
 #endif
 // #include "UiState.h"
@@ -126,7 +126,7 @@ private:
     void settingChanged(cs::Settings::Id id) override;
     juce::SharedResourcePointer<cs::Settings> settings;
 #endif
-#if COMPOSESIREN_RESETALLCONTROLLERS && COMPOSESIREN_SETTINGS
+#if COMPOSESIREN_RESETALLCONTROLLERS
     void applyControllerResetSetting();
     std::atomic<std::uint32_t> channelModePolicy { cs::DspChannelModePolicy{}.packed() };
 #endif

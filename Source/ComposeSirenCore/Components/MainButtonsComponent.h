@@ -12,17 +12,12 @@
 #ifndef COMPOSESIREN_PARK_BRIDGE
 #define COMPOSESIREN_PARK_BRIDGE 0
 #endif
-#ifndef COMPOSESIREN_SETTINGS
-#define COMPOSESIREN_SETTINGS 0
-#endif
 #ifndef COMPOSESIREN_SONG_TITLE
 #define COMPOSESIREN_SONG_TITLE 0
 #endif
 #include "../lib/net/mcp/McpControl.h"
 #include "../lib/utilities/recorder/RecordDialog.h"
-#if COMPOSESIREN_SETTINGS
 #include "../lib/settings/SettingsDialog.h"
-#endif
 
 class MainButtonsComponent : public juce::Component,
                              public juce::TextButton::Listener
@@ -310,9 +305,7 @@ public:
     void showMenu()
     {
         juce::PopupMenu menu;
-#if COMPOSESIREN_SETTINGS
         menu.addItem("Settings...", [this] { cs::SettingsDialog::show(getTopLevelComponent()); });
-#endif
 #if COMPOSESIREN_RECORD
         if (auto* recorder = listener.getRecorder())
             menu.addItem("Record...", [this, recorder] { RecordDialog::show(*recorder, getTopLevelComponent()); });

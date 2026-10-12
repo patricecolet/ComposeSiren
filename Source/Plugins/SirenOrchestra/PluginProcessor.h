@@ -32,21 +32,14 @@
 #include <cstdint>
 #include <vector>
 #endif
-#ifndef COMPOSESIREN_SETTINGS
-#define COMPOSESIREN_SETTINGS 0
-#endif
-#if COMPOSESIREN_SETTINGS
 #include <lib/settings/Settings.h>
-#endif
 #include <juce_gui_basics/juce_gui_basics.h>
 
 class SirenOrchestraPluginProcessor :
     public juce::AudioProcessor,
     public MainButtonsComponent::Listener,
     public juce::Timer
-#if COMPOSESIREN_SETTINGS
     , private cs::Settings::Listener
-#endif
 {
 public:
     SirenOrchestraPluginProcessor();
@@ -190,14 +183,12 @@ private:
     void renderClic(juce::AudioBuffer<float>& audio);
     void applyClicOutputSetting();
 #endif
-#if COMPOSESIREN_SETTINGS
     void settingChanged(cs::Settings::Id id) override;
 #if COMPOSESIREN_RESETALLCONTROLLERS
     void applyControllerResetSetting();
     std::atomic<std::uint32_t> channelModePolicy { cs::DspChannelModePolicy{}.packed() };
 #endif
     juce::SharedResourcePointer<cs::Settings> settings;
-#endif
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SirenOrchestraPluginProcessor)
 };
