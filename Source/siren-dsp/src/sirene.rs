@@ -752,6 +752,41 @@ impl Sirene {
         let (sa, sb) = self.smoothing_rate;
         let compute = self.is16bit || self.is_changement_de_note || self.count8bit;
 
+        if !matches!(&self.frames, FrameControl::Lab(l) if l.interpolate) {
+            // Frames read whole (the plugin's): the arithmetic of the loop below, in the same
+            // order, with each note's frame looked up once per sample instead of per partial.
+            let q = self.qualite as usize;
+            let (ni, ns) = (idx(inf), idx(sup));
+            let (pi, psu) = (self.count_p[ni].max(0) as usize, self.count_p[ns].max(0) as usize);
+            let (fi, ai) = (&self.data.freq(ni, pi)[..q], &self.data.amp(ni, pi)[..q]);
+            let (fs, as_) = (&self.data.freq(ns, psu)[..q], &self.data.amp(ns, psu)[..q]);
+            let phase = &mut self.phase_inf[..q];
+            if compute {
+                let (amp, ampz) = (&mut self.amp[..q], &mut self.ampz[..q]);
+                let crossfade = self.is_crossfade;
+                for i in 0..q {
+                    if crossfade {
+                        phase[i] += ((fi[i] * ps_inf) * el) as f64 / 100.0 + ((fs[i] * ps_sup) * el_sup) as f64 / 100.0;
+                        amp[i] = ((ai[i] * el) as f64 / 100.0 + (as_[i] * el_sup) as f64 / 100.0) as f32;
+                    } else {
+                        amp[i] = ai[i];
+                        phase[i] += (fi[i] * ps_inf) as f64;
+                    }
+                    ampz[i] = (sa * amp[i] as f64 + sb * ampz[i] as f64) as f32;
+                    wave_inf = (wave_inf as f64 + phase[i].sin() * ampz[i] as f64) as f32;
+                    if phase[i] == 180.0 {
+                        phase[i] = 0.0;
+                    }
+                }
+                if q > 0 {
+                    self.ancienne_wave_inf = wave_inf;
+                }
+            } else {
+                for i in 0..q {
+                    phase[i] += (fi[i] * ps_inf) as f64;
+                }
+            }
+        } else {
         for i in 0..self.qualite as usize {
             let (f_inf, a_inf) = self.partial(inf, self.count_k_inf, i);
             if compute {
@@ -773,6 +808,7 @@ impl Sirene {
                 // the C++ advances with noteInf only here, crossfade or not
                 self.phase_inf[i] += (f_inf * ps_inf) as f64;
             }
+        }
         }
 
         let mut out = if self.is16bit { wave_inf * self.ampvouluz } else { self.ancienne_wave_inf * self.ampvouluz };
@@ -919,8 +955,9 @@ impl Sirene {
                     };
                 }
             }
+            let view = FrameView::new(data, frames, n, b.frame, b.count_k, clock, b.carry);
             for i in 0..q {
-                let (f, a) = partial_at(data, frames, n, b.frame, b.count_k, i, clock, b.carry);
+                let (f, a) = view.at(i);
                 if lock {
                     // the harmonic the partial lands on at the target pitch
                     b.phase[i] = ((f as f64 * b.ratio) / f0).round().max(1.0) * phi;
@@ -1086,23 +1123,48 @@ fn scaled(fdur: f32, rate: f64) -> f32 {
 #[inline]
 #[allow(clippy::too_many_arguments)]
 fn partial_at(data: &DataSet, frames: &FrameControl, n: usize, frame: i32, count_k: i32, i: usize, clock: Clock, carry: f64) -> (f32, f32) {
-    let p = frame.max(0) as usize;
-    let (f0, a0) = (data.freq(n, p)[i], data.amp(n, p)[i]);
-    if let FrameControl::Lab(l) = frames
-        && l.interpolate {
-            let s = l.sel.get(n).copied().unwrap_or(FrameSel { start: 0, end: 0, freeze: None });
-            if s.freeze.is_none() {
-                let fdur = clock.len(data.dure.get(n).map_or(0.0, |d| d[0]), l.speed, carry);
-                if fdur > 0 {
-                    let next = if p + 1 >= s.end { s.start } else { p + 1 };
-                    // count_k runs 1..=fdur over a frame
-                    let t = ((count_k - 1).max(0) as f32) / fdur as f32;
-                    let (f1, a1) = (data.freq(n, next)[i], data.amp(n, next)[i]);
-                    return (f0 + (f1 - f0) * t, a0 + (a1 - a0) * t);
+    FrameView::new(data, frames, n, frame, count_k, clock, carry).at(i)
+}
+
+/// The frame(s) a note's partials are read from at one sample: `partial_at` for every partial
+/// with the lookups done once.
+struct FrameView<'a> {
+    freq: &'a [f32; MAX_PARTIEL],
+    amp: &'a [f32; MAX_PARTIEL],
+    /// the next frame and how far towards it, when the lab interpolates
+    next: Option<(&'a [f32; MAX_PARTIEL], &'a [f32; MAX_PARTIEL], f32)>,
+}
+
+impl<'a> FrameView<'a> {
+    #[inline]
+    fn new(data: &'a DataSet, frames: &FrameControl, n: usize, frame: i32, count_k: i32, clock: Clock, carry: f64) -> Self {
+        let p = frame.max(0) as usize;
+        let mut v = FrameView { freq: data.freq(n, p), amp: data.amp(n, p), next: None };
+        if let FrameControl::Lab(l) = frames
+            && l.interpolate {
+                let s = l.sel.get(n).copied().unwrap_or(FrameSel { start: 0, end: 0, freeze: None });
+                if s.freeze.is_none() {
+                    let fdur = clock.len(data.dure.get(n).map_or(0.0, |d| d[0]), l.speed, carry);
+                    if fdur > 0 {
+                        let next = if p + 1 >= s.end { s.start } else { p + 1 };
+                        // count_k runs 1..=fdur over a frame
+                        let t = ((count_k - 1).max(0) as f32) / fdur as f32;
+                        v.next = Some((data.freq(n, next), data.amp(n, next), t));
+                    }
                 }
             }
+        v
+    }
+
+    /// `(freq, amp)` of partial `i`
+    #[inline]
+    fn at(&self, i: usize) -> (f32, f32) {
+        let (f0, a0) = (self.freq[i], self.amp[i]);
+        match self.next {
+            Some((f1, a1, t)) => (f0 + (f1[i] - f0) * t, a0 + (a1[i] - a0) * t),
+            None => (f0, a0),
         }
-    (f0, a0)
+    }
 }
 
 #[inline]
