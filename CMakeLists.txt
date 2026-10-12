@@ -228,6 +228,29 @@ if(BUILD_TESTING)
   enable_testing()
 endif()
 
+# Tests: -DBUILD_TESTING=ON (CTest's standard switch) enables them, whatever else is on. These
+# always run; COMPOSESIREN_RESETALLCONTROLLERS and COMPOSESIREN_RUST_DSP each add their own test
+# (Source/ComposeSirenCore/CMakeLists.txt).
+if(BUILD_TESTING)
+  find_program(COMPOSESIREN_DOTNET dotnet)
+  if(COMPOSESIREN_DOTNET)
+    add_test(NAME fix-data
+      COMMAND "${COMPOSESIREN_DOTNET}" fsi tests/fix-data.fsx "${CMAKE_SOURCE_DIR}/Resources"
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/ResourcesProcessing")
+    add_test(NAME compact-roundtrip
+      COMMAND "${COMPOSESIREN_DOTNET}" fsi tests/compact-roundtrip.fsx "${CMAKE_SOURCE_DIR}/Resources"
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/ResourcesProcessing")
+  endif()
+  find_program(COMPOSESIREN_CARGO cargo)
+  if(COMPOSESIREN_CARGO)
+    foreach(crate IN ITEMS siren-data siren-dsp)
+      add_test(NAME cargo-${crate}
+        COMMAND "${COMPOSESIREN_CARGO}" test --release
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Source/${crate}")
+    endforeach()
+  endif()
+endif()
+
 add_subdirectory(Assets)
 add_subdirectory(Source)
 

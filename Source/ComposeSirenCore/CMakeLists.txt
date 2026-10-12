@@ -195,7 +195,7 @@ else()
   target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_PARK_BRIDGE=0)
 endif()
 
-# Controller reset characterization tests, requested with -DBUILD_TESTING=ON.
+# Controller reset characterization tests: with -DBUILD_TESTING=ON, when the option is on.
 if(BUILD_TESTING AND COMPOSESIREN_RESETALLCONTROLLERS)
   add_executable(ComposeSirenControllerResetTests tests/ControllerResetTests.cpp)
   target_link_libraries(ComposeSirenControllerResetTests PRIVATE
