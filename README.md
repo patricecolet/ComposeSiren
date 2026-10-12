@@ -135,12 +135,12 @@ requests and additional MIDI CC 120/123 handling. The default is `OFF`:
 the additions, their runtime settings, and the MCP reset tool are excluded.
 The Rust server feature is `reset-all-controllers`.
 
-With `COMPOSESIREN_SETTINGS=ON`, **Settings... → Controller reset → Enable**
+**Settings... → Controller reset → Enable** (the Settings... window, in the
+top-bar menu, is in every build; these rows appear only with this option)
 controls the compiled feature at runtime. It defaults to on and is stored
 as `reset_all_controllers.enabled`, shared by plugin instances in the same
 process. Turning it off keeps the existing CC 121 reset and knob synchronization,
-but disables the extra zero-volume request and CC 120/123 handling. With settings
-compiled out, the compiled feature remains enabled.
+but disables the extra zero-volume request and CC 120/123 handling.
 
 With `COMPOSESIREN_MCP=ON`, the feature adds `reset_controllers`: pass
 `siren` (1–7) or omit it for all sirens. Selected siren parameters return
@@ -156,7 +156,7 @@ Pending requests consumed in a disabled block are discarded.
 
 #### Configurable MIDI interpretation
 
-With both `COMPOSESIREN_RESETALLCONTROLLERS=ON` and `COMPOSESIREN_SETTINGS=ON`,
+With `COMPOSESIREN_RESETALLCONTROLLERS=ON`,
 **Controller reset: DSP** provides a separate value rule for each of CC 120,
 121 and 123: **Ignore**, **Zero only**, **Positive only**, or **Any value**.
 Accepted messages keep the operations described below; these choices do not
@@ -191,7 +191,7 @@ These settings are persisted per user and shared by plugin instances in the
 same process, rather than stored in a DAW project. They are copied to the
 audio thread at block boundaries. Turning **Controller reset → Enable** off
 bypasses the custom value rules and bridge conversions, restoring the existing
-MIDI behavior. With settings compiled out, the defaults above remain fixed.
+MIDI behavior.
 
 The rules govern MIDI messages. MCP `reset_controllers` and SirenOrchestra's
 native Reset buttons still make their existing explicit reset calls to the
@@ -217,7 +217,6 @@ entries also require `COMPOSESIREN_MCP=ON`.
 With the runtime switch off, MIDI follows the compile-OFF column; MCP
 `reset_controllers` stays listed but returns an error without changing
 parameters or forwarding a bridge command. Button routing remains unchanged.
-With settings compiled out, the compiled feature stays enabled.
 
 Zero MIDI-level volume does not guarantee immediate acoustic silence: the
 DSP still models flap interpolation/leakage, and reverb is not cleared.
