@@ -76,6 +76,27 @@ pub const VARIANTS: &[Variant] = &[
         settings: &[("dsp.timing", "time"), ("frames.legacy", "false"), ("trio.kernel", "nearest"), ("trio.scale_frames", "true"), ("trio.lock", "true"), ("trio.fast", "true")],
         description: "The nearest note with vectorized sines.",
     },
+    Variant {
+        id: "trio-f32",
+        label: "Trio (f32)",
+        engine: Engine::Rust,
+        settings: &[("dsp.timing", "time"), ("frames.legacy", "false"), ("trio.kernel", "b-spline"), ("trio.gains", "linear"), ("trio.scale_frames", "true"), ("trio.lock", "true"), ("trio.fast", "true"), ("trio.f32", "true")],
+        description: "The trio with f32 harmonic phasors: within about 1e-5 of the trio, cheaper than the fast trio.",
+    },
+    Variant {
+        id: "trio-linear-f32",
+        label: "Trio (two notes; f32)",
+        engine: Engine::Rust,
+        settings: &[("dsp.timing", "time"), ("frames.legacy", "false"), ("trio.kernel", "linear"), ("trio.gains", "linear"), ("trio.scale_frames", "true"), ("trio.lock", "true"), ("trio.fast", "true"), ("trio.f32", "true")],
+        description: "The two-note trio with f32 harmonic phasors.",
+    },
+    Variant {
+        id: "trio-nearest-f32",
+        label: "Nearest note (f32)",
+        engine: Engine::Rust,
+        settings: &[("dsp.timing", "time"), ("frames.legacy", "false"), ("trio.kernel", "nearest"), ("trio.scale_frames", "true"), ("trio.lock", "true"), ("trio.fast", "true"), ("trio.f32", "true")],
+        description: "The nearest note with f32 harmonic phasors.",
+    },
 ];
 
 /// Every data set; the first is the default.
@@ -104,4 +125,5 @@ pub const SWITCHES: &[Switch] = &[
     Switch { id: "trio.envelope", default: "0" },
     Switch { id: "trio.envelope_at_harmonic", default: "false" },
     Switch { id: "trio.fast", default: "false" },
+    Switch { id: "trio.f32", default: "false" },
 ];

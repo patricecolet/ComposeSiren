@@ -59,3 +59,50 @@ fn fast_variants_sound_as_the_trio() {
         println!("{fast}: max |difference| / peak against {slow}: {worst:.2e}");
     }
 }
+
+/// The f32 phasor variants against the trio: the worst peak-relative difference and the SNR
+/// (trio power over difference power) over 7 sirens at 44.1 and 48 kHz, printed; the bounds
+/// are the measured worst with margin (see docs/dsp-performance.md).
+#[test]
+fn f32_variants_sound_close_to_the_trio() {
+    let lib = Library::new(siren_dsp::default_resources());
+    let sirens = [(SirenId::S1, 72), (SirenId::S2, 70), (SirenId::S3, 66), (SirenId::S4, 60), (SirenId::S5, 55), (SirenId::S6, 50), (SirenId::S7, 88)];
+    for (slow, quick) in [("trio", "trio-f32"), ("trio-linear", "trio-linear-f32"), ("trio-nearest", "trio-nearest-f32")] {
+        let (s, f) = (variant(slow).unwrap().dsp_settings().unwrap(), variant(quick).unwrap().dsp_settings().unwrap());
+        let (mut worst, mut snr_min) = (0.0f64, f64::INFINITY);
+        for (id, note) in sirens {
+            for sr in [44100.0, 48000.0] {
+                let n = 4 * sr as usize;
+                let (a, b) = (render(&lib, id, &s, sr, note, n), render(&lib, id, &f, sr, note, n));
+                let peak = a.iter().fold(0.0f32, |m, x| m.max(x.abs())) as f64;
+                let diff = a.iter().zip(&b).fold(0.0f32, |m, (x, y)| m.max((x - y).abs())) as f64;
+                let sig: f64 = a.iter().map(|x| (*x as f64).powi(2)).sum();
+                let err: f64 = a.iter().zip(&b).map(|(x, y)| ((*x - *y) as f64).powi(2)).sum();
+                let snr = 10.0 * (sig / err.max(1e-300)).log10();
+                worst = worst.max(diff / peak);
+                snr_min = snr_min.min(snr);
+                assert!(diff <= F32_PEAK * peak, "{quick} {id:?} @{sr}: {:e} of the peak", diff / peak);
+                assert!(snr >= F32_SNR_DB, "{quick} {id:?} @{sr}: SNR {snr:.1} dB");
+            }
+        }
+        println!("{quick}: max |difference| / peak against {slow}: {worst:.2e}, min SNR {snr_min:.1} dB");
+    }
+}
+
+const F32_PEAK: f64 = 3e-5; // measured 6.1e-6
+const F32_SNR_DB: f64 = 100.0; // measured 116.3 dB
+
+#[test]
+fn harmonic_sines_within_5e_4() {
+    let mut out = [0.0f32; siren_dsp::sirene::TRIO_HARMONICS];
+    let mut worst = 0.0f64;
+    for k in 0..2000 {
+        let phi = k as f64 * 0.003_17;
+        siren_dsp::sirene::harmonic_sines(phi, &mut out);
+        for (h, s) in out.iter().enumerate().skip(1) {
+            worst = worst.max((*s as f64 - (h as f64 * phi).sin()).abs());
+        }
+    }
+    println!("harmonic_sines: max |error| {worst:.2e} up to h = {}", out.len() - 1);
+    assert!(worst < 5e-4, "{worst:e}"); // measured 2.2e-4 at h up to 511
+}

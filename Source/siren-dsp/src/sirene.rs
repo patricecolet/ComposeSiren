@@ -139,6 +139,11 @@ pub struct Trio {
     /// [`crate::fastsin`] (vectorized) instead of libm's. Not bit-exact with the
     /// trio without it: within the bound `tests/fast.rs` checks
     pub fast: bool,
+    /// With `fast` and `lock`: the sines of the harmonics h·Φ from f32 phasors (one polynomial
+    /// cos/sin of Φ per computed sample, as the kernels' `anchor`, then e^{ihΦ} by complex
+    /// products, eight harmonics per step) instead of one sine per partial. Looser than `fast`:
+    /// the bound is `tests/fast.rs`'s
+    pub f32_phasors: bool,
 }
 
 impl Default for Trio {
@@ -156,6 +161,7 @@ impl Default for Trio {
             envelope: 0.0,
             harmonic_envelope: false,
             fast: false,
+            f32_phasors: false,
         }
     }
 }
@@ -221,6 +227,9 @@ struct Bank {
     /// at the current ratio (`i32::MIN`: to compute)
     corr: [f64; MAX_PARTIEL],
     corr_frame: i32,
+    /// `Trio::f32_phasors`: every partial's harmonic number (kept in `phase`, 0 past
+    /// [`TRIO_HARMONICS`]) is i + 1 (the fixed data: slot i is harmonic i + 1): the sines are a slice
+    in_order: bool,
 }
 
 impl Bank {
@@ -237,6 +246,7 @@ impl Bank {
             ampz: [0.0; MAX_PARTIEL],
             corr: [1.0; MAX_PARTIEL],
             corr_frame: i32::MIN,
+            in_order: false,
         }
     }
 }
@@ -352,6 +362,8 @@ pub struct Sirene {
     /// `note_hz` of MIDI notes 0..128 for the trio, computed in `set_trio` (the same
     /// values: the glide changes the pitch every sample, and these are seven `powf`)
     trio_hz: [f64; 128],
+    /// `Trio::f32_phasors`: sin(h·Φ) for h below [`TRIO_HARMONICS`] at the current sample
+    trio_sines: [f32; TRIO_HARMONICS],
     trio_mc: i32,
     trio_wave: f64,
     /// with `Trio::lock`: the phase of the target fundamental, and its step
@@ -421,6 +433,7 @@ impl Sirene {
             banks: [Bank::new(), Bank::new(), Bank::new(), Bank::new()],
             trio_notes: [(-1, 0.0); 3],
             trio_hz: [0.0; 128],
+            trio_sines: [0.0; TRIO_HARMONICS],
             trio_mc: i32::MIN,
             trio_wave: 0.0,
             trio_phi: 0.0,
@@ -939,6 +952,8 @@ impl Sirene {
         let alpha = self.trio.as_ref().map_or(0.0, |t| t.envelope);
         let harmonic_envelope = self.trio.as_ref().is_some_and(|t| t.harmonic_envelope);
         let fast = self.trio.as_ref().is_some_and(|t| t.fast);
+        let phasors = fast && self.trio.as_ref().is_some_and(|t| t.f32_phasors && t.lock);
+        let mut top = 0usize;
         self.trio_phi += self.trio_dphi;
         if fast && self.trio_phi >= std::f64::consts::TAU {
             // h·Φ moves by whole turns: the same sines, and Φ stays small
@@ -985,6 +1000,38 @@ impl Sirene {
                 }
                 let q = q.min(MAX_PARTIEL);
                 let to_h = b.ratio / f0;
+                if phasors {
+                    // compute is true here: the harmonic numbers and amplitudes, the sines later
+                    let gain = b.gain;
+                    let fast_read = view.next.is_none() && alpha == 0.0;
+                    if fast_read {
+                        // straight from the frame: loops the compiler vectorizes
+                        for (z, &a) in b.ampz[..q].iter_mut().zip(&view.amp[..q]) {
+                            *z = sa * (gain * a as f64) + sb * *z;
+                        }
+                        for (hp, &f) in b.phase[..q].iter_mut().zip(&view.freq[..q]) {
+                            let h = crate::fastsin::round(f as f64 * to_h).max(1.0);
+                            *hp = if h < TRIO_HARMONICS as f64 { h } else { 0.0 };
+                        }
+                    } else {
+                        for i in 0..q {
+                            let (f, a) = view.at(i);
+                            let h = crate::fastsin::round(f as f64 * to_h).max(1.0);
+                            b.phase[i] = if h < TRIO_HARMONICS as f64 { h } else { 0.0 };
+                            let a = if alpha != 0.0 { a as f64 * b.corr[i] } else { a as f64 };
+                            b.ampz[i] = sa * (gain * a) + sb * b.ampz[i];
+                        }
+                    }
+                    // the harmonic numbers sit in `phase` (a locked phase is not kept)
+                    let (mut in_order, mut hi) = (true, 0.0f64);
+                    for (i, &h) in b.phase[..q].iter().enumerate() {
+                        in_order &= h == (i + 1) as f64;
+                        hi = hi.max(h);
+                    }
+                    top = top.max(hi as usize);
+                    b.in_order = in_order;
+                    continue;
+                }
                 let (gain, ps) = (b.gain, b.ps);
                 for i in 0..q {
                     let (f, a) = view.at(i);
@@ -1019,6 +1066,23 @@ impl Sirene {
                 }
             }
         }
+        if phasors && compute {
+            harmonic_sines(phi, &mut self.trio_sines[..(top + 1).min(TRIO_HARMONICS)]);
+            self.trio_sines[0] = 0.0;
+            let sines = &self.trio_sines;
+            for b in self.banks.iter().filter(|b| b.note >= 0) {
+                let q = q.min(MAX_PARTIEL);
+                if b.in_order && q + 1 <= TRIO_HARMONICS {
+                    wave += f32_dot(&sines[1..q + 1], &b.ampz[..q]);
+                } else {
+                    let mut acc = 0.0f64;
+                    for i in 0..q {
+                        acc += sines[b.phase[i] as usize] as f64 * b.ampz[i];
+                    }
+                    wave += acc;
+                }
+            }
+        }
         if compute {
             self.trio_wave = wave;
         }
@@ -1028,6 +1092,57 @@ impl Sirene {
         }
         out
     }
+}
+
+/// The harmonics `Trio::f32_phasors` tabulates (a partial above sounds nothing)
+pub const TRIO_HARMONICS: usize = 512;
+
+/// `out[h] = sin(h·phi)` (f32): cos/sin of `phi` by the kernels' polynomial, then e^{ihφ} for
+/// h = 1..8 by products and each next eight from the last eight times e^{i8φ}, eight lanes at
+/// a time (vectorized; plain Rust). The error grows with h, about one f32 rounding per step.
+pub fn harmonic_sines(phi: f64, out: &mut [f32]) {
+    let (_, c, s) = crate::kernels::anchor(phi);
+    let (mut zr, mut zi) = ([0.0f32; 8], [0.0f32; 8]);
+    zr[0] = c;
+    zi[0] = s;
+    for k in 1..8 {
+        zr[k] = zr[k - 1] * c - zi[k - 1] * s;
+        zi[k] = zr[k - 1] * s + zi[k - 1] * c;
+    }
+    let (c8, s8) = (zr[7], zi[7]);
+    if out.is_empty() {
+        return;
+    }
+    let mut h = 1;
+    while h < out.len() {
+        let n = (out.len() - h).min(8);
+        out[h..h + n].copy_from_slice(&zi[..n]);
+        h += 8;
+        for k in 0..8 {
+            let r = zr[k] * c8 - zi[k] * s8;
+            zi[k] = zr[k] * s8 + zi[k] * c8;
+            zr[k] = r;
+        }
+    }
+}
+
+/// Σ s[i]·a[i], four lanes
+#[inline]
+fn f32_dot(s: &[f32], a: &[f64]) -> f64 {
+    let n = s.len().min(a.len());
+    let mut acc = [0.0f64; 4];
+    let (sc, ac) = (s[..n].chunks_exact(4), a[..n].chunks_exact(4));
+    let (sr, ar) = (sc.remainder(), ac.remainder());
+    for (x, y) in sc.zip(ac) {
+        for j in 0..4 {
+            acc[j] += x[j] as f64 * y[j];
+        }
+    }
+    let mut t = (acc[0] + acc[1]) + (acc[2] + acc[3]);
+    for (x, y) in sr.iter().zip(ar) {
+        t += *x as f64 * y;
+    }
+    t
 }
 
 /// a data note's pitch in Hz: its nominal pitch, with the trio's tuning

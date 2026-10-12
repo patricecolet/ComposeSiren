@@ -91,6 +91,7 @@ impl DspSettings {
         "trio.envelope",
         "trio.envelope_at_harmonic",
         "trio.fast",
+        "trio.f32",
     ];
 
     /// Sets one switch from its text value. A `trio.*` other than `trio.kernel` turns the trio on
@@ -152,6 +153,7 @@ impl DspSettings {
                     "trio.envelope" => t.envelope = num(0.0, 1.0)?,
                     "trio.envelope_at_harmonic" => t.harmonic_envelope = b()?,
                     "trio.fast" => t.fast = b()?,
+                    "trio.f32" => t.f32_phasors = b()?,
                     _ => return Err(err("unknown setting")),
                 }
             }

@@ -147,7 +147,7 @@ fn cos_sin(x: f32) -> (f32, f32) {
 
 /// (cos φ, sin φ) for any φ, and φ brought back to [0, 2π)
 #[inline(always)]
-fn anchor(phi: f64) -> (f64, f32, f32) {
+pub(crate) fn anchor(phi: f64) -> (f64, f32, f32) {
     use std::f64::consts::TAU;
     let p = phi - (phi * (1.0 / TAU)).floor() * TAU;
     let x = p as f32;
