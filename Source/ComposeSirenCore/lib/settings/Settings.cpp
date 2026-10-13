@@ -240,3 +240,28 @@ void Settings::valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier
 }
 
 } // namespace cs
+
+namespace cs {
+
+bool Settings::appliesTo(Id id, std::string_view variant)
+{
+    std::string_view rest = describe(id).appliesTo;
+    if (rest.empty()) return true;
+    for (;;) {
+        const auto bar = rest.find('|');
+        if (rest.substr(0, bar) == variant) return true;
+        if (bar == std::string_view::npos) return false;
+        rest.remove_prefix(bar + 1);
+    }
+}
+
+std::string Settings::dspVariant() const
+{
+#if COMPOSESIREN_RUST_DSP
+    return choiceAt(describe(Id::dspVariant), getInt(Id::dspVariant));
+#else
+    return "cpp";
+#endif
+}
+
+} // namespace cs

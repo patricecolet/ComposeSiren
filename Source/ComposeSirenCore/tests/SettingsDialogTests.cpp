@@ -30,6 +30,32 @@ int main()
         cs::SettingsDialog dialog;
         check(dialog.getWidth() > 0 && dialog.getHeight() > 0, "the window opens");
         check(dialog.getNumChildComponents() >= 2, "rows or the empty note, and Reset to defaults");
+#if COMPOSESIREN_RUST_DSP
+        // per dsp.variant: a row is greyed out exactly when its applies_to leaves the variant out
+        using Id = cs::Settings::Id;
+        const auto& vd = cs::Settings::describe(Id::dspVariant);
+        juce::StringArray variants;
+        variants.addTokens(juce::String(vd.choices.data(), vd.choices.size()), "|", {});
+        bool matches = true, datasetRust = true, skipLoops = true;
+        for (const auto& v : variants) {
+            const auto name = v.toStdString();
+            dialog.showApplicable(name);
+            for (std::size_t i = 0; i < cs::Settings::settingCount; ++i) {
+                const auto id = cs::Settings::idAt(i);
+                if (cs::Settings::isAvailable(id) && dialog.isRowEnabled(id) != cs::Settings::appliesTo(id, name))
+                    matches = false;
+            }
+            datasetRust = datasetRust && dialog.isRowEnabled(Id::dspDataset) == (name != "cpp");
+            const bool loops = name == "frames" || v.startsWith("trio");
+            skipLoops = skipLoops && dialog.isRowEnabled(Id::dspSkipSilentFrames) == loops;
+            std::cout << "     " << name << ": data set " << (dialog.isRowEnabled(Id::dspDataset) ? "on" : "greyed")
+                      << ", skip silent frames " << (dialog.isRowEnabled(Id::dspSkipSilentFrames) ? "on" : "greyed")
+                      << ", DSP row " << (dialog.isRowEnabled(Id::dspVariant) ? "on" : "greyed") << "\n";
+        }
+        check(variants.size() > 1 && matches, "every row follows its applies_to, for every variant");
+        check(datasetRust, "dsp.dataset greyed out for cpp only");
+        check(skipLoops, "dsp.skip_silent_frames only for the variants that loop over frames");
+#endif
     }
     std::cout << available << " setting(s) in this build, " << reset << " controller reset\n";
     std::cout << (failures ? "FAILED: " : "ok: ") << failures << " failure(s)\n";

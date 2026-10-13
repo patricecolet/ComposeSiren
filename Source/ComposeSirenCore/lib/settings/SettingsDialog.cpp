@@ -120,7 +120,11 @@ SettingsDialog::SettingsDialog()
         for (std::size_t i = 0; i < Settings::settingCount; ++i) {
             const auto id = Settings::idAt(i);
             if (Settings::isAvailable(id) && str(Settings::describe(id).group) == group)
-                rows.add(makeRow(*settings, id));
+            {
+                auto* row = makeRow(*settings, id);
+                rowsById.emplace_back(id, row);
+                rows.add(row);
+            }
         }
         panel.addSection(group, rows);
     }
@@ -135,7 +139,36 @@ SettingsDialog::SettingsDialog()
     reset.onClick = [this] { settings->resetToDefaults(); };
     addAndMakeVisible(reset);
 
+    showApplicable(settings->dspVariant());
+    settings->addListener(this);
+
     setSize(460, juce::jmin(640, juce::jmax(120, panel.getTotalContentHeight() + 48)));
+}
+
+SettingsDialog::~SettingsDialog() { settings->removeListener(this); }
+
+void SettingsDialog::settingChanged(Settings::Id id)
+{
+    if (id == Settings::Id::dspVariant) showApplicable(settings->dspVariant());
+}
+
+void SettingsDialog::showApplicable(std::string_view variant)
+{
+    for (auto& [id, row] : rowsById) {
+        const bool on = Settings::appliesTo(id, variant);
+        row->setEnabled(on);
+        row->setAlpha(on ? 1.0f : 0.45f);
+        auto tip = str(Settings::describe(id).description);
+        if (!on) tip << " (Not used by the " << str(variant) << " DSP.)";
+        row->setTooltip(tip);
+    }
+}
+
+bool SettingsDialog::isRowEnabled(Settings::Id id) const
+{
+    for (const auto& [i, row] : rowsById)
+        if (i == id) return row->isEnabled();
+    return true;
 }
 
 void SettingsDialog::show(juce::Component* parent)

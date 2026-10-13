@@ -62,6 +62,11 @@ public:
     static Id idAt(std::size_t index) { return static_cast<Id>(index); }
     // false when the CMake option the setting needs is not compiled in
     static bool isAvailable(Id id);
+    // whether the setting means something with the `dsp.variant` named `variant` (its
+    // metadata's applies_to lists it, or lists none)
+    static bool appliesTo(Id id, std::string_view variant);
+    // the dsp.variant id selected ("cpp" without COMPOSESIREN_RUST_DSP)
+    std::string dspVariant() const;
 
     double get(Id id) const;
     bool getBool(Id id) const { return get(id) >= 0.5; }
