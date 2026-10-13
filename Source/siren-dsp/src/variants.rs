@@ -111,6 +111,7 @@ pub const SWITCHES: &[Switch] = &[
     Switch { id: "frames.legacy", default: "true" },
     Switch { id: "frames.speed", default: "1" },
     Switch { id: "frames.interpolate", default: "false" },
+    Switch { id: "frames.skip_silent", default: "false" },
     Switch { id: "synth.crossfade", default: "false" },
     Switch { id: "synth.bit16", default: "false" },
     Switch { id: "synth.glide", default: "true" },

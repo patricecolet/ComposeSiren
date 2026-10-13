@@ -665,3 +665,12 @@ pub unsafe extern "C" fn sdsp_render(
         Ok(samples.len())
     })
 }
+
+/// `frames.skip_silent` (`DataSet::play_frame`): practically silent frames play the next one.
+///
+/// # Safety
+/// see `sdsp_voice_set_partials`
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn sdsp_voice_set_skip_silent(v: *mut Voice, on: bool) {
+    with_voice!(v, |v: &mut Voice| v.siren.skip_silent = on)
+}

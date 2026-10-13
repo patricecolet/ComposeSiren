@@ -323,6 +323,9 @@ pub struct Sirene {
     time_scale: f64,
 
     pub frames: FrameControl,
+    /// `frames.skip_silent`: a practically silent frame plays the next one that is not
+    /// ([`DataSet::play_frame`]); off, the plugin's frames bit for bit
+    pub skip_silent: bool,
     /// amplitude smoothing at 44.1 kHz, `ampz = a * amp + b * ampz` (0.001, 0.999)
     smoothing: (f64, f64),
     /// the same per sample at this rate (`smoothing` when `time_scale` is 1)
@@ -402,6 +405,7 @@ impl Sirene {
             timing: Timing::Time,
             time_scale: 1.0,
             frames: FrameControl::Legacy,
+            skip_silent: false,
             smoothing: (0.001, 0.999),
             smoothing_rate: (0.001, 0.999),
             count8bit: true,
@@ -743,7 +747,7 @@ impl Sirene {
     fn partial(&self, note: i32, count_k: i32, i: usize) -> (f32, f32) {
         let n = idx(note);
         let clock = Clock { rate: 1.0, time_scale: self.time_scale };
-        partial_at(&self.data, &self.frames, n, self.count_p[n], count_k, i, clock, self.frame_carry[n])
+        partial_at(&self.data, &self.frames, self.skip_silent, n, self.count_p[n], count_k, i, clock, self.frame_carry[n])
     }
 
     /// `calculwave()`: one output sample.
@@ -784,7 +788,9 @@ impl Sirene {
             // order, with each note's frame looked up once per sample instead of per partial.
             let q = self.qualite as usize;
             let (ni, ns) = (idx(inf), idx(sup));
-            let (pi, psu) = (self.count_p[ni].max(0) as usize, self.count_p[ns].max(0) as usize);
+            let skip = self.skip_silent;
+            let pi = self.data.play_frame(ni, self.count_p[ni].max(0) as usize, skip);
+            let psu = self.data.play_frame(ns, self.count_p[ns].max(0) as usize, skip);
             let (fi, ai) = (&self.data.freq(ni, pi)[..q], &self.data.amp(ni, pi)[..q]);
             let (fs, as_) = (&self.data.freq(ns, psu)[..q], &self.data.amp(ns, psu)[..q]);
             let phase = &mut self.phase_inf[..q];
@@ -961,7 +967,7 @@ impl Sirene {
         }
         let (phi, f0) = (self.trio_phi, self.trio_f0);
         let time_scale = self.time_scale;
-        let (data, frames, envelopes) = (&self.data, &self.frames, &self.envelopes);
+        let (data, frames, envelopes, skip) = (&self.data, &self.frames, &self.envelopes, self.skip_silent);
         let mut wave = 0.0f64;
         for b in self.banks.iter_mut() {
             if b.note < 0 {
@@ -972,7 +978,7 @@ impl Sirene {
             b.count_k = advance_frame(data, frames, n, &mut b.frame, b.count_k, clock, &mut b.carry);
             if alpha != 0.0 && b.corr_frame != b.frame {
                 b.corr_frame = b.frame;
-                let fr = data.freq(n, b.frame.max(0) as usize);
+                let fr = data.freq(n, data.play_frame(n, b.frame.max(0) as usize, skip));
                 let env = envelopes.get(n).and_then(|e| e.as_ref());
                 for (i, &fi) in fr.iter().enumerate().take(q) {
                     b.corr[i] = match env {
@@ -992,7 +998,7 @@ impl Sirene {
                     };
                 }
             }
-            let view = FrameView::new(data, frames, n, b.frame, b.count_k, clock, b.carry);
+            let view = FrameView::new(data, frames, skip, n, b.frame, b.count_k, clock, b.carry);
             if fast {
                 if lock && !compute {
                     // a locked phase is h·Φ, made afresh when it is read: nothing to keep
@@ -1285,8 +1291,8 @@ fn scaled(fdur: f32, rate: f64) -> f32 {
 /// the lab interpolates
 #[inline]
 #[allow(clippy::too_many_arguments)]
-fn partial_at(data: &DataSet, frames: &FrameControl, n: usize, frame: i32, count_k: i32, i: usize, clock: Clock, carry: f64) -> (f32, f32) {
-    FrameView::new(data, frames, n, frame, count_k, clock, carry).at(i)
+fn partial_at(data: &DataSet, frames: &FrameControl, skip: bool, n: usize, frame: i32, count_k: i32, i: usize, clock: Clock, carry: f64) -> (f32, f32) {
+    FrameView::new(data, frames, skip, n, frame, count_k, clock, carry).at(i)
 }
 
 /// The frame(s) a note's partials are read from at one sample: `partial_at` for every partial
@@ -1300,9 +1306,11 @@ struct FrameView<'a> {
 
 impl<'a> FrameView<'a> {
     #[inline]
-    fn new(data: &'a DataSet, frames: &FrameControl, n: usize, frame: i32, count_k: i32, clock: Clock, carry: f64) -> Self {
+    #[allow(clippy::too_many_arguments)]
+    fn new(data: &'a DataSet, frames: &FrameControl, skip: bool, n: usize, frame: i32, count_k: i32, clock: Clock, carry: f64) -> Self {
         let p = frame.max(0) as usize;
-        let mut v = FrameView { freq: data.freq(n, p), amp: data.amp(n, p), next: None };
+        let pp = data.play_frame(n, p, skip);
+        let mut v = FrameView { freq: data.freq(n, pp), amp: data.amp(n, pp), next: None };
         if let FrameControl::Lab(l) = frames
             && l.interpolate {
                 let s = l.sel.get(n).copied().unwrap_or(FrameSel { start: 0, end: 0, freeze: None });
@@ -1312,6 +1320,7 @@ impl<'a> FrameView<'a> {
                         let next = if p + 1 >= s.end { s.start } else { p + 1 };
                         // count_k runs 1..=fdur over a frame
                         let t = ((count_k - 1).max(0) as f32) / fdur as f32;
+                        let next = data.play_frame(n, next, skip);
                         v.next = Some((data.freq(n, next), data.amp(n, next), t));
                     }
                 }

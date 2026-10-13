@@ -19,6 +19,8 @@ pub struct DspSettings {
     pub frames_speed: f32,
     /// `frames.interpolate` (plugin frame reset off)
     pub frames_interpolate: bool,
+    /// `frames.skip_silent`: practically silent frames play the next one
+    pub skip_silent: bool,
     /// `synth.crossfade`: `None` keeps what the plugin parameter says
     pub crossfade: Option<bool>,
     /// `synth.bit16`: `None` keeps what the plugin parameter says
@@ -38,6 +40,7 @@ impl Default for DspSettings {
             frames_legacy: true,
             frames_speed: 1.0,
             frames_interpolate: false,
+            skip_silent: false,
             crossfade: None,
             bit16: None,
             glide: true,
@@ -77,6 +80,7 @@ impl DspSettings {
         "frames.legacy",
         "frames.speed",
         "frames.interpolate",
+        "frames.skip_silent",
         "synth.crossfade",
         "synth.bit16",
         "synth.glide",
@@ -114,6 +118,7 @@ impl DspSettings {
             "frames.legacy" => self.frames_legacy = b()?,
             "frames.speed" => self.frames_speed = num(0.25, 4.0)? as f32,
             "frames.interpolate" => self.frames_interpolate = b()?,
+            "frames.skip_silent" => self.skip_silent = b()?,
             "synth.crossfade" => self.crossfade = Some(b()?),
             "synth.bit16" => self.bit16 = Some(b()?),
             "synth.glide" => self.glide = b()?,
@@ -200,6 +205,7 @@ impl DspSettings {
             FrameControl::Lab(l)
         };
         s.set_trio(self.trio.clone());
+        s.skip_silent = self.skip_silent;
     }
 }
 

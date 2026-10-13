@@ -112,3 +112,13 @@ pub unsafe extern "C" fn csr_siren_calculwave(s: *mut Sirene) -> f32 {
 pub unsafe extern "C" fn csr_siren_current_pitch(s: *const Sirene) -> f32 {
     unsafe { s.as_ref() }.map_or(0.0, |s| s.current_pitch())
 }
+
+/// `frames.skip_silent`: a practically silent frame plays the next one that is not
+/// (`DataSet::play_frame`, a table made when the data loads). Off, the default, keeps the plugin's
+/// frames bit for bit. Real-time: sets a flag.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn csr_siren_set_skip_silent(s: *mut Sirene, on: bool) {
+    if let Some(s) = unsafe { s.as_mut() } {
+        s.skip_silent = on;
+    }
+}

@@ -14,6 +14,55 @@ pub use siren_data::{FRAMES as MAX_TAB, NOTES as NOMBRE_DE_NOTE, SLOTS as MAX_PA
 
 static ZERO_FRAME: [f32; MAX_PARTIEL] = [0.0; MAX_PARTIEL];
 
+/// A frame is practically silent when its level (`frame_energy`) is under the note's median level
+/// over its played frames (`0..fmax`, those holding data) by [`SILENT_REL_DB`] dB, or under
+/// [`SILENT_FLOOR`] while the median is above it. Fixed: the data is shared by every voice.
+pub const SILENT_REL_DB: f64 = -30.0;
+/// `10^(SILENT_REL_DB / 20)`, written out so every port compares against the same number
+pub const SILENT_REL: f64 = 0.031_622_776_601_683_8;
+pub const SILENT_FLOOR: f64 = 1e-6;
+
+/// Which of a note's frames are practically silent (see [`SILENT_REL_DB`]); frames past
+/// `data_frames` (the zeros past the data) never are.
+pub fn silent_frames(energy: &[f32], fmax: usize, data_frames: usize) -> Vec<bool> {
+    let mut played: Vec<f64> = energy[..fmax.min(energy.len())]
+        .iter()
+        .filter(|&&e| e > 0.0)
+        .map(|&e| e as f64)
+        .collect();
+    played.sort_by(f64::total_cmp);
+    let k = played.len();
+    let median = match k {
+        0 => 0.0,
+        _ if k % 2 == 1 => played[k / 2],
+        _ => (played[k / 2 - 1] + played[k / 2]) / 2.0,
+    };
+    energy
+        .iter()
+        .enumerate()
+        .map(|(f, &e)| {
+            let e = e as f64;
+            f < data_frames && (e < median * SILENT_REL || (e < SILENT_FLOOR && median > SILENT_FLOOR))
+        })
+        .collect()
+}
+
+/// [`NoteInfo::skip_to`] from [`silent_frames`].
+pub fn skip_table(silent: &[bool], fmax: usize, data_frames: usize) -> Vec<u16> {
+    let n = silent.len();
+    let fmax = fmax.min(n);
+    (0..n)
+        .map(|f| {
+            let (lo, hi) = if f < fmax { (0, fmax) } else { (fmax, data_frames.max(f + 1).min(n)) };
+            let len = hi - lo;
+            (1..=len)
+                .map(|k| lo + (f - lo + k - 1) % len)
+                .find(|&g| !silent[g])
+                .unwrap_or(f) as u16
+        })
+        .collect()
+}
+
 /// What is known about a note before any frame is fetched.
 #[derive(Clone, Debug, Default)]
 pub struct NoteInfo {
@@ -36,6 +85,10 @@ pub struct NoteInfo {
     pub max_partials_all: usize,
     /// per stored frame: sqrt of the sum of squared amplitudes
     pub frame_energy: Vec<f32>,
+    /// per stored frame: the frame played in its place when silent frames are skipped (itself
+    /// when it is not silent, else the next one that is not, wrapping within `0..fmax`, or within
+    /// `fmax..data_frames` past it); see [`silent_frames`]
+    pub skip_to: Vec<u16>,
 }
 
 pub struct DataSet {
@@ -97,6 +150,8 @@ impl DataSet {
                 frame_partials.push(p as u16);
                 frame_energy.push(a.iter().map(|x| x * x).sum::<f32>().sqrt());
             }
+            let silent = silent_frames(&frame_energy, fmax, data_frames);
+            let skip_to = skip_table(&silent, fmax, data_frames);
             let max_of = |r: &[u16]| r.iter().copied().max().unwrap_or(0) as usize;
             info.push(NoteInfo {
                 index: n,
@@ -109,6 +164,7 @@ impl DataSet {
                 max_partials_all: max_of(&frame_partials),
                 frame_partials,
                 frame_energy,
+                skip_to,
             });
         }
         DataSet { name: set.name().to_string(), file_notes: set.file_notes(), dure, info, set }
@@ -129,6 +185,16 @@ impl DataSet {
     #[inline]
     pub fn amp(&self, note: usize, frame: usize) -> &[f32; MAX_PARTIEL] {
         self.set.frame_amp(note, frame).map_or(&ZERO_FRAME, |s| s.try_into().unwrap())
+    }
+
+    /// The frame played for `frame` of `note`: itself, or with `skip` the next frame that is not
+    /// practically silent ([`NoteInfo::skip_to`]). No allocation: a table read.
+    #[inline]
+    pub fn play_frame(&self, note: usize, frame: usize, skip: bool) -> usize {
+        if !skip {
+            return frame;
+        }
+        self.info.get(note).and_then(|i| i.skip_to.get(frame)).map_or(frame, |&g| g as usize)
     }
 
     /// Frames stored for `note`.

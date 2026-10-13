@@ -3,6 +3,7 @@
 #pragma once
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -18,6 +19,8 @@ void csr_siren_set_note_from_ext(CsrSiren* s, int32_t note);
 void csr_siren_setnote(CsrSiren* s);
 float csr_siren_calculwave(CsrSiren* s);
 float csr_siren_current_pitch(const CsrSiren* s);
+/* frames.skip_silent: practically silent frames play the next one (off: the plugin's frames). */
+void csr_siren_set_skip_silent(CsrSiren* s, bool on);
 /* The last error on this thread, NUL-terminated into buf; returns its full length. */
 size_t sdsp_last_error(uint8_t* buf, size_t len);
 
