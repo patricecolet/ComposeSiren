@@ -40,6 +40,36 @@ build ships it, else the resources folder. The plugin's C++ MIDI handling drives
 `include/siren_dsp_plugin.h` (`src/plugin.rs`); the data is loaded once per folder and shared by
 every voice. Without the settings, `COMPOSESIREN_DSP_VARIANT` and `COMPOSESIREN_DSP_DATASET`
 pick them.
+`dsp.skip_silent_frames` (or `COMPOSESIREN_DSP_SKIP_SILENT=1`) turns `frames.skip_silent` on
+for the Rust synthesis.
+
+### Skipping practically silent frames
+
+The data holds a few frames far quieter than the rest of their note: across both data sets,
+one frame (S5's F5, data note 77, the plugin's MIDI 89, which S6 plays too: frame 440 of 547,
+42.7 dB under the note's median level). A loop that reaches it clicks. `frames.skip_silent` (the
+global `dsp.skip_silent_frames` setting in the plugin, off by default) plays the next frame that
+is not silent in its place.
+
+- A frame is practically silent when its level (the root of the sum of its squared amplitudes)
+  is under its note's median level over the played frames (`0..fmax`, those holding data) by
+  30 dB (`SILENT_REL_DB`), or under 1e-6 (`SILENT_FLOOR`) while the median is above it. Frames
+  past the note's data never are. The thresholds are fixed: the data is shared by every voice.
+- `DataSet::new` makes the table once (`NoteInfo::skip_to`: for each frame, the one played in
+  its place, wrapping within `0..fmax`); every frame read (the plugin's synthesis, the lab's
+  frames, interpolation, the trio and its envelope correction) goes through
+  `DataSet::play_frame`. On the audio thread it is a table read; nothing allocates.
+- C ABI: `csr_siren_set_skip_silent`, `sdsp_voice_set_skip_silent`, and `skip_silent` in
+  `RenderSpecC` (offset 69, in the padding: older zeroed specs read off).
+- Off, every frame plays: bit for bit the plugin. On, it applies to every Rust variant,
+  `rust-exact` included, which stays bit-exact anyway while it plays the plugin's frames (they
+  never get past the first two). The C++ DSP has no such option.
+- `tests/silent.rs`: the one silent frame of the data, the click it makes and its removal in
+  every Rust variant that loops (peak RMS of the second difference over 128-sample windows, dB
+  over the median window: 23.4 dB off, 0.7 dB on, 16-bit `frames` at 44.1 kHz), and bit-exact
+  output where nothing is skipped.
+
+The plugin applies a change of the setting as a variant change (below).
 
 ### Changing the variant or the data set while playing
 
