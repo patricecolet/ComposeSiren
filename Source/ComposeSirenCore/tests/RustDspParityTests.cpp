@@ -5,6 +5,7 @@
 
 #include "lib/wrappers/SirenVoice.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <iostream>
@@ -12,9 +13,9 @@
 
 namespace {
 
-std::vector<float> render(sirenId id, const std::string& res, const char* variant, double rate, bool& rust)
+std::vector<float> render(sirenId id, const std::string& res, const char* variant, double rate, bool& rust, bool skip = false)
 {
-    SirenVoiceUnit u(id, res, cs::DspChoice { variant, "fixed" });
+    SirenVoiceUnit u(id, res, cs::DspChoice { variant, "fixed", skip });
     rust = u.isRust();
     u.setSampleRate(rate);
     const int n = static_cast<int>(rate * 4);
@@ -30,6 +31,39 @@ std::vector<float> render(sirenId id, const std::string& res, const char* varian
         out[static_cast<size_t>(i)] = u.process();
     }
     return out;
+}
+
+// S6 holding F5 (MIDI 89) looped over its frames (variant "frames"): frame 440 of the data
+// is practically silent and clicks; dsp.skip_silent_frames plays frame 441 there.
+std::vector<float> holdF5(const std::string& res, bool skip)
+{
+    SirenVoiceUnit u(S6, res, cs::DspChoice { "frames", "fixed", skip });
+    u.setSampleRate(44100.0);
+    std::vector<float> out(44100 * 2);
+    for (size_t i = 0; i < out.size(); ++i) {
+        if (i == 0) u.handleMidi(0x90, 89, 127);
+        if (i % 512 == 0) u.beginProcessBlock();
+        out[i] = u.process();
+    }
+    return out;
+}
+
+// the click: the peak RMS of the second difference over 128-sample windows, in dB over the
+// median window, from 0.5 s
+double clickDb(const std::vector<float>& x)
+{
+    std::vector<double> rms;
+    for (size_t w = 22050; w + 130 <= x.size(); w += 128) {
+        double s = 0;
+        for (size_t k = w; k < w + 128; ++k) {
+            const double d = double(x[k + 2]) - 2.0 * x[k + 1] + x[k];
+            s += d * d;
+        }
+        rms.push_back(std::sqrt(s / 128));
+    }
+    const double peak = *std::max_element(rms.begin(), rms.end());
+    std::nth_element(rms.begin(), rms.begin() + rms.size() / 2, rms.end());
+    return 20 * std::log10(peak / rms[rms.size() / 2]);
 }
 
 } // namespace
@@ -61,6 +95,19 @@ int main(int argc, char** argv)
         for (float x : o) { peak = std::max(peak, std::abs(x)); finite = finite && std::isfinite(x); }
         std::cout << v << ": " << (rust && finite && peak > 1e-3f ? "plays" : "FAILS") << " (peak " << peak << ")\n";
         if (!rust || !finite || peak <= 1e-3f) ++failures;
+    }
+    // dsp.skip_silent_frames: rust-exact never gets past the first frames, so it stays the C++
+    // bit for bit; "frames" loses its click
+    {
+        bool rustC = true, rustR = false;
+        const auto c = render(S6, res, "cpp", 44100.0, rustC);
+        const auto r = render(S6, res, "rust-exact", 44100.0, rustR, true);
+        const bool same = std::memcmp(c.data(), r.data(), c.size() * sizeof(float)) == 0;
+        std::cout << "rust-exact, skipping silent frames: " << (same ? "identical" : "DIFFERENT") << "\n";
+        if (!same) ++failures;
+        const double off = clickDb(holdF5(res, false)), on = clickDb(holdF5(res, true));
+        std::cout << "S6 F5 frames, click: " << off << " dB, skipping " << on << " dB\n";
+        if (!(off > 3 + on && on < 6)) ++failures;
     }
     std::cout << (failures ? "FAILED: " : "ok: ") << failures << " failure(s)\n";
     return failures ? 1 : 0;

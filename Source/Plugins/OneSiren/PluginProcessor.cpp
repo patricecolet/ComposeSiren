@@ -89,7 +89,8 @@ void OneSirenPluginProcessor::settingChanged(cs::Settings::Id id)
 #endif
 #if COMPOSESIREN_RUST_DSP
     // app-wide: every instance rebuilds its voice off the audio thread (SirenVoice::reloadDsp)
-    if (id == cs::Settings::Id::dspVariant || id == cs::Settings::Id::dspDataset)
+    if (id == cs::Settings::Id::dspVariant || id == cs::Settings::Id::dspDataset
+        || id == cs::Settings::Id::dspSkipSilentFrames)
         siren.reloadDsp();
 #endif
     juce::ignoreUnused(id);

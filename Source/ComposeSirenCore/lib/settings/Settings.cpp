@@ -36,6 +36,7 @@ static void publishDspChoice(const Settings& s)
     DspChoice c;
     c.variant = choiceAt(Settings::describe(meta::SettingId::dspVariant), s.getInt(meta::SettingId::dspVariant));
     c.dataset = choiceAt(Settings::describe(meta::SettingId::dspDataset), s.getInt(meta::SettingId::dspDataset));
+    c.skipSilent = s.getBool(meta::SettingId::dspSkipSilentFrames);
     setDspChoice(c);
 }
 #endif
@@ -230,7 +231,7 @@ void Settings::valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier
         else
             file->setValue(property.toString(), static_cast<double>(clean));
 #if COMPOSESIREN_RUST_DSP
-        if (id == meta::SettingId::dspVariant || id == meta::SettingId::dspDataset)
+        if (id == meta::SettingId::dspVariant || id == meta::SettingId::dspDataset || id == meta::SettingId::dspSkipSilentFrames)
             publishDspChoice(*this);
 #endif
         listeners.call([id](Listener& l) { l.settingChanged(id); });

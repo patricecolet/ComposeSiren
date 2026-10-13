@@ -29,6 +29,7 @@ SirenVoiceUnit::SirenVoiceUnit(sirenId sid, const std::string& resourcesPath) :
     if (!choice.isCpp()) {
         const std::string name = "S" + std::to_string(static_cast<int>(id) + 1);
         rustSiren.reset(csr_siren_new(resourcesPath.c_str(), name.c_str(), choice.variant.c_str(), choice.dataset.c_str()));
+        if (rustSiren) csr_siren_set_skip_silent(rustSiren.get(), choice.skipSilent);
         if (!rustSiren) {
             char err[512];
             sdsp_last_error(reinterpret_cast<uint8_t*>(err), sizeof err);

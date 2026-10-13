@@ -14,6 +14,7 @@ DspChoice& current()
         DspChoice d;
         if (const char* v = std::getenv("COMPOSESIREN_DSP_VARIANT"); v && *v) d.variant = v;
         if (const char* v = std::getenv("COMPOSESIREN_DSP_DATASET"); v && *v) d.dataset = v;
+        if (const char* v = std::getenv("COMPOSESIREN_DSP_SKIP_SILENT"); v && *v) d.skipSilent = *v == '1';
         return d;
     }();
     return c;

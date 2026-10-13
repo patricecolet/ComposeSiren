@@ -57,9 +57,10 @@ enum class SettingId : std::size_t {
     clicOutputDevice,
     dspVariant,
     dspDataset,
+    dspSkipSilentFrames,
 };
 
-inline constexpr std::size_t settingCount = 32;
+inline constexpr std::size_t settingCount = 33;
 
 inline constexpr std::array<Setting, settingCount> settings {{
     { "waves.enabled", "Waves", "Show waves", SettingType::Bool, 1.0, 0.0, 1.0, "", "", "COMPOSESIREN_SIREN_WAVES", "global", "Animated waves in the siren title cells, following each siren's loudness and pitch." },
@@ -94,6 +95,7 @@ inline constexpr std::array<Setting, settingCount> settings {{
     { "clic.output_device", "Clic", "Audio output", SettingType::String, 0.0, 0.0, 0.0, "", "", "COMPOSESIREN_CLIC", "global", "Where the click plays. Main output: the Clic bus (the host routes it). Any other entry: that output device, so the click can go to a separate amp or headphones." },
     { "dsp.variant", "Synthesis", "DSP", SettingType::Choice, 0.0, 0.0, 12.0, "cpp|rust-exact|rust-time|frames|trio|trio-linear|trio-nearest|trio-fast|trio-linear-fast|trio-nearest-fast|trio-f32|trio-linear-f32|trio-nearest-f32", "", "COMPOSESIREN_RUST_DSP", "global", "Which synthesis plays the sirens: the plugin's C++ DSP, its Rust port, or one of the Rust variants. App-wide, not a plugin parameter." },
     { "dsp.dataset", "Synthesis", "Data set", SettingType::Choice, 0.0, 0.0, 1.0, "fixed|raw", "", "COMPOSESIREN_RUST_DSP", "global", "Which siren data the Rust synthesis plays: with the crossfade fix (as shipped by default) or as measured. App-wide, not a plugin parameter." },
+    { "dsp.skip_silent_frames", "Synthesis", "Skip silent frames", SettingType::Bool, 0.0, 0.0, 1.0, "", "", "COMPOSESIREN_RUST_DSP", "global", "The Rust synthesis plays the next frame in place of a practically silent one (under the note's median level by 30 dB, or under 1e-6), which the data holds a few of and which click. Applies to every Rust variant, rust-exact included (no longer bit-exact with the C++ while on); the C++ DSP (cpp) is unchanged. App-wide, not a plugin parameter." },
 }};
 
 } // namespace mecaviv::metadata
