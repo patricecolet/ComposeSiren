@@ -522,3 +522,36 @@ void MidiIn::resetSirene() {
     ancienVelo = -1;
     ancienVolFinal = -1;
 }
+
+void MidiIn::copyStateFrom(const MidiIn& o) {
+    changeVolumeGeneral = o.changeVolumeGeneral;
+    noteOn = o.noteOn;
+    velocite = o.velocite;
+    pitchBend = o.pitchBend;
+    std::copy(std::begin(o.control), std::end(o.control), std::begin(control));
+    controlFinal = o.controlFinal;
+    noteOnFinal = o.noteOnFinal;
+    volumeFinal = o.volumeFinal;
+    tourMoteur = o.tourMoteur;
+    LSB = o.LSB;
+    MSB = o.MSB;
+    varVfo = o.varVfo;
+    varTremolo = o.varTremolo;
+    isEnVeille = o.isEnVeille;
+    vitesse = o.vitesse;
+    tremolo = o.tremolo;
+    veloFinal = o.veloFinal;
+    vitesseClapet = o.vitesseClapet;
+    ancienVelo = o.ancienVelo;
+    ancienVolFinal = o.ancienVolFinal;
+    countCreateRelease = o.countCreateRelease;
+    countCreateAttack = o.countCreateAttack;
+    constescursion = o.constescursion;
+    sampleRate = o.sampleRate;
+    incrementationVibrato = o.incrementationVibrato;
+    countTimerAudio = o.countTimerAudio;
+    countVibra = o.countVibra;
+    isAttackVibrato = o.isAttackVibrato;
+    isRampe = o.isRampe;
+    isRelease = o.isRelease;
+}

@@ -340,3 +340,41 @@ void Sirene::setisCrossFade(int is) {
   if (is == 0) isCrossfade = false;
   else isCrossfade = true;
 }
+
+Sirene::Handoff Sirene::getHandoff() const {
+  Handoff h;
+  h.noteVoulueAvantSlide = noteVoulueAvantSlide;
+  h.noteEncour = noteEncour;
+  h.interDepart = interDepart;
+  h.ampvoulu = ampvoulu;
+  h.ampvouluz = ampvouluz;
+  h.countKInf = countKInf;
+  h.countKSup = countKSup;
+  h.countPInf = countP[noteInf];
+  h.countPSup = countP[noteSup];
+  std::copy(std::begin(ampz), std::end(ampz), std::begin(h.ampz));
+  std::copy(std::begin(amp), std::end(amp), std::begin(h.amp));
+  std::copy(std::begin(phaseInf), std::end(phaseInf), std::begin(h.phaseInf));
+  std::copy(std::begin(phaseSup), std::end(phaseSup), std::begin(h.phaseSup));
+  h.anciennewaveInf = anciennewaveInf;
+  return h;
+}
+
+void Sirene::setHandoff(const Handoff& h) {
+  noteVoulueAvantSlide = h.noteVoulueAvantSlide;
+  noteEncour = h.noteEncour;
+  interDepart = h.interDepart;
+  setMidicent(static_cast<int>(noteEncour));
+  ampvoulu = h.ampvoulu;
+  ampvouluz = h.ampvouluz;
+  countKInf = h.countKInf;
+  countKSup = h.countKSup;
+  countP[noteInf] = h.countPInf;
+  countP[noteSup] = h.countPSup;
+  std::copy(std::begin(h.ampz), std::end(h.ampz), std::begin(ampz));
+  std::copy(std::begin(h.amp), std::end(h.amp), std::begin(amp));
+  std::copy(std::begin(h.phaseInf), std::end(h.phaseInf), std::begin(phaseInf));
+  std::copy(std::begin(h.phaseSup), std::end(h.phaseSup), std::begin(phaseSup));
+  anciennewaveInf = h.anciennewaveInf;
+  ancienNoteVoulue = noteInf;
+}

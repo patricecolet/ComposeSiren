@@ -87,6 +87,27 @@ public:
     const std::string& vectorIntervalFile
   );
 
+  // The state a note carries from one synthesis to another (SirenVoice's DSP swap with a
+  // note held): the rotor's slide, the flap's level, each partial's smoothed amplitude and
+  // the frames the two notes are on. Reading it changes nothing; setHandoff puts it on this
+  // voice as if it had played the same note (setMidicent then the counters). Real-time.
+  struct Handoff {
+    int noteVoulueAvantSlide = 0;
+    float noteEncour = 0;
+    int interDepart = 0;
+    float ampvoulu = 1, ampvouluz = 1;
+    int countKInf = 0, countKSup = 0, countPInf = 0, countPSup = 0;
+    float ampz[MAX_Partiel] = { 0 };
+    float amp[MAX_Partiel] = { 0 };
+    double phaseInf[MAX_Partiel] = { 0 };
+    double phaseSup[MAX_Partiel] = { 0 };
+    float anciennewaveInf = 0;
+    double trioPhi = 0; // the Rust trio's; the C++ synthesis has none
+    int trio = 0;
+  };
+  Handoff getHandoff() const;
+  void setHandoff(const Handoff& h);
+
   float getCurrentPitch();
 
 private:
