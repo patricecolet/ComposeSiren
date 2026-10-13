@@ -372,6 +372,9 @@ pub struct Sirene {
     /// with `Trio::lock`: the phase of the target fundamental, and its step
     trio_phi: f64,
     trio_dphi: f64,
+    /// set by `set_handoff`: the banks the next pitch change makes start on the carried
+    /// frames, at their smoothed level (a held note taken over plays at once at its level)
+    trio_prime: bool,
     trio_f0: f64,
     /// with `Trio::envelope`: each data note's envelope
     envelopes: Vec<Option<Envelope>>,
@@ -442,6 +445,7 @@ impl Sirene {
             trio_wave: 0.0,
             trio_phi: 0.0,
             trio_dphi: 0.0,
+            trio_prime: false,
             trio_f0: 0.0,
             envelopes: Vec::new(),
         };
@@ -942,6 +946,14 @@ impl Sirene {
                     b.carry = 0.0;
                     b.phase = [0.0; MAX_PARTIEL];
                     b.ampz = [0.0; MAX_PARTIEL];
+                    if self.trio_prime {
+                        let nn = idx(n);
+                        b.frame = self.count_p[nn].max(0);
+                        let a = self.data.amp(nn, self.data.play_frame(nn, b.frame as usize, self.skip_silent));
+                        for (z, &a) in b.ampz.iter_mut().zip(a.iter()) {
+                            *z = g * a as f64;
+                        }
+                    }
                     changed = true;
                 }
                 b.gain = g;
@@ -950,6 +962,7 @@ impl Sirene {
             }
         }
 
+        self.trio_prime = false;
         let compute = self.is16bit || self.count8bit || changed;
         let (sa, sb) = self.smoothing_rate;
         let q = self.qualite as usize;
@@ -1523,5 +1536,84 @@ impl Voice {
         }
         self.set_note_left -= 1.0;
         self.siren.calculwave()
+    }
+}
+
+/// What a held note carries from one synthesis to another (the plugin's DSP swap with a
+/// note held, `csr_siren_get_handoff`): the rotor's slide, the flap's level, each partial's
+/// smoothed amplitude and phase, and the frames the two notes are on. The layout is the C
+/// ABI's `CsrHandoff` and the C++ `Sirene::Handoff`.
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct Handoff {
+    pub note_voulue_avant_slide: i32,
+    pub note_encour: f32,
+    pub inter_depart: i32,
+    pub ampvoulu: f32,
+    pub ampvouluz: f32,
+    pub count_k_inf: i32,
+    pub count_k_sup: i32,
+    pub count_p_inf: i32,
+    pub count_p_sup: i32,
+    pub ampz: [f32; MAX_PARTIEL],
+    pub amp: [f32; MAX_PARTIEL],
+    pub phase_inf: [f64; MAX_PARTIEL],
+    pub phase_sup: [f64; MAX_PARTIEL],
+    pub ancienne_wave_inf: f32,
+    /// the trio's harmonic phase (its locked partials are h·Φ); 0 elsewhere
+    pub trio_phi: f64,
+    /// read only: 1 when this voice is a trio (its partials don't keep the others' phases)
+    pub trio: i32,
+}
+
+impl Sirene {
+    /// The state a swap carries over. Changes nothing. Real-time.
+    pub fn handoff(&self) -> Handoff {
+        Handoff {
+            note_voulue_avant_slide: self.note_voulue_avant_slide,
+            note_encour: self.note_encour,
+            inter_depart: self.inter_depart,
+            ampvoulu: self.ampvoulu,
+            ampvouluz: self.ampvouluz,
+            count_k_inf: self.count_k_inf,
+            count_k_sup: self.count_k_sup,
+            count_p_inf: self.count_p[idx(self.note_inf)],
+            count_p_sup: self.count_p[idx(self.note_sup)],
+            ampz: self.ampz,
+            amp: self.amp,
+            phase_inf: self.phase_inf,
+            phase_sup: self.phase_inf,
+            ancienne_wave_inf: self.ancienne_wave_inf,
+            trio_phi: self.trio_phi,
+            trio: self.trio.is_some() as i32,
+        }
+    }
+
+    /// Takes over a held note: as if this voice had played it (`set_midicent` on the
+    /// carried pitch, then the counters, levels and phases). Real-time: no allocation.
+    pub fn set_handoff(&mut self, h: &Handoff) {
+        self.note_voulue_avant_slide = h.note_voulue_avant_slide.min(self.note_midi_cent_max);
+        self.note_encour = h.note_encour;
+        self.inter_depart = h.inter_depart;
+        self.set_midicent(self.note_encour as i32);
+        self.ampvoulu = h.ampvoulu;
+        self.ampvouluz = h.ampvouluz;
+        self.count_k_inf = h.count_k_inf;
+        self.count_k_sup = h.count_k_sup;
+        self.count_p[idx(self.note_inf)] = h.count_p_inf;
+        self.count_p[idx(self.note_sup)] = h.count_p_sup;
+        self.frame_carry[idx(self.note_inf)] = 0.0;
+        self.frame_carry[idx(self.note_sup)] = 0.0;
+        self.ampz = h.ampz;
+        self.amp = h.amp;
+        self.phase_inf = h.phase_inf;
+        self.ancienne_wave_inf = h.ancienne_wave_inf;
+        self.ancien_note_voulue = self.note_inf;
+        if self.trio.is_some() {
+            // the banks are set up at the next sample, on the carried frames and level
+            self.trio_mc = i32::MIN;
+            self.trio_prime = true;
+            self.trio_phi = h.trio_phi.rem_euclid(std::f64::consts::TAU);
+        }
     }
 }

@@ -21,6 +21,25 @@ float csr_siren_calculwave(CsrSiren* s);
 float csr_siren_current_pitch(const CsrSiren* s);
 /* frames.skip_silent: practically silent frames play the next one (off: the plugin's frames). */
 void csr_siren_set_skip_silent(CsrSiren* s, bool on);
+/* The state a held note carries from one voice to another (the DSP swap mid-note): the
+   rotor's slide, the flap's level, each partial's smoothed amplitude and phase, the frames
+   the two notes are on. Same layout as the C++ Sirene::Handoff. Real-time, both ways. */
+typedef struct CsrHandoff {
+    int32_t note_voulue_avant_slide;
+    float note_encour;
+    int32_t inter_depart;
+    float ampvoulu, ampvouluz;
+    int32_t count_k_inf, count_k_sup, count_p_inf, count_p_sup;
+    float ampz[200];
+    float amp[200];
+    double phase_inf[200];
+    double phase_sup[200];
+    float ancienne_wave_inf;
+    double trio_phi;  /* the trio's harmonic phase, 0 elsewhere */
+    int32_t trio;     /* read only: 1 when the voice is a trio */
+} CsrHandoff;
+void csr_siren_get_handoff(const CsrSiren* s, CsrHandoff* out);
+void csr_siren_set_handoff(CsrSiren* s, const CsrHandoff* h);
 /* The last error on this thread, NUL-terminated into buf; returns its full length. */
 size_t sdsp_last_error(uint8_t* buf, size_t len);
 

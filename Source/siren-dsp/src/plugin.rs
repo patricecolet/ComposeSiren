@@ -122,3 +122,20 @@ pub unsafe extern "C" fn csr_siren_set_skip_silent(s: *mut Sirene, on: bool) {
         s.skip_silent = on;
     }
 }
+
+/// The state a held note carries to another voice (`Sirene::handoff`), into `out`.
+/// Real-time: copies a struct.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn csr_siren_get_handoff(s: *const Sirene, out: *mut crate::sirene::Handoff) {
+    if let (Some(s), Some(out)) = (unsafe { s.as_ref() }, unsafe { out.as_mut() }) {
+        *out = s.handoff();
+    }
+}
+
+/// Takes over a held note from another voice (`Sirene::set_handoff`). Real-time.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn csr_siren_set_handoff(s: *mut Sirene, h: *const crate::sirene::Handoff) {
+    if let (Some(s), Some(h)) = (unsafe { s.as_mut() }, unsafe { h.as_ref() }) {
+        s.set_handoff(h);
+    }
+}
