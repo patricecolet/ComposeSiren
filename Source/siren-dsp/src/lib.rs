@@ -133,6 +133,8 @@ pub struct RenderSpec {
     pub frames: Frames,
     pub speed: f32,
     pub interpolate: bool,
+    /// `frames.skip_silent`
+    pub skip_silent: bool,
     pub smoothing: f64,
 }
 
@@ -153,6 +155,7 @@ impl Default for RenderSpec {
             frames: Frames::Legacy,
             speed: 1.0,
             interpolate: false,
+            skip_silent: false,
             smoothing: 0.001,
         }
     }
@@ -185,6 +188,7 @@ pub fn render(lib: &Library, spec: &RenderSpec) -> io::Result<Vec<f32>> {
             FrameControl::Lab(l)
         }
     };
+    s.skip_silent = spec.skip_silent;
     v.glide = spec.glide;
 
     let held = (spec.seconds * spec.sample_rate) as usize;

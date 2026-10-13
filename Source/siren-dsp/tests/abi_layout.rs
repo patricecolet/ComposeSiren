@@ -25,6 +25,7 @@ fn render_spec_c_layout_is_pinned() {
     assert_eq!(offset_of!(RenderSpecC, freeze), 60);
     assert_eq!(offset_of!(RenderSpecC, speed), 64);
     assert_eq!(offset_of!(RenderSpecC, interpolate), 68);
+    assert_eq!(offset_of!(RenderSpecC, skip_silent), 69);
     assert_eq!(offset_of!(RenderSpecC, smoothing), 72);
     assert_eq!(size_of::<RenderSpecC>(), 80);
     assert_eq!(align_of::<RenderSpecC>(), 8);

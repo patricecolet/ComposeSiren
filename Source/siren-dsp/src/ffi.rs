@@ -612,6 +612,8 @@ pub struct RenderSpecC {
     pub freeze: i32,
     pub speed: f32,
     pub interpolate: bool,
+    /// `frames.skip_silent`, in the padding after `interpolate` (0 in older callers' zeroed specs)
+    pub skip_silent: bool,
     pub smoothing: f64,
 }
 
@@ -653,6 +655,7 @@ pub unsafe extern "C" fn sdsp_render(
             },
             speed: c.speed,
             interpolate: c.interpolate,
+            skip_silent: c.skip_silent,
             smoothing: c.smoothing,
         };
         let total = ((s.seconds * s.sample_rate) as usize) + ((s.release_seconds * s.sample_rate) as usize);
