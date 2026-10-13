@@ -59,6 +59,11 @@ public:
     // set before the unit is handed to the audio thread: take its place at once (a siren
     // change), not at the next note-on with no note held (a DSP change)
     bool adoptAtOnce = false;
+    // audio thread: take over `o`'s held note (a DSP swap mid-note): its MidiIn state, its
+    // timers, and the synthesis state (Sirene::Handoff / CsrHandoff: slide, level, partials,
+    // frames), so this unit carries on where `o` is. Real-time. Returns whether the two now
+    // play in phase (both a trio, or neither: the trio's partials don't keep the others' phases)
+    bool takeOver(const SirenVoiceUnit& o);
 #else
     SirenVoiceUnit(sirenId id, const std::string& resourcesPath);
 #endif
@@ -113,8 +118,9 @@ class SirenVoice
     // another dsp.variant / dsp.dataset) is built off the audio thread and published in
     // pendingSiren (a siren change on the message thread, as before; a DSP change on a
     // loader thread). The audio thread adopts a siren change at the next block start, a
-    // DSP change just before the next note-on that finds no note held, so the change never
-    // cuts a held note, and a release only where the next note starts. It replays the
+    // DSP change at once when a note is held (takeOver carries the note on: MidiIn state,
+    // slide, level, partials, frames), otherwise just before the next note-on, so a
+    // release is only cut where the next note starts. Without a held note it replays the
     // controllers and the pitch wheel into it, and fades the previous unit out over
     // fadeSeconds, then hands it to retiredSiren, which collectGarbage() frees on the
     // message thread. No allocation, lock or free on the audio thread.
@@ -123,6 +129,11 @@ class SirenVoice
     SirenVoiceUnit* fadingSiren = nullptr; // audio thread
     int fadeLeft = 0;                      // audio thread
     float fadeStep = 0.0f;                 // audio thread
+    // audio thread: the new unit took the note over (takeOver), so both play the same note:
+    // it fades in as the old one fades out (a sum of 1), not at full level from the start
+    bool fadeInNew = false;
+    // with it: the two are not in phase (takeOver), an equal-power fade, else a linear one
+    bool fadeEqualPower = false;
     std::atomic<double> sampleRateForNew { 44100.0 };
     std::atomic<std::uint32_t> swaps { 0 };
     std::array<std::int8_t, 120> ccs {};   // audio thread: last value of each controller, -1 none
