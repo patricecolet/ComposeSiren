@@ -75,6 +75,12 @@ public:
     //--------------------------------------------------------------------------
     void timerCallback() override;
 
+    // Editor lifetime. beginEditorTeardown() stops the timer's UI fan-out and
+    // holds MCP command execution; endEditorTeardown() releases MCP once the
+    // editor (and all of its members) is gone. See PluginEditor's EndTeardown.
+    void beginEditorTeardown();
+    void endEditorTeardown();
+
     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
 
     //==========================================================================
@@ -155,6 +161,9 @@ private:
 #endif
 
     McpControl mcp;
+    // False while no editor is up (or one is dissolving): the timer still
+    // pumps MCP, but does not fan state out to UI listeners.
+    std::atomic<bool> uiActive { false };
 
 #if COMPOSESIREN_CLIC
     // the click box's engine, on the second output bus ("Clic")

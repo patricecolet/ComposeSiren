@@ -242,7 +242,22 @@ void SirenOrchestraPluginProcessor::selectedNewResourcesPath(const std::string& 
 void SirenOrchestraPluginProcessor::timerCallback()
 {
     mcp.pump();
-    ensemble.notifyListeners();
+    // SirenStateMonitor fans out to editor components. Skip it while the
+    // editor is absent or being destroyed (Cmd+Q teardown used to race this
+    // into WavesOverflow's Component strings).
+    if (uiActive.load(std::memory_order_acquire))
+        ensemble.notifyListeners();
+}
+
+void SirenOrchestraPluginProcessor::beginEditorTeardown()
+{
+    uiActive.store(false, std::memory_order_release);
+    mcp.setDispatchPaused(true);
+}
+
+void SirenOrchestraPluginProcessor::endEditorTeardown()
+{
+    mcp.setDispatchPaused(false);
 }
 
 // void SirenOrchestraPluginProcessor::initialiseUiState()
@@ -532,6 +547,8 @@ bool SirenOrchestraPluginProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* SirenOrchestraPluginProcessor::createEditor()
 {
+    uiActive.store(true, std::memory_order_release);
+    mcp.setDispatchPaused(false);
     return new SirenOrchestraPluginEditor(*this);
 }
 

@@ -176,6 +176,19 @@ public:
     void sirenStripMenuItemSelected(std::optional<sirenId> s) override;
 
 private:
+    // Declared first so it is destroyed last: resumes MCP only after every
+    // other member — including WavesOverflow — is gone. The dtor body calls
+    // beginEditorTeardown() at the top; this closes the window at the end.
+    struct EndTeardown
+    {
+        SirenOrchestraPluginProcessor* processor = nullptr;
+        ~EndTeardown()
+        {
+            if (processor != nullptr)
+                processor->endEditorTeardown();
+        }
+    } endTeardown;
+
     SirenOrchestraPluginProcessor& audioProcessor;
 
     MainButtonsComponent mainButtons;
@@ -208,8 +221,11 @@ private:
             setInterceptsMouseClicks(false, false);
         }
         void paint(juce::Graphics& g) override;
+        // Stop painting and let go of the editor before either is torn down.
+        void silence();
     private:
         SirenOrchestraPluginEditor& editor;
+        bool quiet = false;
     };
 
     // SirenStateMonitor::Listener

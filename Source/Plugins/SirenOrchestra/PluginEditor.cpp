@@ -46,6 +46,7 @@ SirenOrchestraPluginEditor::SirenOrchestraPluginEditor(SirenOrchestraPluginProce
                  p.getSirenStateMonitor()),
     sirenStripMenu(sirenTracks)
 {
+    endTeardown.processor = &p;
     sirenStripMenu.setListener(this);
 
     addAndMakeVisible(mainButtons);
@@ -96,11 +97,21 @@ SirenOrchestraPluginEditor::SirenOrchestraPluginEditor(SirenOrchestraPluginProce
 
 SirenOrchestraPluginEditor::~SirenOrchestraPluginEditor()
 {
+    // Freeze message-thread callbacks into this hierarchy before any member
+    // dies. Cmd+Q was racing MCP pump / SirenStateMonitor into WavesOverflow
+    // (see docs/bug-reports/sirenorchestra/cmd-q-crash-wavesoverflow-string-release).
+    audioProcessor.beginEditorTeardown();
+    audioProcessor.getSirenStateMonitor().removeAllListeners();
+
 #if COMPOSESIREN_SIREN_WAVES
     vblank.reset();
     settings->removeListener(this);
-    audioProcessor.getSirenStateMonitor().removeListener(this);
     glContext.detach();
+    // Quiet and detach the overflow painter: its Component strings are what
+    // faulted if anything still writes into this object mid-teardown.
+    wavesOverflow.silence();
+    removeChildComponent(&wavesOverflow);
+    waveColumn.setCells({});
 #endif
 #if COMPOSESIREN_PARK_BRIDGE
     stopTimer();
@@ -390,6 +401,14 @@ void SirenOrchestraPluginEditor::advanceWaves(double now)
 
 void SirenOrchestraPluginEditor::WavesOverflow::paint(juce::Graphics& g)
 {
+    if (quiet)
+        return;
     editor.waveColumn.paintOverflow(g, editor.waveTuning, getPosition().toFloat());
+}
+
+void SirenOrchestraPluginEditor::WavesOverflow::silence()
+{
+    quiet = true;
+    setVisible(false);
 }
 #endif
