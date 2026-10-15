@@ -120,8 +120,9 @@ class SirenVoice
     // loader thread). The audio thread adopts a siren change at the next block start, a
     // DSP change at once when a note is held (takeOver carries the note on: MidiIn state,
     // slide, level, partials, frames), otherwise just before the next note-on, so a
-    // release is only cut where the next note starts. Without a held note it replays the
-    // controllers and the pitch wheel into it, and fades the previous unit out over
+    // release is only cut where the next note starts. A DSP change, note held or not, carries
+    // the siren state over (takeOver: a note after the swap glides from the old pitch); a
+    // siren change replays the controllers and the pitch wheel into the new unit. It fades the previous unit out over
     // fadeSeconds, then hands it to retiredSiren, which collectGarbage() frees on the
     // message thread. No allocation, lock or free on the audio thread.
     std::atomic<SirenVoiceUnit*> pendingSiren { nullptr };

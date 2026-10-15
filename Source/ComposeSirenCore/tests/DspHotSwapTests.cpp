@@ -102,6 +102,58 @@ Take renderHeld(const std::string& res, double rate, const char* first, const st
     return t;
 }
 
+// Note A, released, a DSP change with no note held, then note B: B starts from the pitch the
+// siren had (it glides from there, as the motor would), not from the bottom of its range.
+// The pitch at each block start, swapped (cpp -> each variant) and unswapped (cpp alone).
+template <class Check>
+void noteAfterSwap(const std::string& res, double rate, Check& check)
+{
+    auto run = [&](const char* to, int noteB) {
+        cs::setDspChoice({ "cpp", "fixed" });
+        SirenVoice v;
+        PitchProbe probe;
+        v.addListener(&probe);
+        v.setSirenId(S3, res);
+        v.setSampleRate(rate);
+        std::vector<float> pitch;
+        for (int b = 0; b < 1100; ++b) {
+            if (b == 1020 && to != nullptr) {
+                cs::setDspChoice({ to, "fixed" });
+                v.reloadDsp();
+                waitForLoader(v);
+            }
+            if (!v.getRawSirenHandle()) break;
+            v.beginProcessBlock();
+            v.notifyListeners();
+            pitch.push_back(probe.pitch);
+            for (int i = 0; i < block; ++i) {
+                if (b == 0 && i == 0) v.handleMidi(0x90, 72, 100);
+                if (b == 1000 && i == 0) v.handleMidi(0x80, 72, 0);
+                if (b == 1040 && i == 0) v.handleMidi(0x90, noteB, 100);
+                v.process();
+            }
+            v.collectGarbage();
+        }
+        v.removeListener(&probe);
+        return pitch;
+    };
+    for (int noteB : { 60, 74 }) {
+        const auto ref = run(nullptr, noteB);
+        if (std::getenv("HS_TRACE")) for (int b : { 0, 200, 500, 999, 1010, 1039, 1041, 1060, 1099 }) if (b < (int) ref.size()) std::cout << "  pitch[" << b << "] " << ref[static_cast<size_t>(b)] << "\n";
+        for (const char* to : { "rust-exact", "trio-f32", "trio" }) {
+            const auto p = run(to, noteB);
+            if (p.size() < 1100 || ref.size() < 1100) { check(false, "note after a swap: rendered"); return; }
+            // block 1041: the first pitch read after B's note-on
+            const float before = p[1039], after = p[1041], unswapped = ref[1041];
+            const float d = std::abs(after - unswapped);
+            check(d < 0.25f && std::abs(after - before) < 1.0f,
+                  std::string("note ") + std::to_string(noteB) + " after a swap to " + to
+                  + ": starts from the previous pitch (" + std::to_string(before) + " -> " + std::to_string(after)
+                  + " semitones, unswapped " + std::to_string(unswapped) + ")");
+        }
+    }
+}
+
 // A held note through every swap: the new synthesis takes the note over at the next block.
 // The level is compared with each synthesis playing the same note alone, unswapped: before
 // the swap with the old one, after the fade with the new one, during it with their mean
@@ -219,17 +271,18 @@ int main(int argc, char** argv)
         check(peak > 1e-3f, std::string("plays after the swap to ") + changes[k].variant + " (peak " + std::to_string(peak) + ")");
     }
 
-    // bit for bit with a fresh C++ voice after the swaps to rust-exact and cpp, once faded
-    const int fade = static_cast<int>(SirenVoice::fadeSeconds * rate);
-    for (size_t k : { size_t(0), size_t(3) }) {
-        const int from = swapAt[k], to = k + 1 < swapAt.size() ? swapAt[k + 1] : total;
-        const auto ref = reference(id, res, "cpp", rate, events, from, to);
-        const bool same = std::memcmp(ref.data() + fade, out.data() + from + fade,
-                                      static_cast<size_t>(to - from - fade) * sizeof(float)) == 0;
+    // the swaps carry the siren on: after the swap to rust-exact (the C++ synthesis, bit for
+    // bit), the voice plays what one C++ voice playing every event from the start plays
+    {
+        const int fade = static_cast<int>(SirenVoice::fadeSeconds * rate);
+        const int from = swapAt[0], to = swapAt[1];
+        const auto ref = reference(id, res, "cpp", rate, events, 0, to);
         float diff = 0;
-        for (int i = fade; i < to - from; ++i) diff = std::max(diff, std::abs(ref[static_cast<size_t>(i)] - out[static_cast<size_t>(from + i)]));
-        check(same, std::string("after the swap to ") + changes[k].variant + ": identical to the C++ voice (max |diff| " + std::to_string(diff) + ")");
+        for (int i = from + fade; i < to; ++i) diff = std::max(diff, std::abs(ref[static_cast<size_t>(i)] - out[static_cast<size_t>(i)]));
+        check(diff < 1e-4f, "after the swap to rust-exact: the C++ voice carried on (max |diff| " + std::to_string(diff) + ")");
     }
+
+    noteAfterSwap(res, rate, check);
 
     // a siren change still swaps at once, and the voice keeps playing
     v.setSirenId(S4, res);

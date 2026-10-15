@@ -529,7 +529,11 @@ void SirenVoice::adoptPending(bool atNoteOn)
     }
     p = pendingSiren.exchange(nullptr, std::memory_order_acq_rel);
     if (p == nullptr) return;
-    fadeInNew = cur != nullptr && !p->adoptAtOnce && cur->isHeld();
+    // a DSP change (not a siren change) carries the siren on, note held or not: the new unit
+    // starts from the old one's pitch, slide, level and controllers (takeOver), so a note
+    // played after the swap glides from where the siren was, as the motor would, instead of
+    // from the bottom of its range; the old one's release fades out under the new one
+    fadeInNew = cur != nullptr && !p->adoptAtOnce;
     if (fadeInNew) {
         fadeEqualPower = !p->takeOver(*cur); // the controllers and the wheel come with the MidiIn state
     } else {
