@@ -193,6 +193,16 @@ if(BUILD_TESTING)
   add_test(NAME settings-dialog COMMAND ComposeSirenSettingsDialogTests)
 endif()
 
+# A reloaded plugin: bridges resend restored values, the reverb switch shows them, and
+# controllers sent while a siren loads reach it.
+if(BUILD_TESTING)
+  add_executable(ComposeSirenStateRestoreTests tests/StateRestoreTests.cpp)
+  target_link_libraries(ComposeSirenStateRestoreTests PRIVATE
+    ComposeSirenCore juce::juce_audio_processors)
+  add_test(NAME state-restore
+    COMMAND ComposeSirenStateRestoreTests "${CMAKE_SOURCE_DIR}/Resources/")
+endif()
+
 # The Rust synthesis plays as the C++ one, bit for bit, in the plugin's voice.
 if(BUILD_TESTING AND COMPOSESIREN_RUST_DSP)
   add_executable(ComposeSirenRustDspParityTests tests/RustDspParityTests.cpp)
