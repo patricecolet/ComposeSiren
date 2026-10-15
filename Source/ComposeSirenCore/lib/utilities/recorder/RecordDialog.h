@@ -16,7 +16,8 @@ public:
     explicit RecordDialog(Recorder& recorder);
     ~RecordDialog() override;
 
-    // Opens the dialog in its own window (not modal), near `parent`.
+    // Opens the dialog in its own non-modal window near `parent`. The window
+    // deletes itself when closed.
     static void show(Recorder& recorder, juce::Component* parent);
 
     void resized() override;

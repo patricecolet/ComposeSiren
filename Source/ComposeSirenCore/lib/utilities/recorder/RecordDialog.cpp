@@ -2,6 +2,8 @@
 
 #if COMPOSESIREN_RECORD
 
+#include "../NonModalDialog.h"
+
 namespace {
 
 juce::String clock(double seconds)
@@ -48,15 +50,7 @@ RecordDialog::~RecordDialog()
 
 void RecordDialog::show(Recorder& recorder, juce::Component* parent)
 {
-    juce::DialogWindow::LaunchOptions options;
-    options.content.setOwned(new RecordDialog(recorder));
-    options.dialogTitle = "Record";
-    options.componentToCentreAround = parent;
-    options.dialogBackgroundColour = juce::Colour { 0xff263238 };
-    options.escapeKeyTriggersCloseButton = true;
-    options.useNativeTitleBar = true;
-    options.resizable = false;
-    options.launchAsync();
+    cs::NonModalDialog::show("Record", new RecordDialog(recorder), parent, false);
 }
 
 Recorder::Format RecordDialog::selectedFormat() const
@@ -87,14 +81,12 @@ void RecordDialog::startOrStop()
     if (current.recording) {
         const auto result = fadeOut.getToggleState() ? recorder.stopFading() : recorder.stop();
         if (result.failed())
-            juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon, "Record",
-                                                   result.getErrorMessage());
+            cs::showNonModalMessage("Record", result.getErrorMessage(), getTopLevelComponent());
     } else {
         const auto target = chosen != juce::File() ? chosen : Recorder::defaultFile(selectedFormat());
         const auto result = recorder.start(target, selectedFormat());
         if (result.failed())
-            juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon, "Record",
-                                                   result.getErrorMessage());
+            cs::showNonModalMessage("Record", result.getErrorMessage(), getTopLevelComponent());
         // A default name is taken once: the next recording gets a new one.
         chosen = juce::File();
     }

@@ -22,7 +22,7 @@ public:
     // false when the row is greyed out; true for a setting without a row
     bool isRowEnabled(Settings::Id id) const;
 
-    // Opens the window (not modal), near `parent`.
+    // Opens the window (non-modal) near `parent`. It deletes itself when closed.
     static void show(juce::Component* parent);
 
     void resized() override;

@@ -2,6 +2,8 @@
 
 #include <BuildInfo.h>
 
+#include <lib/utilities/NonModalDialog.h>
+
 #include "PluginProcessor.h"
 
 namespace {
@@ -143,15 +145,7 @@ AboutDialog::~AboutDialog()
 
 juce::DialogWindow* AboutDialog::show(SirenOrchestraPluginProcessor& processor, juce::Component* parent)
 {
-    juce::DialogWindow::LaunchOptions options;
-    options.content.setOwned(new AboutDialog(processor));
-    options.dialogTitle = "About SirenOrchestra";
-    options.componentToCentreAround = parent;
-    options.dialogBackgroundColour = juce::Colour { 0xff263238 };
-    options.escapeKeyTriggersCloseButton = true;
-    options.useNativeTitleBar = true;
-    options.resizable = true;
-    return options.launchAsync();
+    return cs::NonModalDialog::show("About SirenOrchestra", new AboutDialog(processor), parent, true);
 }
 
 void AboutDialog::resized()

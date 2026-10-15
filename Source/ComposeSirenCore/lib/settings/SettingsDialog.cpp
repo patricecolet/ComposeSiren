@@ -1,5 +1,6 @@
 #include "SettingsDialog.h"
 
+#include "../utilities/NonModalDialog.h"
 #include <juce_audio_devices/juce_audio_devices.h>
 
 namespace cs {
@@ -173,15 +174,7 @@ bool SettingsDialog::isRowEnabled(Settings::Id id) const
 
 void SettingsDialog::show(juce::Component* parent)
 {
-    juce::DialogWindow::LaunchOptions options;
-    options.content.setOwned(new SettingsDialog());
-    options.dialogTitle = "Settings";
-    options.componentToCentreAround = parent;
-    options.dialogBackgroundColour = juce::Colour { 0xff263238 };
-    options.escapeKeyTriggersCloseButton = true;
-    options.useNativeTitleBar = true;
-    options.resizable = true;
-    options.launchAsync();
+    NonModalDialog::show("Settings", new SettingsDialog(), parent, true);
 }
 
 void SettingsDialog::resized()

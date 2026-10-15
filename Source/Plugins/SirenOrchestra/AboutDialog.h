@@ -14,7 +14,8 @@ public:
     explicit AboutDialog(SirenOrchestraPluginProcessor& processor);
     ~AboutDialog() override;
 
-    // Opens the dialog in its own window (not modal), near `parent`.
+    // Opens the dialog in its own non-modal window near `parent`. The window
+    // deletes itself when closed; the processor also deletes it on destruction.
     static juce::DialogWindow* show(SirenOrchestraPluginProcessor& processor, juce::Component* parent);
 
     void resized() override;
