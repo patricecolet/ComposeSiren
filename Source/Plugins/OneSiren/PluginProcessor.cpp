@@ -382,7 +382,8 @@ void OneSirenPluginProcessor::changeProgramName(int index,
 void OneSirenPluginProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
     juce::XmlElement xmlState("AllParameters");
-    xmlState.addChildElement(apvts.state.createXml().release());
+    // copyState flushes the parameters into the tree first (APVTS does it on a timer)
+    xmlState.addChildElement(apvts.copyState().createXml().release());
     xmlState.addChildElement(vms.toXml().release());
     copyXmlToBinary(xmlState, destData);
 }

@@ -627,7 +627,8 @@ void SirenOrchestraPluginProcessor::changeProgramName(int index,
 void SirenOrchestraPluginProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
     juce::XmlElement xmlState("AllParameters");
-    xmlState.addChildElement(apvts.state.createXml().release());
+    // copyState flushes the parameters into the tree first (APVTS does it on a timer)
+    xmlState.addChildElement(apvts.copyState().createXml().release());
     xmlState.addChildElement(vms.toXml().release());
 #if COMPOSESIREN_PARK_BRIDGE
     // le pilotage des sirènes physiques suit la session, pas le plugin

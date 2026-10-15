@@ -150,3 +150,11 @@ add_plugin_variant(SirenOrchestra "MvSO" "com.mecaviv.sirenorchestra")
 #    "Plugins/CustomMix/Components/MixerStripComponent.cpp"
 #    "Plugins/CustomMix/Components/ReverbComponent.cpp"
 #)
+# The SirenOrchestra processor itself: state reload (vibrato, volume, reverb), and a renderer.
+if(BUILD_TESTING AND TARGET SirenOrchestra)
+  add_executable(SirenOrchestraProcessorTests Plugins/SirenOrchestra/tests/ProcessorTests.cpp)
+  target_link_libraries(SirenOrchestraProcessorTests PRIVATE SirenOrchestra ComposeSirenCore
+    juce::juce_audio_utils juce::juce_audio_formats)
+  target_include_directories(SirenOrchestraProcessorTests PRIVATE "${CMAKE_BINARY_DIR}/generated")
+  add_test(NAME processor-reload COMMAND SirenOrchestraProcessorTests)
+endif()
