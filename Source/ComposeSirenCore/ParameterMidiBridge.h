@@ -106,6 +106,12 @@ public:
 
     void setPending()
     {
+        // the parameter's current value (a restored state, a knob moved since): not the
+        // one this bridge last saw
+        pendingValue.store(
+            { defaultInputChannel.oneBased, audioParam.getValue(), 0 },
+            std::memory_order_release
+        );
         // pendingValue.store(
         //     { defaultInputChannel.oneBased, audioParam.getValue(), 0 },
         //     std::memory_order_relaxed
