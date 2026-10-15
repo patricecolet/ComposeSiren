@@ -751,7 +751,7 @@ impl Sirene {
     fn partial(&self, note: i32, count_k: i32, i: usize) -> (f32, f32) {
         let n = idx(note);
         let clock = Clock { rate: 1.0, time_scale: self.time_scale };
-        partial_at(&self.data, &self.frames, self.skip_silent, n, self.count_p[n], count_k, i, clock, self.frame_carry[n])
+        partial_at(&self.data, &self.frames, self.skips(), n, self.count_p[n], count_k, i, clock, self.frame_carry[n])
     }
 
     /// `calculwave()`: one output sample.
@@ -792,7 +792,7 @@ impl Sirene {
             // order, with each note's frame looked up once per sample instead of per partial.
             let q = self.qualite as usize;
             let (ni, ns) = (idx(inf), idx(sup));
-            let skip = self.skip_silent;
+            let skip = self.skips();
             let pi = self.data.play_frame(ni, self.count_p[ni].max(0) as usize, skip);
             let psu = self.data.play_frame(ns, self.count_p[ns].max(0) as usize, skip);
             let (fi, ai) = (&self.data.freq(ni, pi)[..q], &self.data.amp(ni, pi)[..q]);
@@ -949,7 +949,7 @@ impl Sirene {
                     if self.trio_prime {
                         let nn = idx(n);
                         b.frame = self.count_p[nn].max(0);
-                        let a = self.data.amp(nn, self.data.play_frame(nn, b.frame as usize, self.skip_silent));
+                        let a = self.data.amp(nn, self.data.play_frame(nn, b.frame as usize, self.skip_silent && matches!(self.frames, FrameControl::Lab(_))));
                         for (z, &a) in b.ampz.iter_mut().zip(a.iter()) {
                             *z = g * a as f64;
                         }
@@ -980,7 +980,7 @@ impl Sirene {
         }
         let (phi, f0) = (self.trio_phi, self.trio_f0);
         let time_scale = self.time_scale;
-        let (data, frames, envelopes, skip) = (&self.data, &self.frames, &self.envelopes, self.skip_silent);
+        let (data, frames, envelopes, skip) = (&self.data, &self.frames, &self.envelopes, self.skips());
         let mut wave = 0.0f64;
         for b in self.banks.iter_mut() {
             if b.note < 0 {
@@ -1564,6 +1564,16 @@ pub struct Handoff {
     pub trio_phi: f64,
     /// read only: 1 when this voice is a trio (its partials don't keep the others' phases)
     pub trio: i32,
+}
+
+impl Sirene {
+    /// `skip_silent` where it applies: the lab's frames. The plugin's frames (`Legacy`) stay the
+    /// plugin's, bit for bit: their counters restart at every `setMidicent()` and seldom leave
+    /// the first frames.
+    #[inline]
+    pub fn skips(&self) -> bool {
+        self.skip_silent && matches!(self.frames, FrameControl::Lab(_))
+    }
 }
 
 impl Sirene {

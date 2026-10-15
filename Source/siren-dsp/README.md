@@ -61,13 +61,38 @@ is not silent in its place.
   `DataSet::play_frame`. On the audio thread it is a table read; nothing allocates.
 - C ABI: `csr_siren_set_skip_silent`, `sdsp_voice_set_skip_silent`, and `skip_silent` in
   `RenderSpecC` (offset 69, in the padding: older zeroed specs read off).
-- Off, every frame plays: bit for bit the plugin. On, it applies to every Rust variant,
-  `rust-exact` included, which stays bit-exact anyway while it plays the plugin's frames (they
-  never get past the first two). The C++ DSP has no such option.
+- Off, every frame plays: bit for bit the plugin. On, it applies to the variants that play the
+  lab's frames (`frames`, every `trio`); the plugin's frames (`rust-exact`, `rust-time`) stay
+  the plugin's, bit for bit (`Sirene::skips`). The C++ DSP has no such option.
 - `tests/silent.rs`: the one silent frame of the data, the click it makes and its removal in
   every Rust variant that loops (peak RMS of the second difference over 128-sample windows, dB
   over the median window: 23.4 dB off, 0.7 dB on, 16-bit `frames` at 44.1 kHz), and bit-exact
   output where nothing is skipped.
+
+### Realigning frames whose partial slots move
+
+The same option realigns frames whose partial slots stop following the note's partials. Many S7
+notes (and a few of S1, S3, S4, S5) lose a partial in a few frames, often the loop's last: every
+partial above it moves down one slot, so each slot's oscillator jumps (an octave for the
+fundamental's slot) there and back at the wrap, once per loop: a click every 15 to 400 ms (S7
+F#5, data 66: frame 76 of 77, every 65 ms).
+
+- The reference frame is the played frame whose first slot is nearest the note's median
+  first-slot frequency. A frame needs realigning when more than 20% of the two frames' amplitude
+  sits in slots whose frequency differs by more than 10% (`REALIGN_SHARE`, `MISALIGNED_REL`).
+- `realign` gives each reference slot the frame's partial nearest its frequency (within 10%), the
+  rest to free slots above; kept when it halves the moved share. A note where more than 80% of
+  the frames would need it is left as it is (analysed that way, or noisy). Frames that can't be
+  saved and are more than half moved are skipped as silent ones are.
+- Realigned frames live in a pool built with the data (`DataSet::repaired`), read as frames
+  `MAX_TAB + i` through `skip_to` and `DataSet::play_frame`: still a table read on the audio
+  thread.
+- Today: 407 frames realigned in 24 notes, 1 skipped (S5 n77 f440).
+- `tests/frames_repair.rs`: the reported notes (S7 data 42, 44, 47, 50, 52, 58, 66; S5 77) go
+  from 51-100% worst moved share between played frames to 6-33%; S7 n66 loses its wrap click in
+  every lab-frames variant (high-passed residual peak over its ±20 ms context: 2.3-3.9 dB off,
+  1.0-2.3 dB on). `tests/dataset_scan.rs` (ignored) scans every note: skipped and realigned
+  frames, slot jumps left, and a render per variant ranked by that peak.
 
 The plugin applies a change of the setting as a variant change (below).
 

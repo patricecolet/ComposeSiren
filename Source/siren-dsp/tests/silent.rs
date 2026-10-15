@@ -28,7 +28,8 @@ fn the_data_has_one_silent_frame_s5_f5_440() {
             }
             for f in 0..i.frames {
                 let g = i.skip_to[f] as usize;
-                assert!(g < i.frames, "{} n{} f{f} -> {g}", def.name(), i.index);
+                // a frame, or past MAX_TAB a realigned one (frames_repair.rs)
+                assert!(g < i.frames || g >= siren_dsp::data::MAX_TAB, "{} n{} f{f} -> {g}", def.name(), i.index);
             }
         }
     }
@@ -89,8 +90,10 @@ fn skipping_takes_the_click_out_of_s6_f5() {
         eprintln!("S6 F5 (fdur {}, fmax {}), interpolate {interpolate}: click off {c_off:.1} dB, on {c_on:.1} dB", info.fdur, info.fmax);
         assert!(c_off > 12.0, "the click is there with skipping off: {c_off:.1} dB");
         assert!(c_on < 6.0, "skipping takes it out: {c_on:.1} dB");
-        // until the loop gets to the silent frame (or the one read towards it), not a sample changes
-        let first = frames.iter().position(|&f| f + 1 == FRAME).unwrap();
+        // until the loop gets to the first frame skipped or realigned (or the one read towards it), not a sample changes
+        let d = lib.data(SirenId::S6.def()).unwrap();
+        let changed = (0..info.fmax).find(|&f| d.play_frame(NOTE, f, true) != f).unwrap();
+        let first = frames.iter().position(|&f| f + 1 == changed.min(FRAME)).unwrap();
         assert!(off[..first].iter().zip(&on[..first]).all(|(a, b)| a.to_bits() == b.to_bits()));
     }
 }
@@ -108,7 +111,7 @@ fn skipping_changes_nothing_where_no_frame_is_silent() {
 
 #[test]
 fn the_plugin_frames_with_skipping_on_are_the_plugins() {
-    // the plugin's frame reset never leaves the first frames: nothing to skip there
+    // the plugin's frames are the plugin's: skipping (and realigning) applies to the lab's only
     let lib = lib();
     for skip in [false, true] {
         let mut v = lib.voice(SirenId::S6, 44100.0).unwrap();
@@ -149,7 +152,7 @@ fn every_rust_variant_skips_when_asked() {
         let (c_off, c_on) = (click_db(&off), click_db(&on));
         report.push(format!("{:<18} legacy {:<5} click off {c_off:5.1} dB, on {c_on:5.1} dB", var.id, frames_legacy));
         if frames_legacy {
-            // never past the first frames: skipping is a no-op, bit for bit
+            // the plugin's frames: skipping is a no-op, bit for bit (Sirene::skips)
             assert!(off.iter().zip(&on).all(|(a, b)| a.to_bits() == b.to_bits()), "{}", var.id);
         } else {
             assert!(c_on < 6.0 && c_on < c_off - 3.0, "{}: off {c_off:.1}, on {c_on:.1}", var.id);
