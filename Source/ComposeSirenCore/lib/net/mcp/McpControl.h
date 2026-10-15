@@ -72,6 +72,13 @@ public:
     // the server when a command arrives.
     void pump();
 
+    // Hold command execution while the editor is being destroyed. New and
+    // queued commands fail fast instead of running into a half-dissolved UI
+    // (setValueNotifyingHost walks parameter listeners). The server keeps
+    // listening; clear this once the editor is gone so headless use works.
+    void setDispatchPaused(bool paused);
+    bool isDispatchPaused() const { return state->dispatchPaused.load(); }
+
     // Move queued MIDI into the block, at sample 0, before the host's events.
     void drainMidi(juce::MidiBuffer& midi) const;
 
@@ -126,6 +133,7 @@ private:
     {
         std::atomic<bool> alive { true };
         std::atomic<bool> shuttingDown { false };
+        std::atomic<bool> dispatchPaused { false };
         McpControl* control = nullptr;
         juce::AudioProcessor* processor = nullptr;
         std::mutex jobsMutex;

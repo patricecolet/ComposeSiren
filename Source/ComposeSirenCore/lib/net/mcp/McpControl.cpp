@@ -90,9 +90,32 @@ std::vector<McpControl::ToolCount> McpControl::toolCounts() const
     return counts;
 }
 
+void McpControl::setDispatchPaused(bool paused)
+{
+    state->dispatchPaused.store(paused);
+    if (!paused)
+        return;
+
+    // Fail whatever is already queued so callers do not sit out the 2 s timeout.
+    std::vector<std::shared_ptr<Job>> jobs;
+    {
+        std::lock_guard lock(state->jobsMutex);
+        jobs.swap(state->jobs);
+    }
+    for (const auto& job : jobs)
+    {
+        {
+            std::lock_guard lock(job->mutex);
+            job->response = jsonOf(failure("the editor is closing")).toStdString();
+            job->done = true;
+        }
+        job->cv.notify_one();
+    }
+}
+
 void McpControl::pump()
 {
-    if (!state->alive.load() || state->processor == nullptr)
+    if (!state->alive.load() || state->processor == nullptr || state->dispatchPaused.load())
         return;
 
     std::vector<std::shared_ptr<Job>> jobs;
@@ -132,6 +155,8 @@ char* McpControl::dispatch(const char* requestJson, void* user)
     auto* raw = static_cast<State*>(user);
     if (raw == nullptr || raw->shuttingDown.load() || !raw->alive.load())
         return duplicate("{\"ok\":false,\"error\":\"server is stopping\"}");
+    if (raw->dispatchPaused.load())
+        return duplicate("{\"ok\":false,\"error\":\"the editor is closing\"}");
 
     // The state is owned by a shared_ptr in McpControl. The callback only has
     // the raw pointer; the server is stopped before that pointer is cleared.
@@ -141,6 +166,8 @@ char* McpControl::dispatch(const char* requestJson, void* user)
         std::lock_guard lock(raw->jobsMutex);
         if (raw->shuttingDown.load())
             return duplicate("{\"ok\":false,\"error\":\"server is stopping\"}");
+        if (raw->dispatchPaused.load())
+            return duplicate("{\"ok\":false,\"error\":\"the editor is closing\"}");
         raw->jobs.push_back(job);
     }
 
