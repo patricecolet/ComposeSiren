@@ -29,6 +29,9 @@ class ReverbStripComponent : public juce::Component
     EngravedTitle titleLabel;
     juce::ToggleButton titleSwitch;
     HeaderSwitchLAF headerSwitchLAF;
+    // the switch follows ReverbEnable both ways: shows the restored state when the editor
+    // opens, and any later change (a host automation, setStateInformation, MCP)
+    std::unique_ptr<juce::ButtonParameterAttachment> titleSwitchAttachment;
 #else
     // master layout: plain label (title is optional); Enable Reverb is a cell
     juce::Label titleLabel;

@@ -18,17 +18,10 @@ ReverbStripComponent::ReverbStripComponent(
     titleLabel.setText("Reverb");
     // header enable: ToggleLAF button with LED on the left
     titleSwitch.setButtonText({});
-    titleSwitch.setClickingTogglesState(true);
     titleSwitch.setLookAndFeel(&headerSwitchLAF);
-    titleSwitch.onClick = [this, &vts, paramGroupId] {
-        const bool on = titleSwitch.getToggleState();
-        if (auto* p = vts.getParameter(
-                ParameterIdGet::toJuceParameterId(paramGroupId, ParameterId::ReverbEnable))) {
-            p->beginChangeGesture();
-            p->setValueNotifyingHost(p->convertTo0to1(on ? 1.0f : 0.0f));
-            p->endChangeGesture();
-        }
-    };
+    if (auto* p = vts.getParameter(
+            ParameterIdGet::toJuceParameterId(paramGroupId, ParameterId::ReverbEnable)))
+        titleSwitchAttachment = std::make_unique<juce::ButtonParameterAttachment>(*p, titleSwitch);
 #else
     // master layout
     addAndMakeVisible(titleLabel);
