@@ -51,6 +51,7 @@ impl Clic {
         self.curve = curve;
     }
 
+    /// Fade shape for `decay`.
     #[must_use]
     pub fn decay_curve(&self) -> DecayCurve {
         self.curve
