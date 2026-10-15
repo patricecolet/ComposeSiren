@@ -131,6 +131,11 @@ private:
 
     std::function<std::string(void)> getResourcesPathFunction;
 
+    // before the ensemble: the settings publish the DSP choice (dsp.variant, dsp.dataset,
+    // dsp.skip_silent_frames) its sirens are built with. Declared after it, every siren played
+    // the default (the C++ DSP) until a dsp.* setting changed.
+    juce::SharedResourcePointer<cs::Settings> settings;
+
     SirenEnsemble ensemble;
     SirenEnsembleParameterBridges ensembleParameterBridges;
 
@@ -188,7 +193,6 @@ private:
     void applyControllerResetSetting();
     std::atomic<std::uint32_t> channelModePolicy { cs::DspChannelModePolicy{}.packed() };
 #endif
-    juce::SharedResourcePointer<cs::Settings> settings;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SirenOrchestraPluginProcessor)
 };
