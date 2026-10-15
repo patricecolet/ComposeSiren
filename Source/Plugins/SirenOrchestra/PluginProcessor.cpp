@@ -334,6 +334,12 @@ void SirenOrchestraPluginProcessor::processBlock(juce::AudioBuffer<float>& audio
     // AUDIO CONTROL / SYNTHESIS ///////////////////////////////////////////////
 
     if (!ensemble.getRawSirenHandles()) {
+        // a siren still loading: its controllers (the knobs, a restored state) are kept
+        // for it, not lost with this silent block
+        for (const auto metadata : midiIn) {
+            const auto* d = metadata.getMessage().getRawData();
+            if (metadata.getMessage().getRawDataSize() == 3) ensemble.handleMidiWithoutHandles(d[0], d[1], d[2]);
+        }
         audio.clear();
 #if COMPOSESIREN_CLIC
         renderClic(audio);

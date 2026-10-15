@@ -240,6 +240,10 @@ public:
 
     // those are not using getRawSirenHandle
     // handle with care ! (see comments above)
+    // audio thread, in a block where some voice has no unit yet (getRawSirenHandle false):
+    // controllers and the pitch wheel are kept for the unit that will play (replayed when
+    // it is adopted), and reach the current unit if there is one. Notes are dropped.
+    void handleMidiWithoutHandle(int status, int value1, int value2);
     void handleMidi(int status, int value1, int value2);
     virtual void beginProcessBlock();
     float process();

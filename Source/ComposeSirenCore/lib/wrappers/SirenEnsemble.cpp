@@ -179,6 +179,14 @@ void SirenEnsemble::handleMidi(int status, int value1, int value2) {
     }
 }
 
+void SirenEnsemble::handleMidiWithoutHandles(int status, int value1, int value2) {
+    if (status > 0xFF) { return; }
+    OneBasedMidiChannel channel = {.oneBased = (status & 0x0F) + 1};
+    auto it = sirenPropertiesByChannel.find(channel);
+    if (it != sirenPropertiesByChannel.end())
+        tracks.at(it->second->id)->handleMidiWithoutHandle(status, value1, value2);
+}
+
 void SirenEnsemble::beginProcessBlock() {
     for (auto& t : tracks | std::views::values) { t->beginProcessBlock(); }
     vr.setTarget(masterVolume.load(std::memory_order_relaxed));

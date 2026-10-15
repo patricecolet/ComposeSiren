@@ -97,6 +97,8 @@ public:
     // float getCurrentPitch(sirenId);
     void setMasterVolume(float v);
     void handleMidi(int status, int value1, int value2);
+    // a block without every siren's handle: SirenVoice::handleMidiWithoutHandle
+    void handleMidiWithoutHandles(int status, int value1, int value2);
     void beginProcessBlock();
     void process(float* l, float* r);
     void deleteDiscarded() const;

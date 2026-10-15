@@ -232,6 +232,11 @@ void OneSirenPluginProcessor::processBlock(juce::AudioBuffer<float>& audio,
 
     // internal rawSiren handle
     if (!siren.getRawSirenHandle()) {
+        // still loading: keep the controllers for the siren that will play
+        for (const auto metadata : midiIn) {
+            const auto* d = metadata.getMessage().getRawData();
+            if (metadata.getMessage().getRawDataSize() == 3) siren.handleMidiWithoutHandle(d[0], d[1], d[2]);
+        }
         audio.clear();
         return;
     }

@@ -357,6 +357,13 @@ void SirenVoice::handleMidi(int status, int value1, int value2)
     rawSiren->handleMidi(status, value1, value2);
 }
 
+void SirenVoice::handleMidiWithoutHandle(int status, int value1, int value2)
+{
+    const int kind = status >> 4;
+    if (kind == 0x8 || kind == 0x9) return;
+    if (auto* cur = currentSiren.load(std::memory_order_acquire)) cur->handleMidi(status, value1, value2);
+}
+
 void SirenVoice::beginProcessBlock()
 {
 #if COMPOSESIREN_RESETALLCONTROLLERS
@@ -600,6 +607,22 @@ void SirenVoice::stop()
 void SirenVoice::update()
 {
     if (auto* cur = currentSiren.load(std::memory_order_acquire)) cur->update();
+}
+
+void SirenVoice::handleMidiWithoutHandle(int status, int value1, int value2)
+{
+    const int kind = status >> 4;
+    if (kind == 0x8 || kind == 0x9) return;
+    if (kind == 0xB && value1 >= 0 && value1 < static_cast<int>(ccs.size())) {
+        ccs[static_cast<size_t>(value1)] = static_cast<std::int8_t>(value2 & 0x7F);
+    } else if (kind == 0xB && value1 == 121) {
+        ccs.fill(-1);
+        wheel1 = wheel2 = -1;
+    } else if (kind == 0xE) {
+        wheel1 = value1 & 0x7F;
+        wheel2 = value2 & 0x7F;
+    }
+    if (auto* cur = currentSiren.load(std::memory_order_acquire)) cur->handleMidi(status, value1, value2);
 }
 
 void SirenVoice::handleMidi(int status, int value1, int value2)
