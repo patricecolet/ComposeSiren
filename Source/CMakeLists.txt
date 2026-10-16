@@ -47,6 +47,12 @@ endif()
 add_subdirectory(ComposeSirenCore)
 target_link_libraries(ComposeSirenCore PUBLIC ComposeSirenBuildOptions)
 target_link_libraries(ComposeSirenCore PUBLIC ${BaseTargetName}BinaryData)
+# GCC compiles std::atomic of types the CPU cannot load or store in one go (a struct,
+# for example) to calls into libatomic, which Linux links only when asked; Clang on
+# macOS needs nothing.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  target_link_libraries(ComposeSirenCore PUBLIC atomic)
+endif()
 
 # ------------------------------------------------------------------------------
 # Add plugin variants
