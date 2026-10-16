@@ -166,3 +166,11 @@ if(BUILD_TESTING AND COMPOSESIREN_DSP_CONTROL_MIDI_IN)
     juce::juce_audio_processors juce::juce_audio_utils juce::juce_audio_devices)
   add_test(NAME dsp-control-midi-in COMMAND SirenOrchestraDspControlMidiInTests)
 endif()
+
+# Extra MIDI-in for Siren Control (notes, volume, vibrato), merged into MidiIn.
+if(BUILD_TESTING AND COMPOSESIREN_SIREN_CONTROL_MIDI_IN)
+  add_executable(SirenOrchestraSirenControlMidiInTests Plugins/SirenOrchestra/tests/SirenControlMidiInTests.cpp)
+  target_link_libraries(SirenOrchestraSirenControlMidiInTests PRIVATE ComposeSirenCore
+    juce::juce_audio_processors juce::juce_audio_utils juce::juce_audio_devices)
+  add_test(NAME siren-control-midi-in COMMAND SirenOrchestraSirenControlMidiInTests)
+endif()

@@ -100,7 +100,8 @@ static juce::PropertyComponent* makeRow(Settings& settings, Settings::Id id)
                         devices.addIfNotAlreadyThere(n);
                 }
                 row = new NamedChoicePropertyComponent(value, name, devices, "Main output");
-            } else if (std::string_view(d.id) == "dsp_control.midi_in") {
+            } else if (std::string_view(d.id) == "dsp_control.midi_in"
+                    || std::string_view(d.id) == "siren_control.midi_in") {
                 juce::StringArray devices { "Virtual port" };
                 for (const auto& input : juce::MidiInput::getAvailableDevices())
                     devices.addIfNotAlreadyThere(input.name);

@@ -134,6 +134,17 @@ composesiren_option(COMPOSESIREN_DSP_CONTROL_MIDI_IN
         "Extra MIDI-in port on SirenOrchestra for DSP Control (reverb, pan, gain)"
         OFF)
 
+# DEAL WITH SIREN CONTROL MIDI-IN ##############################################
+# SirenOrchestra opens an extra MIDI-in port for Siren Control that joins the
+# siren MIDI implementation (MidiIn): notes, volume, vibrato, and the other
+# firmware CCs. Virtual destination "SirenOrchestra: Siren Control"; further
+# instances number the SirenOrchestra prefix. Off: Siren Control stays host
+# MIDI (and the on-screen keyboard) only.
+
+composesiren_option(COMPOSESIREN_SIREN_CONTROL_MIDI_IN
+        "Extra MIDI-in port on SirenOrchestra for Siren Control (notes, volume, vibrato)"
+        OFF)
+
 # DEAL WITH THE MCP SERVER #####################################################
 # Each plugin instance can run an in-process MCP server (Rust crate
 # Source/composesiren-mcp). It does not use mecaviv-rs. See

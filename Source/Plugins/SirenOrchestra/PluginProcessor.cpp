@@ -107,6 +107,9 @@ SirenOrchestraPluginProcessor::SirenOrchestraPluginProcessor() :
 #if COMPOSESIREN_DSP_CONTROL_MIDI_IN
     dspControlMidiInput.setHardwareDevice(settings->getString(cs::Settings::Id::dspControlMidiIn));
 #endif
+#if COMPOSESIREN_SIREN_CONTROL_MIDI_IN
+    sirenControlMidiInput.setHardwareDevice(settings->getString(cs::Settings::Id::sirenControlMidiIn));
+#endif
     startTimer(33);
 }
 
@@ -139,6 +142,9 @@ void SirenOrchestraPluginProcessor::prepareToPlay(double sampleRate, int samples
     ensemble.setSampleRate(sampleRate);
 #if COMPOSESIREN_DSP_CONTROL_MIDI_IN
     dspControlMidiInput.setSampleRate(sampleRate);
+#endif
+#if COMPOSESIREN_SIREN_CONTROL_MIDI_IN
+    sirenControlMidiInput.setSampleRate(sampleRate);
 #endif
 #if COMPOSESIREN_CLIC
     clicEngine.setSampleRate(sampleRate);
@@ -308,6 +314,14 @@ void SirenOrchestraPluginProcessor::processBlock(juce::AudioBuffer<float>& audio
         dspControlMidiInput.drain(dspControlMidi, audio.getNumSamples());
         for (const auto metadata : dspControlMidi)
             dspControlMidiRouter.handle(metadata.getMessage());
+    }
+#endif
+#if COMPOSESIREN_SIREN_CONTROL_MIDI_IN
+    {
+        juce::MidiBuffer sirenControlMidi;
+        sirenControlMidiInput.drain(sirenControlMidi, audio.getNumSamples());
+        for (const auto metadata : sirenControlMidi)
+            midiIn.addEvent(metadata.getMessage(), metadata.samplePosition);
     }
 #endif
 #if COMPOSESIREN_CLIC
@@ -556,7 +570,11 @@ void SirenOrchestraPluginProcessor::settingChanged(cs::Settings::Id id)
     if (id == cs::Settings::Id::dspControlMidiIn)
         dspControlMidiInput.setHardwareDevice(settings->getString(id));
 #endif
-#if !COMPOSESIREN_CLIC && !COMPOSESIREN_DSP_CONTROL_MIDI_IN && !COMPOSESIREN_RESETALLCONTROLLERS && !COMPOSESIREN_RUST_DSP
+#if COMPOSESIREN_SIREN_CONTROL_MIDI_IN
+    if (id == cs::Settings::Id::sirenControlMidiIn)
+        sirenControlMidiInput.setHardwareDevice(settings->getString(id));
+#endif
+#if !COMPOSESIREN_CLIC && !COMPOSESIREN_DSP_CONTROL_MIDI_IN && !COMPOSESIREN_SIREN_CONTROL_MIDI_IN && !COMPOSESIREN_RESETALLCONTROLLERS && !COMPOSESIREN_RUST_DSP
     juce::ignoreUnused(id);
 #endif
 }

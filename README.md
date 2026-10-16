@@ -341,6 +341,28 @@ $ cmake -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug -DCOMPOSESIREN_DSP_CONTROL
 $ cmake --build cmake-build-debug --target SirenOrchestra_Standalone
 ```
 
+### Siren Control Midi Input
+
+SirenOrchestra can open an extra MIDI-in port for Siren Control (notes, volume,
+vibrato, and the other firmware CCs) that joins the siren MIDI implementation
+(`MidiIn`). It is off by default; turn it on with
+`-DCOMPOSESIREN_SIREN_CONTROL_MIDI_IN=ON`.
+
+The extra port is a virtual destination named **SirenOrchestra: Siren Control**
+(macOS and Linux), the same convention as DSP Control. Further plugin instances
+number the prefix: **SirenOrchestra 2: Siren Control**, and so on. Settings...
+→ Siren Control Midi Input can also open a hardware MIDI input. Messages on
+that port go through `OrchestraMidiRouter`, the park bridge, and the plugin
+MIDI output, like host MIDI. DSP Control CCs on this port are ignored.
+
+Characterization tests: `-DCOMPOSESIREN_SIREN_CONTROL_MIDI_IN=ON
+-DBUILD_TESTING=ON`, then `ctest --test-dir <build> -R siren-control-midi-in`.
+
+```
+$ cmake -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug -DCOMPOSESIREN_SIREN_CONTROL_MIDI_IN=ON
+$ cmake --build cmake-build-debug --target SirenOrchestra_Standalone
+```
+
 ### dependencies
 
 #### linux

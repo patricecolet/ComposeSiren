@@ -22,6 +22,12 @@
 #include "DspControlMidiRouter.h"
 #include "DspControlMidiInput.h"
 #endif
+#ifndef COMPOSESIREN_SIREN_CONTROL_MIDI_IN
+#define COMPOSESIREN_SIREN_CONTROL_MIDI_IN 0
+#endif
+#if COMPOSESIREN_SIREN_CONTROL_MIDI_IN
+#include "SirenControlMidiInput.h"
+#endif
 #ifndef COMPOSESIREN_PARK_BRIDGE
 #define COMPOSESIREN_PARK_BRIDGE 0
 #endif
@@ -145,6 +151,10 @@ private:
     // extra MIDI-in: DSP Control CCs (reverb, pan, gain). Not MidiIn.
     DspControlMidiRouter dspControlMidiRouter;
     DspControlMidiInput dspControlMidiInput;
+#endif
+#if COMPOSESIREN_SIREN_CONTROL_MIDI_IN
+    // extra MIDI-in: Siren Control (notes, volume, vibrato). Joins MidiIn.
+    SirenControlMidiInput sirenControlMidiInput;
 #endif
 
     std::function<std::string(void)> getResourcesPathFunction;
