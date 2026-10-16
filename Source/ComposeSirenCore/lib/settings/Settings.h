@@ -2,8 +2,7 @@
 
 // Power-user settings of the plugins. What exists, with its type, range,
 // default and description, comes from lib/definitions/generated/
-// SettingsMetadata.h, committed, generated from mecaviv-dev-root's
-// resources/metadata/composesiren-settings.csv by `franz doctor fix meta`.
+// SettingsMetadata.h (generated from the shared settings metadata).
 // The compile-gated controller-reset rows extend it in Settings::describe().
 //
 // The values are stored per user (a properties file next to the other
@@ -17,12 +16,18 @@
 #include "../definitions/generated/SettingsMetadata.h"
 #include "../dsp/ChannelModePolicy.h"
 
+#ifndef COMPOSESIREN_RESETALLCONTROLLERS
+#define COMPOSESIREN_RESETALLCONTROLLERS 0
+#endif
+
 namespace cs {
 
 class Settings : private juce::ValueTree::Listener
 {
 public:
     using Id = mecaviv::metadata::SettingId;
+
+    static constexpr std::size_t resetExtraCount = COMPOSESIREN_RESETALLCONTROLLERS ? 10 : 0;
 
 #if COMPOSESIREN_RESETALLCONTROLLERS
     // Optional extension: leave the generated base table and disabled builds
@@ -37,16 +42,16 @@ public:
     static constexpr Id bridgeAllSoundsOffOutput = static_cast<Id>(mecaviv::metadata::settingCount + 7);
     static constexpr Id bridgeResetControllersOutput = static_cast<Id>(mecaviv::metadata::settingCount + 8);
     static constexpr Id bridgeAllNotesOffOutput = static_cast<Id>(mecaviv::metadata::settingCount + 9);
-    static constexpr std::size_t settingCount = mecaviv::metadata::settingCount + 10;
     static bool isControllerResetSetting(Id id) {
         return static_cast<std::size_t>(id) >= mecaviv::metadata::settingCount
-            && static_cast<std::size_t>(id) < settingCount;
+            && static_cast<std::size_t>(id) < mecaviv::metadata::settingCount + resetExtraCount;
     }
     DspChannelModePolicy getDspChannelModePolicy() const;
     BridgeChannelModePolicy getBridgeChannelModePolicy() const;
-#else
-    static constexpr std::size_t settingCount = mecaviv::metadata::settingCount;
 #endif
+
+    static constexpr std::size_t settingCount
+        = mecaviv::metadata::settingCount + resetExtraCount;
 
     class Listener
     {

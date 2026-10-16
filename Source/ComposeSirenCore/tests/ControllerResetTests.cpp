@@ -63,7 +63,10 @@ void checkSettings()
           "one boolean in the reset section");
     check(row.defaultValue == 1.0 && row.scope == "global", "enabled by default, shared per process");
     check(cs::Settings::isAvailable(cs::Settings::controllerResetEnabled), "setting is available");
-    check(cs::Settings::settingCount == mecaviv::metadata::settingCount + 10, "ten optional rows");
+    check(cs::Settings::resetExtraCount == 10, "ten optional reset rows");
+    check(cs::Settings::settingCount
+              == mecaviv::metadata::settingCount + cs::Settings::resetExtraCount,
+          "settingCount is the generated table plus optional reset rows");
     for (auto id : { cs::Settings::dspAllSoundsOffValues, cs::Settings::dspResetControllersValues,
                      cs::Settings::dspAllNotesOffValues }) {
         const auto& choice = cs::Settings::describe(id);

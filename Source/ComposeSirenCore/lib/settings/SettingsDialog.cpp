@@ -17,8 +17,9 @@ class NamedChoicePropertyComponent : public juce::PropertyComponent,
 public:
     NamedChoicePropertyComponent(const juce::Value& value,
                                  const juce::String& name,
-                                 const juce::StringArray& names)
-        : juce::PropertyComponent(name), attachedValue(value)
+                                 const juce::StringArray& names,
+                                 const juce::String& emptyText)
+        : juce::PropertyComponent(name), attachedValue(value), emptyLabel(emptyText)
     {
         box.addItemList(names, 1);
         box.setTextWhenNothingSelected({});
@@ -37,7 +38,7 @@ public:
     void refresh() override
     {
         const auto text = attachedValue.toString();
-        box.setText(text.isNotEmpty() ? text : juce::String("Main output"),
+        box.setText(text.isNotEmpty() ? text : emptyLabel,
                     juce::dontSendNotification);
     }
 
@@ -55,6 +56,7 @@ private:
     }
 
     juce::Value attachedValue;
+    juce::String emptyLabel;
     juce::ComboBox box;
 };
 
@@ -97,7 +99,12 @@ static juce::PropertyComponent* makeRow(Settings& settings, Settings::Id id)
                     for (const auto& n : type->getDeviceNames(false))
                         devices.addIfNotAlreadyThere(n);
                 }
-                row = new NamedChoicePropertyComponent(value, name, devices);
+                row = new NamedChoicePropertyComponent(value, name, devices, "Main output");
+            } else if (std::string_view(d.id) == "dsp_control.midi_in") {
+                juce::StringArray devices { "Virtual port" };
+                for (const auto& input : juce::MidiInput::getAvailableDevices())
+                    devices.addIfNotAlreadyThere(input.name);
+                row = new NamedChoicePropertyComponent(value, name, devices, "Virtual port");
             } else {
                 row = new juce::TextPropertyComponent(value, name, 128, false);
             }
@@ -132,7 +139,7 @@ SettingsDialog::SettingsDialog()
     addAndMakeVisible(panel);
     if (groups.isEmpty()) {
         empty.setText("This build has no settings to change: they come with its options "
-                      "(Rust DSP, siren waves, clic, controller reset).", juce::dontSendNotification);
+                      "(Rust DSP, siren waves, clic, DSP Control Midi Input, controller reset).", juce::dontSendNotification);
         empty.setJustificationType(juce::Justification::centred);
         addAndMakeVisible(empty);
     }

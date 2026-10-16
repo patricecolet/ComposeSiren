@@ -18,7 +18,7 @@ MasterVolumeComponent::MasterVolumeComponent(juce::AudioProcessorValueTreeState&
     // addAndMakeVisible(spacer0);
     // addAndMakeVisible(spacer1);
 
-    volume.setNameText("Master Volume");
+    volume.setNameText(midiCcKnobLabel("Master Volume", ParameterId::MasterVolume));
     volume.setSliderAttachment(vts,
                                ParameterId::MasterVolume,
                                paramGroupId);

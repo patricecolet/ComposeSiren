@@ -43,6 +43,13 @@ public:
                                                           kbs,
                                                           allowedInputChannel);
         for (const auto& d : layoutData.params) {
+            // TrackControl (pan, gain) shares the siren layout group with
+            // SirenControl. MidiIn / this router keep SirenControl only.
+            // DspControlMidiRouter maps TrackControl, ReverbControl, and
+            // MasterControl on the extra DSP Control MIDI-in.
+            if (ParameterIdGet::getClass(d->id) != ParameterClass::SirenControl)
+                continue;
+
             auto p = getRangedParameterFromVTS(layoutData.id, d->id, vts);
             // all parameters should be found by juce parameter id
             if (p == nullptr) assert(false);

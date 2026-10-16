@@ -70,6 +70,12 @@ else()
   target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_CLIC=0)
 endif()
 
+if(COMPOSESIREN_DSP_CONTROL_MIDI_IN)
+  target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_DSP_CONTROL_MIDI_IN=1)
+else()
+  target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_DSP_CONTROL_MIDI_IN=0)
+endif()
+
 if(COMPOSESIREN_RECORD)
   include("${CMAKE_CURRENT_LIST_DIR}/Record.cmake")
   target_link_libraries(ComposeSirenCore PUBLIC composesiren_record)

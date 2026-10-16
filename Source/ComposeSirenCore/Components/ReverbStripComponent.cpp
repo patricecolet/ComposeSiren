@@ -53,7 +53,7 @@ ReverbStripComponent::ReverbStripComponent(
 
 #if !COMPOSESIREN_CLIC
     // --- reverb enable switch (master: dedicated cell) -----------------------
-    enable.setNameText("Enable Reverb");
+    enable.setNameText(midiCcKnobLabel("Enable Reverb", ParameterId::ReverbEnable));
     enable.setToggleAttachment(vts,
                                ParameterId::ReverbEnable,
                                paramGroupId);
@@ -61,33 +61,33 @@ ReverbStripComponent::ReverbStripComponent(
 #endif
 
     // --- reverb group knobs (horizontal) -------------------------------------
-    dryWet.setNameText("DryWet");
+    dryWet.setNameText(midiCcKnobLabel("DryWet", ParameterId::ReverbDryWet));
     dryWet.setSliderAttachment(vts, ParameterId::ReverbDryWet, paramGroupId);
     setSliderFillColour(dryWet, c1);
     reverbGroup.addAndMakeVisible(dryWet);
 
-    damping.setNameText("Damp");
+    damping.setNameText(midiCcKnobLabel("Damp", ParameterId::ReverbDamping));
     damping.setSliderAttachment(vts, ParameterId::ReverbDamping, paramGroupId);
     setSliderFillColour(damping, c1);
     reverbGroup.addAndMakeVisible(damping);
 
-    roomSize.setNameText("Size");
+    roomSize.setNameText(midiCcKnobLabel("Size", ParameterId::ReverbRoomSize));
     roomSize.setSliderAttachment(vts, ParameterId::ReverbRoomSize, paramGroupId);
     setSliderFillColour(roomSize, c1);
     reverbGroup.addAndMakeVisible(roomSize);
 
-    width.setNameText("Width");
+    width.setNameText(midiCcKnobLabel("Width", ParameterId::ReverbWidth));
     width.setSliderAttachment(vts, ParameterId::ReverbWidth, paramGroupId);
     setSliderFillColour(width, c1);
     reverbGroup.addAndMakeVisible(width);
 
     // --- filter group knobs --------------------------------------------------
-    lowCut.setNameText("LowCut");
+    lowCut.setNameText(midiCcKnobLabel("LowCut", ParameterId::ReverbLowCut));
     lowCut.setSliderAttachment(vts, ParameterId::ReverbLowCut, paramGroupId);
     setSliderFillColour(lowCut, c1);
     filterGroup.addAndMakeVisible(lowCut);
 
-    highCut.setNameText("HighCut");
+    highCut.setNameText(midiCcKnobLabel("HighCut", ParameterId::ReverbHighCut));
     highCut.setSliderAttachment(vts, ParameterId::ReverbHighCut, paramGroupId);
     setSliderFillColour(highCut, c1);
     filterGroup.addAndMakeVisible(highCut);
