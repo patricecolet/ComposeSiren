@@ -16,6 +16,7 @@
 // we need this to ensure file loading will not fail if floats are not 32 bits,
 // although it's highly unlikely to happen on macos / windows and common linux distros
 #include <climits>
+#include <cstring>
 
 static_assert(CHAR_BIT == 8 && sizeof(float) == 4, "require 8 bits bytes and 32 bits floats");
 // or is this enough ?

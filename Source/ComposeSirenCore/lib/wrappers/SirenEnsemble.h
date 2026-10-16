@@ -5,6 +5,7 @@
 #ifndef COMPOSESIREN_SIREN_ENSEMBLE_H
 #define COMPOSESIREN_SIREN_ENSEMBLE_H
 
+#include <atomic>
 #include "SirenVoice.h"
 #include "../dsp/rampe.h"
 #include "../definitions/parameterDefinitions.h"
