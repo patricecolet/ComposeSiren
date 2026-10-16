@@ -13,6 +13,10 @@
 #define COMPOSESIREN_CLIC 0
 #endif
 
+#ifndef COMPOSESIREN_DSP_MIDI
+#define COMPOSESIREN_DSP_MIDI 0
+#endif
+
 #if DEBUG
 #endif
 template<typename TBound> struct ParameterBounds {
@@ -480,6 +484,19 @@ parameterDefinitionById = []() {
     }
     return res;
 }();
+
+inline std::string midiCcKnobLabel(const std::string& name, ParameterId id)
+{
+#if COMPOSESIREN_DSP_MIDI
+    if (const auto it = parameterDefinitionById.find(id); it != parameterDefinitionById.end()) {
+        if (const auto* cc = std::get_if<CCParam>(&it->second->data))
+            return name + std::string("\ncc") + std::to_string(cc->midiCCNumber);
+    }
+#else
+    (void)id;
+#endif
+    return name;
+}
 
 inline const std::map<int, std::shared_ptr<paramData>>
 parameterDefinitionByCCNumber = []() {

@@ -24,7 +24,8 @@ int main()
     check((reset > 0) == (COMPOSESIREN_RESETALLCONTROLLERS != 0),
           "the controller reset rows come with COMPOSESIREN_RESETALLCONTROLLERS only");
     check((available > 0) == (COMPOSESIREN_RESETALLCONTROLLERS || COMPOSESIREN_RUST_DSP
-                              || COMPOSESIREN_SIREN_WAVES || COMPOSESIREN_CLIC),
+                              || COMPOSESIREN_SIREN_WAVES || COMPOSESIREN_CLIC
+                              || COMPOSESIREN_DSP_MIDI),
           "rows only for the options of this build");
     {
         cs::SettingsDialog dialog;

@@ -304,6 +304,42 @@ $ cmake -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug -DCOMPOSESIREN_CLIC=ON
 $ cmake --build cmake-build-debug --target SirenOrchestra_Standalone
 ```
 
+### Mixer DSP MIDI-in
+
+SirenOrchestra can open an extra MIDI-in port for mixer DSP controls that are
+not the siren MIDI implementation (`MidiIn`: notes, volume, vibrato, and the
+other firmware CCs). It is off by default; turn it on with
+`-DCOMPOSESIREN_DSP_MIDI=ON`.
+
+The extra port is a virtual destination named **SirenOrchestra DSP** (macOS
+and Linux). Settings... → Mixer DSP MIDI can also open a hardware MIDI input.
+Messages on that port never reach `MidiIn`, the park bridge, or the plugin
+MIDI output.
+
+Mapping, from the mixer DSP parameters of [PR #16](https://github.com/mecaviv/ComposeSiren/pull/16):
+
+| Channel | CC | Parameter |
+|---|---|---|
+| 1–7 | 10 | That siren's pan |
+| 1–7 | 70 | That siren's gain |
+| 16 | 7 | Master volume |
+| 16 | 64 | Reverb enable (≥ 64 on) |
+| 16 | 65 | Reverb room size |
+| 16 | 66 | Reverb dry/wet |
+| 16 | 67 | Reverb damping |
+| 16 | 68 | Reverb low cut |
+| 16 | 69 | Reverb high cut |
+| 16 | 70 | Reverb width |
+
+Continuous CCs map 0–127 onto the parameter's range. Characterization tests:
+`-DCOMPOSESIREN_DSP_MIDI=ON -DBUILD_TESTING=ON`, then
+`ctest --test-dir <build> -R dsp-midi`.
+
+```
+$ cmake -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug -DCOMPOSESIREN_DSP_MIDI=ON
+$ cmake --build cmake-build-debug --target SirenOrchestra_Standalone
+```
+
 ### dependencies
 
 #### linux

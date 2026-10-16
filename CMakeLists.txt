@@ -123,6 +123,16 @@ composesiren_option(COMPOSESIREN_CLIC
         "Click output: a Clic stereo bus on SirenOrchestra, MIDI channel 10 (Rust, firmwares-artila next to ComposeSiren)"
         OFF)
 
+# DEAL WITH THE MIXER DSP MIDI-IN PORT #########################################
+# SirenOrchestra opens an extra MIDI-in port for mixer DSP controls that are
+# not the siren MIDI implementation (MidiIn): per-siren pan/gain, master
+# volume, and reverb. Mapping is PR #16 (channels 1–7 CC 10/70, channel 16
+# CC 7/64–70). Off: pan/gain/reverb stay UI and host-automation only.
+
+composesiren_option(COMPOSESIREN_DSP_MIDI
+        "Extra MIDI-in port on SirenOrchestra for mixer DSP controls (reverb, pan, gain; PR #16 mapping)"
+        OFF)
+
 # DEAL WITH THE MCP SERVER #####################################################
 # Each plugin instance can run an in-process MCP server (Rust crate
 # Source/composesiren-mcp). It does not use mecaviv-rs. See

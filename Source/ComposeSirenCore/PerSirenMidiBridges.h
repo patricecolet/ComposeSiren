@@ -43,6 +43,12 @@ public:
                                                           kbs,
                                                           allowedInputChannel);
         for (const auto& d : layoutData.params) {
+            // Mixer DSP params (pan, gain) share the siren layout group but are
+            // not the siren MIDI implementation: MidiIn / this router ignore
+            // them. COMPOSESIREN_DSP_MIDI maps those CCs on a separate port.
+            if (ParameterIdGet::getClass(d->id) != ParameterClass::SirenControl)
+                continue;
+
             auto p = getRangedParameterFromVTS(layoutData.id, d->id, vts);
             // all parameters should be found by juce parameter id
             if (p == nullptr) assert(false);

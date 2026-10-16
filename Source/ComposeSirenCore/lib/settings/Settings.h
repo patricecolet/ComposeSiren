@@ -4,7 +4,8 @@
 // default and description, comes from lib/definitions/generated/
 // SettingsMetadata.h, committed, generated from mecaviv-dev-root's
 // resources/metadata/composesiren-settings.csv by `franz doctor fix meta`.
-// The compile-gated controller-reset rows extend it in Settings::describe().
+// The compile-gated controller-reset and mixer DSP MIDI rows extend it in
+// Settings::describe().
 //
 // The values are stored per user (a properties file next to the other
 // Mecanique Vivante settings) and the Settings... menu item edits them, in
@@ -17,12 +18,22 @@
 #include "../definitions/generated/SettingsMetadata.h"
 #include "../dsp/ChannelModePolicy.h"
 
+#ifndef COMPOSESIREN_RESETALLCONTROLLERS
+#define COMPOSESIREN_RESETALLCONTROLLERS 0
+#endif
+#ifndef COMPOSESIREN_DSP_MIDI
+#define COMPOSESIREN_DSP_MIDI 0
+#endif
+
 namespace cs {
 
 class Settings : private juce::ValueTree::Listener
 {
 public:
     using Id = mecaviv::metadata::SettingId;
+
+    static constexpr std::size_t resetExtraCount = COMPOSESIREN_RESETALLCONTROLLERS ? 10 : 0;
+    static constexpr std::size_t dspMidiExtraCount = COMPOSESIREN_DSP_MIDI ? 1 : 0;
 
 #if COMPOSESIREN_RESETALLCONTROLLERS
     // Optional extension: leave the generated base table and disabled builds
@@ -37,16 +48,21 @@ public:
     static constexpr Id bridgeAllSoundsOffOutput = static_cast<Id>(mecaviv::metadata::settingCount + 7);
     static constexpr Id bridgeResetControllersOutput = static_cast<Id>(mecaviv::metadata::settingCount + 8);
     static constexpr Id bridgeAllNotesOffOutput = static_cast<Id>(mecaviv::metadata::settingCount + 9);
-    static constexpr std::size_t settingCount = mecaviv::metadata::settingCount + 10;
     static bool isControllerResetSetting(Id id) {
         return static_cast<std::size_t>(id) >= mecaviv::metadata::settingCount
-            && static_cast<std::size_t>(id) < settingCount;
+            && static_cast<std::size_t>(id) < mecaviv::metadata::settingCount + resetExtraCount;
     }
     DspChannelModePolicy getDspChannelModePolicy() const;
     BridgeChannelModePolicy getBridgeChannelModePolicy() const;
-#else
-    static constexpr std::size_t settingCount = mecaviv::metadata::settingCount;
 #endif
+
+#if COMPOSESIREN_DSP_MIDI
+    static constexpr Id dspMidiInputDevice
+        = static_cast<Id>(mecaviv::metadata::settingCount + resetExtraCount);
+#endif
+
+    static constexpr std::size_t settingCount
+        = mecaviv::metadata::settingCount + resetExtraCount + dspMidiExtraCount;
 
     class Listener
     {

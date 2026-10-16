@@ -32,10 +32,7 @@ SirenTrackComponent::SirenTrackComponent(sirenId sid,
     addAndMakeVisible(sirenControls);
 
     // Panning -------------------------------------------------------------
-    // pan.setNameText(
-    //    sirenControls.appendCCNumber("Pan", ParameterId::TrackPanning)
-    // );
-    pan.setNameText("Pan");
+    pan.setNameText(midiCcKnobLabel("Pan", ParameterId::TrackPanning));
     juce::Slider& pans = pan.getSlider();
     pans.setLookAndFeel(&sirenControls.centredKnobLAF);
     pan.setSliderAttachment(vts,
@@ -45,10 +42,7 @@ SirenTrackComponent::SirenTrackComponent(sirenId sid,
     trackGroup.addAndMakeVisible(pan);
 
     // Output gain ---------------------------------------------------------
-    // outputGain.setNameText(
-    //    sirenControls.appendCCNumber("Gain", ParameterId::TrackOutputGain)
-    // );
-    outputGain.setNameText("Gain");
+    outputGain.setNameText(midiCcKnobLabel("Gain", ParameterId::TrackOutputGain));
     juce::Slider& outgains = outputGain.getSlider();
     outputGain.setSliderAttachment(vts,
                                    ParameterId::TrackOutputGain,

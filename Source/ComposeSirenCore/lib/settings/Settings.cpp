@@ -10,6 +10,9 @@
 #ifndef COMPOSESIREN_SIREN_WAVES
 #define COMPOSESIREN_SIREN_WAVES 0
 #endif
+#ifndef COMPOSESIREN_DSP_MIDI
+#define COMPOSESIREN_DSP_MIDI 0
+#endif
 
 namespace cs {
 
@@ -112,6 +115,19 @@ const meta::Setting& Settings::describe(Id id)
         return reset[static_cast<std::size_t>(id) - meta::settingCount];
     }
 #endif
+#if COMPOSESIREN_DSP_MIDI
+    if (id == dspMidiInputDevice) {
+        static constexpr meta::Setting row {
+            "dsp_midi.input_device", "Mixer DSP MIDI", "MIDI input",
+            meta::SettingType::String, 0.0, 0.0, 0.0, "", "",
+            "COMPOSESIREN_DSP_MIDI", "global",
+            "Extra MIDI-in for mixer DSP controls (reverb, pan, gain). "
+            "Virtual port: the SirenOrchestra DSP destination (macOS/Linux). "
+            "Any other entry: that MIDI input device as well."
+        };
+        return row;
+    }
+#endif
     return meta::settings[static_cast<std::size_t>(id)];
 }
 
@@ -146,6 +162,7 @@ bool Settings::isAvailable(Id id)
     if (option == "COMPOSESIREN_RECORD") return COMPOSESIREN_RECORD != 0;
     if (option == "COMPOSESIREN_PARK_BRIDGE") return COMPOSESIREN_PARK_BRIDGE != 0;
     if (option == "COMPOSESIREN_CLIC") return COMPOSESIREN_CLIC != 0;
+    if (option == "COMPOSESIREN_DSP_MIDI") return COMPOSESIREN_DSP_MIDI != 0;
     if (option == "COMPOSESIREN_RUST_DSP") return COMPOSESIREN_RUST_DSP != 0;
 #if COMPOSESIREN_RESETALLCONTROLLERS
     if (option == "COMPOSESIREN_RESETALLCONTROLLERS") return true;
