@@ -52,6 +52,13 @@ target_link_libraries(ComposeSirenCore PUBLIC ${BaseTargetName}BinaryData)
 # macOS needs nothing.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   target_link_libraries(ComposeSirenCore PUBLIC atomic)
+  # TouchInput.cpp reads touches with Xlib and XInput2 (JUCE loads Xlib at run time
+  # and links neither).
+  find_package(X11 REQUIRED)
+  if(NOT X11_Xi_FOUND)
+    message(FATAL_ERROR "TouchInput needs XInput2 (Debian: libxi-dev)")
+  endif()
+  target_link_libraries(ComposeSirenCore PUBLIC X11::X11 X11::Xi)
 endif()
 
 # ------------------------------------------------------------------------------

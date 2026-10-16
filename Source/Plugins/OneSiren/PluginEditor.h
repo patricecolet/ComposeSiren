@@ -10,6 +10,7 @@
 #include <Components/VoiceManagerComponent.h>
 #include <Components/SirenStripComponent.h>
 #include <Components/DbRangesMidiKeyboardComponent.h>
+#include <TouchInput.h>
 #include "PluginProcessor.h"
 
 class OneSirenPluginEditor : public juce::AudioProcessorEditor,
@@ -35,6 +36,9 @@ private:
     VoiceManagerComponent voiceManager;
     SirenStripComponent sirenStrip;
     DbRangesMidiKeyboardComponent midiKeyboard;
+
+    // Last: stops reading touches before anything else goes.
+    cs::TouchInput touchInput{*this};
 };
 
 #endif //ONESIREN_PLUGINEDITOR_H

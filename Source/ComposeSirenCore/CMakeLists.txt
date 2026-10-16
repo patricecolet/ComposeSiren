@@ -30,6 +30,7 @@ target_sources(ComposeSirenCore
   # Synth.cpp
   Reverb.cpp
   StandaloneAudio.cpp
+  TouchInput.cpp
 
   lib/definitions/sirenProperties.cpp
   lib/definitions/parameterDefinitions.cpp

@@ -16,6 +16,7 @@
 #endif
 #include "PluginProcessor.h"
 #include <StandaloneAudio.h>
+#include <TouchInput.h>
 #if COMPOSESIREN_SIREN_WAVES
 #include <juce_opengl/juce_opengl.h>
 #include <Components/waves/SirenWaveColumn.h>
@@ -292,6 +293,9 @@ private:
         std::map<sirenId, float> peakDb;
     } waveStats;
 #endif
+
+    // Last: stops reading touches before anything else goes.
+    cs::TouchInput touchInput{*this};
 };
 
 

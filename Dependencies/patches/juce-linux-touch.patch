@@ -1,0 +1,16 @@
+diff --git a/modules/juce_gui_basics/native/juce_Windowing_linux.cpp b/modules/juce_gui_basics/native/juce_Windowing_linux.cpp
+index d42a5b321c..072ef6f44e 100644
+--- a/modules/juce_gui_basics/native/juce_Windowing_linux.cpp
++++ b/modules/juce_gui_basics/native/juce_Windowing_linux.cpp
+@@ -731,7 +731,10 @@ bool detail::MouseInputSourceList::addSource()
+ 
+ bool detail::MouseInputSourceList::canUseTouch() const
+ {
+-    return false;
++    // mecaviv (ComposeSiren): touch sources exist on Linux too. JUCE does not read touch
++    // on X11 itself; ComposeSiren reads XInput2 touches and passes each finger to
++    // ComponentPeer::handleMouseEvent as a touch source (Source/ComposeSirenCore/TouchInput.cpp).
++    return true;
+ }
+ 
+ Point<float> MouseInputSource::getCurrentRawMousePosition()
