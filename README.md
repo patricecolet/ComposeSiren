@@ -29,7 +29,8 @@ volume control.
 ![SirenOrchestra](./Doc/pics/Mecaviv-SirenOrchestra-tenor-01.png)
 
 On MacOS, the plugins are available as universal (x86_64/arm64) 64 bit VST3, Audio Unit and Standalone Application
-formats. On windows they are available as x64 VST3 and Standalone Application formats.
+formats. On windows they are available as x64 VST3 and Standalone Application formats. On Linux they are
+available as VST3, LV2 and Standalone Application formats.
 They are currently tested on [Reaper][6] and [Ableton Live][4].
 
 The ComposeSiren suite is developed on top of the **JUCE** frameworks. You can find more infos about it there: http://www.juce.com.

@@ -66,6 +66,8 @@ function(add_plugin_variant TARGET_NAME PLUGIN_CODE BUNDLE_ID)
     PLUGIN_CODE ${PLUGIN_CODE}
     # the reverse url style unique identifiers (com.<vendor>.<plugin_name>)
     BUNDLE_ID "${BUNDLE_ID}"
+    # LV2 (Linux): the plugin's identity for hosts; it never needs to resolve.
+    LV2URI "https://github.com/mecaviv/ComposeSiren#${TARGET_NAME}"
 
     IS_SYNTH TRUE
     NEEDS_MIDI_INPUT TRUE
