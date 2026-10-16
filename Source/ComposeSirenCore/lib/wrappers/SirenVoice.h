@@ -5,6 +5,7 @@
 #ifndef COMPOSESIREN_SIREN_VOICE_H
 #define COMPOSESIREN_SIREN_VOICE_H
 
+#include <atomic>
 #include <set>
 #include <optional>
 #include "../definitions/parameterDefinitions.h"

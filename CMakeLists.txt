@@ -240,6 +240,11 @@ if (APPLE)
   list(APPEND FORMATS "AU")
 endif()
 
+# LV2, the Linux-native plugin format (Ardour, Carla, Qtractor…), next to VST3.
+if (UNIX AND NOT APPLE)
+  list(APPEND FORMATS "LV2")
+endif()
+
 composesiren_add_build_info() # after the options: it records them
 
 if(BUILD_TESTING)
