@@ -115,19 +115,6 @@ const meta::Setting& Settings::describe(Id id)
         return reset[static_cast<std::size_t>(id) - meta::settingCount];
     }
 #endif
-#if COMPOSESIREN_DSP_MIDI
-    if (id == dspMidiInputDevice) {
-        static constexpr meta::Setting row {
-            "dsp_midi.input_device", "Mixer DSP MIDI", "MIDI input",
-            meta::SettingType::String, 0.0, 0.0, 0.0, "", "",
-            "COMPOSESIREN_DSP_MIDI", "global",
-            "Extra MIDI-in for mixer DSP controls (reverb, pan, gain). "
-            "Virtual port: the SirenOrchestra DSP destination (macOS/Linux). "
-            "Any other entry: that MIDI input device as well."
-        };
-        return row;
-    }
-#endif
     return meta::settings[static_cast<std::size_t>(id)];
 }
 

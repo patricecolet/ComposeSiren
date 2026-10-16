@@ -316,7 +316,7 @@ and Linux). Settings... → Mixer DSP MIDI can also open a hardware MIDI input.
 Messages on that port never reach `MidiIn`, the park bridge, or the plugin
 MIDI output.
 
-Mapping, from the mixer DSP parameters of [PR #16](https://github.com/mecaviv/ComposeSiren/pull/16):
+Mapping: the mixer parameter CCs (track, reverb, master) on siren channels 1–7 and mixer channel 16:
 
 | Channel | CC | Parameter |
 |---|---|---|

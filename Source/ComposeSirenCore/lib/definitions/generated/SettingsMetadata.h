@@ -56,12 +56,13 @@ enum class SettingId : std::size_t {
     wavesClouds,
     wavesMaskSteps,
     clicOutputDevice,
+    dspMidiInputDevice,
     dspVariant,
     dspDataset,
     dspSkipSilentFrames,
 };
 
-inline constexpr std::size_t settingCount = 33;
+inline constexpr std::size_t settingCount = 34;
 
 inline constexpr std::array<Setting, settingCount> settings {{
     { "waves.enabled", "Waves", "Show waves", SettingType::Bool, 1.0, 0.0, 1.0, "", "", "COMPOSESIREN_SIREN_WAVES", "global", "Animated waves in the siren title cells, following each siren's loudness and pitch.", "" },
@@ -94,6 +95,7 @@ inline constexpr std::array<Setting, settingCount> settings {{
     { "waves.clouds", "Waves", "Clouds", SettingType::Float, 0.5, 0.0, 1.0, "", "", "COMPOSESIREN_SIREN_WAVES", "global", "Light clouds over the title cells, strongest on the top rows, so the waves stand out from the blue.", "" },
     { "waves.mask_steps", "Waves", "Edge steps", SettingType::Int, 16.0, 1.0, 16.0, "", "", "COMPOSESIREN_SIREN_WAVES", "global", "Number of shades in the antialiased wave edge (1: hard edge).", "" },
     { "clic.output_device", "Clic", "Audio output", SettingType::String, 0.0, 0.0, 0.0, "", "", "COMPOSESIREN_CLIC", "global", "Where the click plays. Main output: the Clic bus (the host routes it). Any other entry: that output device, so the click can go to a separate amp or headphones.", "" },
+    { "dsp_midi.input_device", "Mixer DSP MIDI", "MIDI input", SettingType::String, 0.0, 0.0, 0.0, "", "", "COMPOSESIREN_DSP_MIDI", "global", "Extra MIDI-in for mixer DSP controls (reverb, pan, gain). Virtual port: the SirenOrchestra DSP destination (macOS/Linux). Any other entry: that MIDI input device as well.", "" },
     { "dsp.variant", "Synthesis", "DSP", SettingType::Choice, 0.0, 0.0, 12.0, "cpp|rust-exact|rust-time|frames|trio|trio-linear|trio-nearest|trio-fast|trio-linear-fast|trio-nearest-fast|trio-f32|trio-linear-f32|trio-nearest-f32", "", "COMPOSESIREN_RUST_DSP", "global", "Which synthesis plays the sirens: the plugin's C++ DSP, its Rust port, or one of the Rust variants. App-wide, not a plugin parameter.", "" },
     { "dsp.dataset", "Synthesis", "Data set", SettingType::Choice, 0.0, 0.0, 1.0, "fixed|raw", "", "COMPOSESIREN_RUST_DSP", "global", "Which siren data the Rust synthesis plays: with the crossfade fix (as shipped by default) or as measured. App-wide, not a plugin parameter.", "rust-exact|rust-time|frames|trio|trio-linear|trio-nearest|trio-fast|trio-linear-fast|trio-nearest-fast|trio-f32|trio-linear-f32|trio-nearest-f32" },
     { "dsp.skip_silent_frames", "Synthesis", "Skip silent and realign shifted frames", SettingType::Bool, 0.0, 0.0, 1.0, "", "", "COMPOSESIREN_RUST_DSP", "global", "The Rust synthesis plays the next frame in place of a practically silent one (under the note's median level by 30 dB, or under 1e-6), and realigns a frame whose partial slots shifted (a partial missing from the analysis moves the ones above it down a slot) onto its note's reference frame, or skips it when realigning can't save it: the data holds a few of each, and they click. Applies to the variants that loop over frames (frames and the trio variants); rust-exact and rust-time, on the plugin's frames, stay bit-exact with the C++, and the C++ DSP (cpp) is unchanged. App-wide, not a plugin parameter.", "frames|trio|trio-linear|trio-nearest|trio-fast|trio-linear-fast|trio-nearest-fast|trio-f32|trio-linear-f32|trio-nearest-f32" },

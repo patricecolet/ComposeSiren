@@ -65,9 +65,8 @@ void checkSettings()
     check(cs::Settings::isAvailable(cs::Settings::controllerResetEnabled), "setting is available");
     check(cs::Settings::resetExtraCount == 10, "ten optional reset rows");
     check(cs::Settings::settingCount
-              == mecaviv::metadata::settingCount + cs::Settings::resetExtraCount
-                     + cs::Settings::dspMidiExtraCount,
-          "settingCount is the generated table plus optional rows");
+              == mecaviv::metadata::settingCount + cs::Settings::resetExtraCount,
+          "settingCount is the generated table plus optional reset rows");
     for (auto id : { cs::Settings::dspAllSoundsOffValues, cs::Settings::dspResetControllersValues,
                      cs::Settings::dspAllNotesOffValues }) {
         const auto& choice = cs::Settings::describe(id);

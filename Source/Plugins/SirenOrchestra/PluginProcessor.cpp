@@ -105,7 +105,7 @@ SirenOrchestraPluginProcessor::SirenOrchestraPluginProcessor() :
     applyClicOutputSetting();
 #endif
 #if COMPOSESIREN_DSP_MIDI
-    dspMidiInput.setHardwareDevice(settings->getString(cs::Settings::dspMidiInputDevice));
+    dspMidiInput.setHardwareDevice(settings->getString(cs::Settings::Id::dspMidiInputDevice));
 #endif
     startTimer(33);
 }
@@ -553,7 +553,7 @@ void SirenOrchestraPluginProcessor::settingChanged(cs::Settings::Id id)
         applyClicOutputSetting();
 #endif
 #if COMPOSESIREN_DSP_MIDI
-    if (id == cs::Settings::dspMidiInputDevice)
+    if (id == cs::Settings::Id::dspMidiInputDevice)
         dspMidiInput.setHardwareDevice(settings->getString(id));
 #endif
 #if !COMPOSESIREN_CLIC && !COMPOSESIREN_DSP_MIDI && !COMPOSESIREN_RESETALLCONTROLLERS && !COMPOSESIREN_RUST_DSP

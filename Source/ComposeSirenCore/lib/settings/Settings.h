@@ -2,10 +2,8 @@
 
 // Power-user settings of the plugins. What exists, with its type, range,
 // default and description, comes from lib/definitions/generated/
-// SettingsMetadata.h, committed, generated from mecaviv-dev-root's
-// resources/metadata/composesiren-settings.csv by `franz doctor fix meta`.
-// The compile-gated controller-reset and mixer DSP MIDI rows extend it in
-// Settings::describe().
+// SettingsMetadata.h (generated from the shared settings metadata).
+// The compile-gated controller-reset rows extend it in Settings::describe().
 //
 // The values are stored per user (a properties file next to the other
 // Mecanique Vivante settings) and the Settings... menu item edits them, in
@@ -21,9 +19,6 @@
 #ifndef COMPOSESIREN_RESETALLCONTROLLERS
 #define COMPOSESIREN_RESETALLCONTROLLERS 0
 #endif
-#ifndef COMPOSESIREN_DSP_MIDI
-#define COMPOSESIREN_DSP_MIDI 0
-#endif
 
 namespace cs {
 
@@ -33,7 +28,6 @@ public:
     using Id = mecaviv::metadata::SettingId;
 
     static constexpr std::size_t resetExtraCount = COMPOSESIREN_RESETALLCONTROLLERS ? 10 : 0;
-    static constexpr std::size_t dspMidiExtraCount = COMPOSESIREN_DSP_MIDI ? 1 : 0;
 
 #if COMPOSESIREN_RESETALLCONTROLLERS
     // Optional extension: leave the generated base table and disabled builds
@@ -56,13 +50,8 @@ public:
     BridgeChannelModePolicy getBridgeChannelModePolicy() const;
 #endif
 
-#if COMPOSESIREN_DSP_MIDI
-    static constexpr Id dspMidiInputDevice
-        = static_cast<Id>(mecaviv::metadata::settingCount + resetExtraCount);
-#endif
-
     static constexpr std::size_t settingCount
-        = mecaviv::metadata::settingCount + resetExtraCount + dspMidiExtraCount;
+        = mecaviv::metadata::settingCount + resetExtraCount;
 
     class Listener
     {
