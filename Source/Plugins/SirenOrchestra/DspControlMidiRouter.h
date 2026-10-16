@@ -1,6 +1,6 @@
 //
-// Extra MIDI-in mapping for mixer DSP parameters (reverb, per-siren pan/gain,
-// master volume). CC numbers and classes come from the generated UiMetadata
+// Extra MIDI-in mapping for DSP Control (reverb, per-siren pan/gain, master
+// volume). CC numbers and classes come from the generated UiMetadata
 // (composesiren-parameters.csv). Channel 1–7 are the sirens; channel 16 is
 // the orchestra mixer bus (master and reverb).
 //
@@ -9,8 +9,8 @@
 // drive the DSP. Nothing is scheduled onto the siren MIDI output or the park.
 //
 
-#ifndef COMPOSESIREN_DSPMIDIROUTER_H
-#define COMPOSESIREN_DSPMIDIROUTER_H
+#ifndef COMPOSESIREN_DSPCONTROLMIDIROUTER_H
+#define COMPOSESIREN_DSPCONTROLMIDIROUTER_H
 
 #include <array>
 #include <string>
@@ -22,7 +22,7 @@
 #include <lib/definitions/parameterDefinitions.h>
 #include <lib/definitions/sirenProperties.h>
 
-class DspMidiRouter
+class DspControlMidiRouter
 {
     static constexpr int kSirenChannels = 7;
     static constexpr int kMixerChannel = 16;
@@ -64,7 +64,7 @@ class DspMidiRouter
     }
 
 public:
-    explicit DspMidiRouter(juce::AudioProcessorValueTreeState& vts)
+    explicit DspControlMidiRouter(juce::AudioProcessorValueTreeState& vts)
     {
         namespace ui = mecaviv::metadata::ui;
         for (const auto& p : ui::parameters) {
@@ -87,7 +87,7 @@ public:
         }
     }
 
-    // true when the message is a mixer DSP CC this router owns.
+    // true when the message is a DSP Control CC this router owns.
     // Notes, siren CCs (volume, vibrato, …) and CC 121 stay with MidiIn.
     bool handle(const juce::MidiMessage& msg) const
     {
@@ -118,4 +118,4 @@ public:
     }
 };
 
-#endif // COMPOSESIREN_DSPMIDIROUTER_H
+#endif // COMPOSESIREN_DSPCONTROLMIDIROUTER_H

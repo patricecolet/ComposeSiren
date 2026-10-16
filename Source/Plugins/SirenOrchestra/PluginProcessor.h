@@ -15,12 +15,12 @@
 #include <lib/wrappers/SirenStateMonitor.h>
 #include <ParameterBridges.h>
 #include "OrchestraMidiRouter.h"
-#ifndef COMPOSESIREN_DSP_MIDI
-#define COMPOSESIREN_DSP_MIDI 0
+#ifndef COMPOSESIREN_DSP_CONTROL_MIDI_IN
+#define COMPOSESIREN_DSP_CONTROL_MIDI_IN 0
 #endif
-#if COMPOSESIREN_DSP_MIDI
-#include "DspMidiRouter.h"
-#include "DspMidiInput.h"
+#if COMPOSESIREN_DSP_CONTROL_MIDI_IN
+#include "DspControlMidiRouter.h"
+#include "DspControlMidiInput.h"
 #endif
 #ifndef COMPOSESIREN_PARK_BRIDGE
 #define COMPOSESIREN_PARK_BRIDGE 0
@@ -141,10 +141,10 @@ private:
 
     OrchestraMidiRouter router;
     MidiScheduler scheduler;
-#if COMPOSESIREN_DSP_MIDI
-    // extra MIDI-in: mixer DSP CCs (reverb, pan, gain). Not MidiIn.
-    DspMidiRouter dspMidiRouter;
-    DspMidiInput dspMidiInput;
+#if COMPOSESIREN_DSP_CONTROL_MIDI_IN
+    // extra MIDI-in: DSP Control CCs (reverb, pan, gain). Not MidiIn.
+    DspControlMidiRouter dspControlMidiRouter;
+    DspControlMidiInput dspControlMidiInput;
 #endif
 
     std::function<std::string(void)> getResourcesPathFunction;

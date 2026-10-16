@@ -159,11 +159,10 @@ if(BUILD_TESTING AND TARGET SirenOrchestra)
   add_test(NAME processor-reload COMMAND SirenOrchestraProcessorTests)
 endif()
 
-# Extra MIDI-in for mixer DSP controls (reverb, pan, gain): PR #16 mapping,
-# kept out of MidiIn.
-if(BUILD_TESTING AND COMPOSESIREN_DSP_MIDI)
-  add_executable(SirenOrchestraDspMidiTests Plugins/SirenOrchestra/tests/DspMidiTests.cpp)
-  target_link_libraries(SirenOrchestraDspMidiTests PRIVATE ComposeSirenCore
-    juce::juce_audio_processors juce::juce_audio_utils)
-  add_test(NAME dsp-midi COMMAND SirenOrchestraDspMidiTests)
+# Extra MIDI-in for DSP Control (reverb, pan, gain), kept out of MidiIn.
+if(BUILD_TESTING AND COMPOSESIREN_DSP_CONTROL_MIDI_IN)
+  add_executable(SirenOrchestraDspControlMidiInTests Plugins/SirenOrchestra/tests/DspControlMidiInTests.cpp)
+  target_link_libraries(SirenOrchestraDspControlMidiInTests PRIVATE ComposeSirenCore
+    juce::juce_audio_processors juce::juce_audio_utils juce::juce_audio_devices)
+  add_test(NAME dsp-control-midi-in COMMAND SirenOrchestraDspControlMidiInTests)
 endif()

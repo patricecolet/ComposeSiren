@@ -304,17 +304,18 @@ $ cmake -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug -DCOMPOSESIREN_CLIC=ON
 $ cmake --build cmake-build-debug --target SirenOrchestra_Standalone
 ```
 
-### Mixer DSP MIDI-in
+### DSP Control Midi Input
 
-SirenOrchestra can open an extra MIDI-in port for mixer DSP controls that are
-not the siren MIDI implementation (`MidiIn`: notes, volume, vibrato, and the
-other firmware CCs). It is off by default; turn it on with
-`-DCOMPOSESIREN_DSP_MIDI=ON`.
+SirenOrchestra can open an extra MIDI-in port for DSP Control (reverb, pan,
+gain, master) that is not the siren MIDI implementation (`MidiIn`: notes,
+volume, vibrato, and the other firmware CCs). It is off by default; turn it
+on with `-DCOMPOSESIREN_DSP_CONTROL_MIDI_IN=ON`.
 
-The extra port is a virtual destination named **SirenOrchestra DSP** (macOS
-and Linux). Settings... → Mixer DSP MIDI can also open a hardware MIDI input.
-Messages on that port never reach `MidiIn`, the park bridge, or the plugin
-MIDI output.
+The extra port is a virtual destination named **SirenOrchestra: DSP Control**
+(macOS and Linux). Further plugin instances number the prefix:
+**SirenOrchestra 2: DSP Control**, and so on. Settings... → DSP Control Midi
+Input can also open a hardware MIDI input. Messages on that port never reach
+`MidiIn`, the park bridge, or the plugin MIDI output.
 
 Mapping: the mixer parameter CCs (track, reverb, master) on siren channels 1–7 and mixer channel 16:
 
@@ -332,11 +333,11 @@ Mapping: the mixer parameter CCs (track, reverb, master) on siren channels 1–7
 | 16 | 70 | Reverb width |
 
 Continuous CCs map 0–127 onto the parameter's range. Characterization tests:
-`-DCOMPOSESIREN_DSP_MIDI=ON -DBUILD_TESTING=ON`, then
-`ctest --test-dir <build> -R dsp-midi`.
+`-DCOMPOSESIREN_DSP_CONTROL_MIDI_IN=ON -DBUILD_TESTING=ON`, then
+`ctest --test-dir <build> -R dsp-control-midi-in`.
 
 ```
-$ cmake -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug -DCOMPOSESIREN_DSP_MIDI=ON
+$ cmake -B cmake-build-debug -DCMAKE_BUILD_TYPE=Debug -DCOMPOSESIREN_DSP_CONTROL_MIDI_IN=ON
 $ cmake --build cmake-build-debug --target SirenOrchestra_Standalone
 ```
 

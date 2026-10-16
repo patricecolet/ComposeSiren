@@ -43,9 +43,10 @@ public:
                                                           kbs,
                                                           allowedInputChannel);
         for (const auto& d : layoutData.params) {
-            // Mixer DSP params (pan, gain) share the siren layout group but are
-            // not the siren MIDI implementation: MidiIn / this router ignore
-            // them. COMPOSESIREN_DSP_MIDI maps those CCs on a separate port.
+            // DSP Control params (pan, gain) share the siren layout group but
+            // are not the siren MIDI implementation: MidiIn / this router
+            // ignore them. COMPOSESIREN_DSP_CONTROL_MIDI_IN maps those CCs on a
+            // separate port.
             if (ParameterIdGet::getClass(d->id) != ParameterClass::SirenControl)
                 continue;
 

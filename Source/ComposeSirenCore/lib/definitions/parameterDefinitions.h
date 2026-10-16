@@ -13,8 +13,8 @@
 #define COMPOSESIREN_CLIC 0
 #endif
 
-#ifndef COMPOSESIREN_DSP_MIDI
-#define COMPOSESIREN_DSP_MIDI 0
+#ifndef COMPOSESIREN_DSP_CONTROL_MIDI_IN
+#define COMPOSESIREN_DSP_CONTROL_MIDI_IN 0
 #endif
 
 #if DEBUG
@@ -487,7 +487,7 @@ parameterDefinitionById = []() {
 
 inline std::string midiCcKnobLabel(const std::string& name, ParameterId id)
 {
-#if COMPOSESIREN_DSP_MIDI
+#if COMPOSESIREN_DSP_CONTROL_MIDI_IN
     if (const auto it = parameterDefinitionById.find(id); it != parameterDefinitionById.end()) {
         if (const auto* cc = std::get_if<CCParam>(&it->second->data))
             return name + std::string("\ncc") + std::to_string(cc->midiCCNumber);

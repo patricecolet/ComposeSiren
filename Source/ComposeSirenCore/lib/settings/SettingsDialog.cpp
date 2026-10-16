@@ -100,7 +100,7 @@ static juce::PropertyComponent* makeRow(Settings& settings, Settings::Id id)
                         devices.addIfNotAlreadyThere(n);
                 }
                 row = new NamedChoicePropertyComponent(value, name, devices, "Main output");
-            } else if (std::string_view(d.id) == "dsp_midi.input_device") {
+            } else if (std::string_view(d.id) == "dsp_control.midi_in") {
                 juce::StringArray devices { "Virtual port" };
                 for (const auto& input : juce::MidiInput::getAvailableDevices())
                     devices.addIfNotAlreadyThere(input.name);
@@ -139,7 +139,7 @@ SettingsDialog::SettingsDialog()
     addAndMakeVisible(panel);
     if (groups.isEmpty()) {
         empty.setText("This build has no settings to change: they come with its options "
-                      "(Rust DSP, siren waves, clic, mixer DSP MIDI, controller reset).", juce::dontSendNotification);
+                      "(Rust DSP, siren waves, clic, DSP Control Midi Input, controller reset).", juce::dontSendNotification);
         empty.setJustificationType(juce::Justification::centred);
         addAndMakeVisible(empty);
     }

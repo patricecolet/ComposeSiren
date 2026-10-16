@@ -1,8 +1,9 @@
-// Mixer DSP MIDI (COMPOSESIREN_DSP_MIDI): PR #16 CC mapping on the extra port,
+// DSP Control Midi Input (COMPOSESIREN_DSP_CONTROL_MIDI_IN): PR #16 CC mapping on the extra port,
 // never mixed with MidiIn (siren firmware CCs).
-// Usage: SirenOrchestraDspMidiTests
+// Usage: SirenOrchestraDspControlMidiInTests
 
-#include "../DspMidiRouter.h"
+#include "../DspControlMidiInput.h"
+#include "../DspControlMidiRouter.h"
 #include "PerSirenMidiBridges.h"
 
 #include <cmath>
@@ -42,7 +43,7 @@ struct Proc : juce::AudioProcessor {
     {
     }
 
-    const juce::String getName() const override { return "dsp-midi-test"; }
+    const juce::String getName() const override { return "dsp-control-midi-in-test"; }
     void prepareToPlay(double, int) override {}
     void releaseResources() override {}
     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override {}
@@ -90,6 +91,18 @@ int main()
     };
 
     run([] {
+        check(DspControlMidiInput::virtualDestinationName(0)
+                  == "SirenOrchestra: DSP Control",
+              "first instance is unnumbered");
+        check(DspControlMidiInput::virtualDestinationName(1)
+                  == "SirenOrchestra 2: DSP Control",
+              "second instance numbers the SirenOrchestra prefix");
+        check(DspControlMidiInput::virtualDestinationName(2)
+                  == "SirenOrchestra 3: DSP Control",
+              "third instance");
+    }, "virtual destination names");
+
+    run([] {
         Proc p;
         juce::MidiKeyboardState kbs;
         PerSirenMidiBridges bridges(p.groups.front(), p.apvts, kbs);
@@ -108,7 +121,7 @@ int main()
 
     run([] {
         Proc p;
-        DspMidiRouter router(p.apvts);
+        DspControlMidiRouter router(p.apvts);
 
         check(router.handle(juce::MidiMessage::controllerEvent(1, 10, 0)), "ch1 CC10 pan is DSP MIDI");
         check(std::abs(native(p, "S1", ParameterId::TrackPanning) + 1.0f) < 1e-4f, "CC 10 = 0 is hard left");
@@ -128,7 +141,7 @@ int main()
 
     run([] {
         Proc p;
-        DspMidiRouter router(p.apvts);
+        DspControlMidiRouter router(p.apvts);
 
         check(router.handle(juce::MidiMessage::controllerEvent(16, 7, 127)), "ch16 CC7 master");
         check(std::abs(native(p, "M", ParameterId::MasterVolume) - 1.0f) < 1e-4f, "master CC 127 is unity");
