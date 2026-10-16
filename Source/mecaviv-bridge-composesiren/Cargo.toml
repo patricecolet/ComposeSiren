@@ -15,7 +15,9 @@ crate-type = ["staticlib", "rlib"]
 [dependencies]
 # mecaviv-rs is expected to be checked out next to ComposeSiren.
 mecaviv-v1 = { path = "../../../mecaviv-rs/crates/mecaviv-v1" }
-mecaviv-bridge-daemon = { path = "../../../mecaviv-rs/crates/mecaviv-bridge-daemon" }
+# Only the client protocol: not the daemon's virtual MIDI port (midir, and on Linux
+# libasound symbols a plugin cannot leave unresolved).
+mecaviv-bridge-daemon = { path = "../../../mecaviv-rs/crates/mecaviv-bridge-daemon", default-features = false }
 
 [build-dependencies]
 cbindgen = { version = "0.29.4", default-features = false }
