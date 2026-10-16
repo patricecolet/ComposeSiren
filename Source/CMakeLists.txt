@@ -104,6 +104,15 @@ function(add_plugin_variant TARGET_NAME PLUGIN_CODE BUNDLE_ID)
     target_link_libraries(${TARGET_NAME} PRIVATE juce::juce_opengl)
   endif()
 
+  # MIDI keeps running in the standalone when no audio output is chosen
+  # (ComposeSirenCore/StandaloneAudio.h).
+  if(TARGET ${TARGET_NAME}_Standalone)
+    target_sources(${TARGET_NAME}_Standalone
+      PRIVATE
+        "${CMAKE_CURRENT_LIST_DIR}/ComposeSirenCore/StandaloneAudioless.cpp"
+    )
+  endif()
+
   if(COMPOSESIREN_MCP AND TARGET ${TARGET_NAME}_Standalone)
     target_sources(${TARGET_NAME}_Standalone
       PRIVATE

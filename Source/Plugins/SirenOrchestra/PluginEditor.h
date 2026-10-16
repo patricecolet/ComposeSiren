@@ -15,6 +15,7 @@
 #include <Components/ClicPane.h>
 #endif
 #include "PluginProcessor.h"
+#include <StandaloneAudio.h>
 #if COMPOSESIREN_SIREN_WAVES
 #include <juce_opengl/juce_opengl.h>
 #include <Components/waves/SirenWaveColumn.h>
@@ -144,6 +145,38 @@ private:
     }
 };
 
+// In the top bar while the standalone has no audio device: no sound, but the MIDI in,
+// the keyboard and the MIDI out keep working (StandaloneAudio.h).
+class NoAudioNotice : public juce::Component, private juce::Timer
+{
+public:
+    NoAudioNotice()
+    {
+        setInterceptsMouseClicks(false, false);
+        startTimerHz(4);
+    }
+
+    void paint(juce::Graphics& g) override
+    {
+        auto area = getLocalBounds().toFloat().reduced(0.0f, 5.0f);
+        g.setColour(juce::Colour(0xffe3a21a).withAlpha(0.18f));
+        g.fillRoundedRectangle(area, 4.0f);
+        g.setColour(juce::Colour(0xffe3a21a));
+        g.drawRoundedRectangle(area, 4.0f, 1.0f);
+        g.setColour(juce::Colours::whitesmoke);
+        g.setFont(juce::FontOptions(12.0f));
+        g.drawFittedText("No audio output: no sound. MIDI in, keyboard and MIDI out still work.",
+                         area.reduced(8.0f, 0.0f).toNearestInt(),
+                         juce::Justification::centredLeft, 1);
+    }
+
+private:
+    void timerCallback() override
+    {
+        setVisible(cs::standalone::audioState() == cs::standalone::AudioState::noDevice);
+    }
+};
+
 class SirenOrchestraPluginEditor : public juce::AudioProcessorEditor,
                                    public VoiceManagerState::Listener,
                                    public SirenStripMenu::Listener
@@ -192,6 +225,9 @@ private:
     SirenOrchestraPluginProcessor& audioProcessor;
 
     MainButtonsComponent mainButtons;
+    NoAudioNotice noAudioNotice;
+    // Standalone: runs the processor while no audio device does (null in a plugin).
+    cs::standalone::Keeper audioKeeper;
     juce::TooltipWindow tooltipWindow { this };
     std::map<sirenId, std::unique_ptr<SirenTrackComponent>> sirenTracks;
 #if COMPOSESIREN_PARK_BRIDGE
