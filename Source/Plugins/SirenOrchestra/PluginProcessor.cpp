@@ -56,7 +56,7 @@ SirenOrchestraPluginProcessor::SirenOrchestraPluginProcessor() :
     ),
     router(parameterLayoutData, apvts, midiKeyboardState),
 #if COMPOSESIREN_DSP_CONTROL_MIDI_IN
-    dspControlMidiRouter(apvts),
+    dspControlMidiRouter(parameterLayoutData, apvts),
 #endif
     getResourcesPathFunction(getResourcesPathGetter()),
     ensemble(allSirenIds, getResourcesPathFunction()),

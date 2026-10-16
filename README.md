@@ -317,7 +317,7 @@ The extra port is a virtual destination named **SirenOrchestra: DSP Control**
 Input can also open a hardware MIDI input. Messages on that port never reach
 `MidiIn`, the park bridge, or the plugin MIDI output.
 
-Mapping: the mixer parameter CCs (track, reverb, master) on siren channels 1–7 and mixer channel 16:
+Mapping: `ParameterClass` TrackControl, ReverbControl, and MasterControl on siren channels 1–7 and mixer channel 16:
 
 | Channel | CC | Parameter |
 |---|---|---|

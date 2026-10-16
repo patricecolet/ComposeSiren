@@ -43,10 +43,10 @@ public:
                                                           kbs,
                                                           allowedInputChannel);
         for (const auto& d : layoutData.params) {
-            // DSP Control params (pan, gain) share the siren layout group but
-            // are not the siren MIDI implementation: MidiIn / this router
-            // ignore them. COMPOSESIREN_DSP_CONTROL_MIDI_IN maps those CCs on a
-            // separate port.
+            // TrackControl (pan, gain) shares the siren layout group with
+            // SirenControl. MidiIn / this router keep SirenControl only.
+            // DspControlMidiRouter maps TrackControl, ReverbControl, and
+            // MasterControl on the extra DSP Control MIDI-in.
             if (ParameterIdGet::getClass(d->id) != ParameterClass::SirenControl)
                 continue;
 

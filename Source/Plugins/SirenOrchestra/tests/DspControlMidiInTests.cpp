@@ -121,7 +121,7 @@ int main()
 
     run([] {
         Proc p;
-        DspControlMidiRouter router(p.apvts);
+        DspControlMidiRouter router(p.groups, p.apvts);
 
         check(router.handle(juce::MidiMessage::controllerEvent(1, 10, 0)), "ch1 CC10 pan is DSP MIDI");
         check(std::abs(native(p, "S1", ParameterId::TrackPanning) + 1.0f) < 1e-4f, "CC 10 = 0 is hard left");
@@ -141,7 +141,7 @@ int main()
 
     run([] {
         Proc p;
-        DspControlMidiRouter router(p.apvts);
+        DspControlMidiRouter router(p.groups, p.apvts);
 
         check(router.handle(juce::MidiMessage::controllerEvent(16, 7, 127)), "ch16 CC7 master");
         check(std::abs(native(p, "M", ParameterId::MasterVolume) - 1.0f) < 1e-4f, "master CC 127 is unity");

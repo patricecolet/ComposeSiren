@@ -1,12 +1,14 @@
 //
-// Extra MIDI-in mapping for DSP Control (reverb, per-siren pan/gain, master
-// volume). CC numbers and classes come from the generated UiMetadata
-// (composesiren-parameters.csv). Channel 1–7 are the sirens; channel 16 is
-// the orchestra mixer bus (master and reverb).
+// Extra MIDI-in mapping for DSP Control: ParameterClass TrackControl,
+// ReverbControl, and MasterControl (pan/gain, reverb, master volume).
+// CC numbers come from CCParam on those rows of parameterDefinitions.
+// Channel 1–7 are the sirens; channel 16 is the orchestra mixer bus
+// (ReverbControl and MasterControl).
 //
-// This is not MidiIn (the siren firmware CC table: volume, vibrato, notes).
-// Messages handled here only move APVTS parameters; ParameterBridges already
-// drive the DSP. Nothing is scheduled onto the siren MIDI output or the park.
+// SirenControl stays with MidiIn (firmware CCs: volume, vibrato, notes).
+// Messages handled here only move APVTS parameters; ParameterBridges
+// already drive the DSP. Nothing is scheduled onto the siren MIDI output
+// or the park.
 //
 
 #ifndef COMPOSESIREN_DSPCONTROLMIDIROUTER_H
@@ -14,11 +16,11 @@
 
 #include <array>
 #include <string>
+#include <vector>
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include <apvtsUtilities.h>
-#include <lib/definitions/generated/UiMetadata.h>
 #include <lib/definitions/parameterDefinitions.h>
 #include <lib/definitions/sirenProperties.h>
 
@@ -33,14 +35,20 @@ class DspControlMidiRouter
     CcParams mixer {};
     std::array<bool, kCcCount> toggleCc {};
 
-    static juce::RangedAudioParameter* param(juce::AudioProcessorValueTreeState& vts,
-                                             const std::string& group,
-                                             std::string_view codeName)
+    static int midiChannelForSirenGroup(const std::string& groupId)
     {
-        const auto it = parameterIdByCodeName.find(std::string(codeName));
-        if (it == parameterIdByCodeName.end())
-            return nullptr;
-        return vts.getParameter(ParameterIdGet::toJuceParameterId(group, it->second));
+        for (const auto sid : allSirenIds) {
+            if (sirenStrIdById.at(sid) == groupId)
+                return sirenPropertiesById.at(sid)->oneBasedMidiChannel.oneBased;
+        }
+        return 0;
+    }
+
+    static bool isDspControlClass(ParameterClass c)
+    {
+        return c == ParameterClass::TrackControl
+            || c == ParameterClass::ReverbControl
+            || c == ParameterClass::MasterControl;
     }
 
     static void apply(juce::RangedAudioParameter* p, int ccValue, bool toggle)
@@ -53,36 +61,31 @@ class DspControlMidiRouter
             p->setValueNotifyingHost(static_cast<float>(juce::jlimit(0, 127, ccValue)) / 127.0f);
     }
 
-    static void bind(CcParams& dest,
-                     juce::AudioProcessorValueTreeState& vts,
-                     const std::string& group,
-                     const mecaviv::metadata::ui::Parameter& p)
-    {
-        if (p.midi != mecaviv::metadata::ui::Midi::Cc || p.cc < 0 || p.cc >= kCcCount)
-            return;
-        dest[static_cast<size_t>(p.cc)] = param(vts, group, p.codeName);
-    }
-
 public:
-    explicit DspControlMidiRouter(juce::AudioProcessorValueTreeState& vts)
+    explicit DspControlMidiRouter(const std::vector<parameterLayoutGroupData>& groups,
+                                  juce::AudioProcessorValueTreeState& vts)
     {
-        namespace ui = mecaviv::metadata::ui;
-        for (const auto& p : ui::parameters) {
-            if (p.midi != ui::Midi::Cc || p.cc < 0 || p.cc >= kCcCount)
-                continue;
-            if (p.widget == ui::Widget::Toggle)
-                toggleCc[static_cast<size_t>(p.cc)] = true;
-            if (p.parameterClass == ui::ParameterClass::Track) {
-                for (const auto sid : allSirenIds) {
-                    const int ch = sirenPropertiesById.at(sid)->oneBasedMidiChannel.oneBased;
-                    if (ch < 1 || ch > kSirenChannels)
-                        continue;
-                    bind(track[static_cast<size_t>(ch)], vts, sirenStrIdById.at(sid), p);
+        for (const auto& g : groups) {
+            const int trackCh = midiChannelForSirenGroup(g.id);
+            for (const auto& d : g.params) {
+                const auto cls = ParameterIdGet::getClass(d->id);
+                if (!isDspControlClass(cls))
+                    continue;
+                const auto* cc = std::get_if<CCParam>(&d->data);
+                if (cc == nullptr || cc->midiCCNumber >= kCcCount)
+                    continue;
+                auto* p = vts.getParameter(ParameterIdGet::toJuceParameterId(g.id, d->id));
+                if (p == nullptr)
+                    continue;
+                const auto idx = static_cast<size_t>(cc->midiCCNumber);
+                if (d->id == ParameterId::ReverbEnable)
+                    toggleCc[idx] = true;
+                if (cls == ParameterClass::TrackControl) {
+                    if (trackCh >= 1 && trackCh <= kSirenChannels)
+                        track[static_cast<size_t>(trackCh)][idx] = p;
+                } else {
+                    mixer[idx] = p;
                 }
-            } else if (p.parameterClass == ui::ParameterClass::Reverb) {
-                bind(mixer, vts, "R", p);
-            } else if (p.parameterClass == ui::ParameterClass::Master) {
-                bind(mixer, vts, "M", p);
             }
         }
     }
