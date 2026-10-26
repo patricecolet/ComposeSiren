@@ -17,3 +17,14 @@ crate-type = ["rlib", "staticlib", "cdylib"]
 
 [dev-dependencies]
 siren-dsp-oracle = { path = "../siren-dsp-oracle" }
+
+# Audio DSP runs on the real-time CoreAudio/ALSA I/O thread even in Debug builds:
+# unoptimized Rust (opt-level = 0) takes ~800-1000 ns/sample (~20x slower than C++ -O0)
+# and causes audio thread overruns (HALC_ProxyIOContext IOWorkLoop clicks).
+[profile.dev]
+opt-level = 2
+
+[profile.release]
+debug = 1
+codegen-units = 1
+
