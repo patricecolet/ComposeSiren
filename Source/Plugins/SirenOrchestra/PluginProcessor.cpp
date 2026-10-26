@@ -560,7 +560,10 @@ void SirenOrchestraPluginProcessor::settingChanged(cs::Settings::Id id)
     // app-wide: every siren rebuilt off the audio thread, swapped at its next free note-on
     if (id == cs::Settings::Id::dspVariant || id == cs::Settings::Id::dspDataset
         || id == cs::Settings::Id::dspSkipSilentFrames)
+    {
         ensemble.reloadDsp();
+        reverb.reloadDsp();
+    }
 #endif
 #if COMPOSESIREN_CLIC
     if (id == cs::Settings::Id::clicOutputDevice)

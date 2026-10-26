@@ -8,8 +8,10 @@
 #include <memory>
 #include <string>
 
+#include "Reverb.h"
 #include "lib/dsp/MidiIn.h"
 #include "lib/dsp/Sirene.h"
+#include "lib/dsp/mareverbe.h"
 
 namespace {
 
@@ -96,6 +98,58 @@ float cso_voice_pitch(void* v) { return static_cast<Voice*>(v)->siren->getCurren
 void cso_voice_render(void* v, float* out, long n) {
     auto* voice = static_cast<Voice*>(v);
     for (long i = 0; i < n; ++i) out[i] = voice->process();
+}
+
+// --- mareverbe -----------------------------------------------------------------
+
+void* cso_mareverbe_new() {
+    try {
+        return new mareverbe();
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+void cso_mareverbe_free(void* m) { delete static_cast<mareverbe*>(m); }
+void cso_mareverbe_mute(void* m) { static_cast<mareverbe*>(m)->mute(); }
+void cso_mareverbe_set_room_size(void* m, float v) { static_cast<mareverbe*>(m)->setroomsize(v); }
+float cso_mareverbe_get_room_size(void* m) { return static_cast<mareverbe*>(m)->getroomsize(); }
+void cso_mareverbe_set_damp(void* m, float v) { static_cast<mareverbe*>(m)->setdamp(v); }
+float cso_mareverbe_get_damp(void* m) { return static_cast<mareverbe*>(m)->getdamp(); }
+void cso_mareverbe_set_wet(void* m, float v) { static_cast<mareverbe*>(m)->setwet(v); }
+float cso_mareverbe_get_wet(void* m) { return static_cast<mareverbe*>(m)->getwet(); }
+void cso_mareverbe_set_dry(void* m, float v) { static_cast<mareverbe*>(m)->setdry(v); }
+float cso_mareverbe_get_dry(void* m) { return static_cast<mareverbe*>(m)->getdry(); }
+void cso_mareverbe_set_width(void* m, float v) { static_cast<mareverbe*>(m)->setwidth(v); }
+float cso_mareverbe_get_width(void* m) { return static_cast<mareverbe*>(m)->getwidth(); }
+void cso_mareverbe_set_mode(void* m, float v) { static_cast<mareverbe*>(m)->setmode(v); }
+float cso_mareverbe_get_mode(void* m) { return static_cast<mareverbe*>(m)->getmode(); }
+void cso_mareverbe_process_stereo(void* m, float* inL, float* inR, float* outL, float* outR, long n) {
+    static_cast<mareverbe*>(m)->process_stereo(inL, inR, outL, outR, n);
+}
+
+// --- Reverb --------------------------------------------------------------------
+
+void* cso_reverb_new() {
+    try {
+        return new Reverb();
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+void cso_reverb_free(void* r) { delete static_cast<Reverb*>(r); }
+void cso_reverb_set_sample_rate(void* r, double sr) { static_cast<Reverb*>(r)->setSampleRate(sr); }
+void cso_reverb_begin_process_block(void* r) { static_cast<Reverb*>(r)->beginProcessBlock(); }
+void cso_reverb_enable(void* r, int e) { static_cast<Reverb*>(r)->enable(e != 0); }
+void cso_reverb_set_dry_wet(void* r, float v) { static_cast<Reverb*>(r)->setDryWet(v); }
+void cso_reverb_set_damping(void* r, float v) { static_cast<Reverb*>(r)->setDamping(v); }
+void cso_reverb_set_room_size(void* r, float v) { static_cast<Reverb*>(r)->setRoomSize(v); }
+void cso_reverb_set_width(void* r, float v) { static_cast<Reverb*>(r)->setWidth(v); }
+void cso_reverb_set_low_cut(void* r, float v) { static_cast<Reverb*>(r)->setLowCut(v); }
+void cso_reverb_set_high_cut(void* r, float v) { static_cast<Reverb*>(r)->setHighCut(v); }
+void cso_reverb_process(void* r, float* inL, float* inR, float* outL, float* outR, int n) {
+    static_cast<Reverb*>(r)->process(inL, inR, outL, outR, n);
 }
 
 } // extern "C"

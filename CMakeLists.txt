@@ -266,7 +266,7 @@ if(BUILD_TESTING)
   endif()
   find_program(COMPOSESIREN_CARGO cargo)
   if(COMPOSESIREN_CARGO)
-    foreach(crate IN ITEMS siren-data siren-dsp)
+    foreach(crate IN ITEMS siren-data siren-dsp reverb-dsp)
       add_test(NAME cargo-${crate}
         COMMAND "${COMPOSESIREN_CARGO}" test --release
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Source/${crate}")

@@ -4,53 +4,113 @@
 
 #include "Reverb.h"
 #include "lib/dsp/mareverbe.h"
+#if COMPOSESIREN_RUST_DSP
+#include "lib/wrappers/DspChoice.h"
+#include "reverb_dsp.h"
+#endif
 
 Reverb::Reverb() {
     rvb = std::make_unique<mareverbe>();
     rvb->setdry(0.0f);
     rvb->setwet(1.0f);
+#if COMPOSESIREN_RUST_DSP
+    rustRvb = csr_reverb_new();
+    useRust.store(!cs::currentDspChoice().isCpp(), std::memory_order_relaxed);
+#endif
 }
+
+#if COMPOSESIREN_RUST_DSP
+Reverb::Reverb(bool rust) : Reverb() {
+    setRust(rust);
+}
+
+void Reverb::setRust(bool rust) {
+    useRust.store(rust && rustRvb != nullptr, std::memory_order_relaxed);
+}
+
+bool Reverb::isRust() const {
+    return useRust.load(std::memory_order_relaxed) && rustRvb != nullptr;
+}
+
+void Reverb::reloadDsp() {
+    setRust(!cs::currentDspChoice().isCpp());
+}
+#endif
 
 // cannot use default destructor because of mareverbe forward declaration :
 // unique_ptr needs to know sizeof mareverbe
-Reverb::~Reverb() {}
+Reverb::~Reverb() {
+#if COMPOSESIREN_RUST_DSP
+    csr_reverb_free(rustRvb);
+#endif
+}
 
 void Reverb::setSampleRate(double sr) {
     sampleRate = sr;
     updateHighPassCoefficients();
     updateLowPassCoefficients();
+#if COMPOSESIREN_RUST_DSP
+    csr_reverb_set_sample_rate(rustRvb, sr);
+#endif
 }
 
 void Reverb::enable(bool e) {
     enabled = e;
+#if COMPOSESIREN_RUST_DSP
+    csr_reverb_enable(rustRvb, e);
+#endif
 }
 
 void Reverb::setDryWet(float d) {
     dryWet.store(d, std::memory_order_relaxed);
+#if COMPOSESIREN_RUST_DSP
+    csr_reverb_set_dry_wet(rustRvb, d);
+#endif
 }
 
 void Reverb::setDamping(float d) {
     damping.store(d, std::memory_order_relaxed);
+#if COMPOSESIREN_RUST_DSP
+    csr_reverb_set_damping(rustRvb, d);
+#endif
 }
 
 void Reverb::setRoomSize(float s) {
     roomSize.store(s, std::memory_order_relaxed);
+#if COMPOSESIREN_RUST_DSP
+    csr_reverb_set_room_size(rustRvb, s);
+#endif
 }
 
 void Reverb::setWidth(float w) {
     width.store(w, std::memory_order_relaxed);
+#if COMPOSESIREN_RUST_DSP
+    csr_reverb_set_width(rustRvb, w);
+#endif
 }
 
 void Reverb::setLowCut(float l) {
     lowCut.store(l, std::memory_order_relaxed);
+#if COMPOSESIREN_RUST_DSP
+    csr_reverb_set_low_cut(rustRvb, l);
+#endif
 }
 
 void Reverb::setHighCut(float h) {
     highCut.store(h, std::memory_order_relaxed);
+#if COMPOSESIREN_RUST_DSP
+    csr_reverb_set_high_cut(rustRvb, h);
+#endif
 }
 
 void Reverb::beginProcessBlock()
 {
+#if COMPOSESIREN_RUST_DSP
+    if (isRust()) {
+        csr_reverb_begin_process_block(rustRvb);
+        return;
+    }
+#endif
     en = enabled.load(std::memory_order_relaxed);
     rdw.setTarget(dryWet.load(std::memory_order_relaxed));
     rd.setTarget(damping.load(std::memory_order_relaxed));
@@ -72,6 +132,14 @@ void Reverb::beginProcessBlock()
 void Reverb::process(float *inL, float *inR,
                      float *outL, float *outR,
                      int n) {
+#if COMPOSESIREN_RUST_DSP
+    if (isRust()) {
+        if (n > 0) {
+            csr_reverb_process(rustRvb, inL, inR, outL, outR, static_cast<size_t>(n));
+        }
+        return;
+    }
+#endif
     if (en) {
         float v;
         if (rdw.process(v)) {

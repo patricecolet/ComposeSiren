@@ -1,0 +1,19 @@
+[package]
+name = "reverb-dsp"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "GPL-3.0-only"
+publish = false
+
+# Standalone package: not part of any parent workspace.
+[workspace]
+
+[lib]
+# rlib for Rust binaries and tests; staticlib/cdylib for C, C++, F# and other hosts.
+crate-type = ["rlib", "staticlib", "cdylib"]
+
+[dependencies]
+
+[dev-dependencies]
+siren-dsp-oracle = { path = "../siren-dsp-oracle" }

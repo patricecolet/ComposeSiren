@@ -3,12 +3,14 @@
 // handling. The other Rust variants must load and play.
 // Usage: ComposeSirenRustDspParityTests <resources folder, ending with />
 
+#include "Reverb.h"
 #include "lib/wrappers/SirenVoice.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <iostream>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -31,6 +33,60 @@ std::vector<float> render(sirenId id, const std::string& res, const char* varian
         out[static_cast<size_t>(i)] = u.process();
     }
     return out;
+}
+
+std::pair<std::vector<float>, std::vector<float>> renderReverb(
+    const std::vector<float>& inL,
+    const std::vector<float>& inR,
+    double rate,
+    bool useRust,
+    bool inPlace,
+    bool& reportedRust)
+{
+    Reverb rvb(useRust);
+    reportedRust = rvb.isRust();
+    rvb.enable(true);
+    rvb.setDryWet(0.45f);
+    rvb.setDamping(0.35f);
+    rvb.setRoomSize(0.75f);
+    rvb.setWidth(0.9f);
+    rvb.setLowCut(120.0f);
+    rvb.setHighCut(7500.0f);
+    rvb.setSampleRate(rate);
+
+    const size_t n = std::min(inL.size(), inR.size());
+    std::vector<float> outL = inPlace ? inL : std::vector<float>(n, 0.0f);
+    std::vector<float> outR = inPlace ? inR : std::vector<float>(n, 0.0f);
+    std::vector<float> srcL = inL;
+    std::vector<float> srcR = inR;
+
+    const size_t block = 512;
+    for (size_t pos = 0; pos < n; pos += block) {
+        const int chunk = static_cast<int>(std::min(block, n - pos));
+        const size_t b = pos / block;
+        if (b == 30) {
+            rvb.setDryWet(0.75f);
+            rvb.setRoomSize(0.9f);
+            rvb.setDamping(0.2f);
+            rvb.setWidth(0.6f);
+            rvb.setLowCut(220.0f);
+            rvb.setHighCut(6000.0f);
+        } else if (b == 70) {
+            rvb.enable(false);
+        } else if (b == 90) {
+            rvb.enable(true);
+            rvb.setDryWet(0.55f);
+            rvb.setLowCut(90.0f);
+            rvb.setHighCut(9000.0f);
+        }
+        rvb.beginProcessBlock();
+        if (inPlace) {
+            rvb.process(outL.data() + pos, outR.data() + pos, outL.data() + pos, outR.data() + pos, chunk);
+        } else {
+            rvb.process(srcL.data() + pos, srcR.data() + pos, outL.data() + pos, outR.data() + pos, chunk);
+        }
+    }
+    return { std::move(outL), std::move(outR) };
 }
 
 // S6 holding F5 (MIDI 89) looped over its frames (variant "frames"): frame 440 of the data
@@ -74,17 +130,36 @@ int main(int argc, char** argv)
     const std::string res = argv[1];
     int failures = 0;
     for (double rate : { 44100.0, 48000.0 }) {
+        std::vector<float> s1Signal, s3Signal;
         for (int s = 0; s < 7; ++s) {
             const auto id = static_cast<sirenId>(s);
             bool rustC = true, rustR = false;
             const auto c = render(id, res, "cpp", rate, rustC);
             const auto r = render(id, res, "rust-exact", rate, rustR);
+            if (s == 0) s1Signal = c;
+            if (s == 2) s3Signal = c;
             float peak = 0;
             for (float x : c) peak = std::max(peak, std::abs(x));
             const bool same = c.size() == r.size() && std::memcmp(c.data(), r.data(), c.size() * sizeof(float)) == 0;
             std::cout << "S" << s + 1 << " @" << rate << ": " << (same && !rustC && rustR ? "identical" : "DIFFERENT")
                       << " (peak " << peak << ")\n";
             if (!same || rustC || !rustR || peak < 1e-3f) ++failures;
+        }
+
+        for (bool inPlace : { false, true }) {
+            bool rustC = true, rustR = false;
+            const auto [cL, cR] = renderReverb(s1Signal, s3Signal, rate, false, inPlace, rustC);
+            const auto [rL, rR] = renderReverb(s1Signal, s3Signal, rate, true, inPlace, rustR);
+            float peak = 0;
+            for (size_t i = 0; i < cL.size(); ++i) {
+                peak = std::max(peak, std::max(std::abs(cL[i]), std::abs(cR[i])));
+            }
+            const bool sameL = cL.size() == rL.size() && std::memcmp(cL.data(), rL.data(), cL.size() * sizeof(float)) == 0;
+            const bool sameR = cR.size() == rR.size() && std::memcmp(cR.data(), rR.data(), cR.size() * sizeof(float)) == 0;
+            const bool ok = sameL && sameR && !rustC && rustR && peak > 1e-3f;
+            std::cout << "Reverb " << (inPlace ? "in-place" : "out-of-place") << " @" << rate << ": "
+                      << (ok ? "identical" : "DIFFERENT") << " (peak " << peak << ")\n";
+            if (!ok) ++failures;
         }
     }
     for (const char* v : { "rust-time", "frames", "trio", "trio-linear", "trio-nearest" }) {

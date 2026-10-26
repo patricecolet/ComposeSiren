@@ -10,10 +10,21 @@
 
 #include "lib/dsp/rampe.h"
 
+#ifndef COMPOSESIREN_RUST_DSP
+#define COMPOSESIREN_RUST_DSP 0
+#endif
+#if COMPOSESIREN_RUST_DSP
+struct CsrReverb;
+#endif
+
 class mareverbe;
 
 class Reverb {
     std::unique_ptr<mareverbe> rvb;
+#if COMPOSESIREN_RUST_DSP
+    CsrReverb* rustRvb = nullptr;
+    std::atomic<bool> useRust{false};
+#endif
 
     std::atomic<bool> enabled{true};
     bool en{true};
@@ -44,7 +55,16 @@ class Reverb {
 
 public:
     Reverb();
+#if COMPOSESIREN_RUST_DSP
+    explicit Reverb(bool rust);
+#endif
     ~Reverb();
+
+#if COMPOSESIREN_RUST_DSP
+    void setRust(bool rust);
+    bool isRust() const;
+    void reloadDsp();
+#endif
 
     void setSampleRate(double sr);
     void enable(bool e);

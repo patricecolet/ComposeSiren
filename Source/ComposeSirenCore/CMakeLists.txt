@@ -96,7 +96,7 @@ endif()
 
 if(COMPOSESIREN_RUST_DSP)
   include("${CMAKE_CURRENT_LIST_DIR}/RustDsp.cmake")
-  target_link_libraries(ComposeSirenCore PUBLIC siren_dsp)
+  target_link_libraries(ComposeSirenCore PUBLIC siren_dsp reverb_dsp)
   target_compile_definitions(ComposeSirenCore PUBLIC COMPOSESIREN_RUST_DSP=1)
   target_sources(ComposeSirenCore PRIVATE lib/wrappers/DspChoice.cpp)
 else()
