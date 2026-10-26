@@ -56,6 +56,8 @@ void SirenTrack::process(float *l, float* r) {
 
 // we can add sqrt panning law and others later if we like
 void SirenTrack::computePanningGains() {
+    if (p == lastPan) { return; }
+    lastPan = p;
     p = (p + 1.0f) * 0.5f; // [-1;1] to [0;1]
     lp = std::cos(p * pi_2);
     rp = std::cos((1.0f - p) * pi_2);

@@ -24,6 +24,7 @@ class SirenTrack : public SirenVoice
 
     std::atomic<float> panning{0.0f}; // centred
     float p{0.0f};
+    float lastPan{-999.0f};
     rampe<float> pr{1, 10};
 
     float lp{0.0f};

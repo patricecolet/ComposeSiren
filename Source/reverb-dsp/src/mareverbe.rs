@@ -379,8 +379,11 @@ impl Mareverbe {
     }
 
     pub fn set_room_size(&mut self, value: f32) {
-        self.roomsize = fma_f32(value, SCALE_ROOM, OFFSET_ROOM);
-        self.update();
+        let r = fma_f32(value, SCALE_ROOM, OFFSET_ROOM);
+        if self.roomsize.to_bits() != r.to_bits() {
+            self.roomsize = r;
+            self.update();
+        }
     }
 
     pub fn room_size(&self) -> f32 {
@@ -388,8 +391,11 @@ impl Mareverbe {
     }
 
     pub fn set_damp(&mut self, value: f32) {
-        self.damp = value * SCALE_DAMP;
-        self.update();
+        let d = value * SCALE_DAMP;
+        if self.damp.to_bits() != d.to_bits() {
+            self.damp = d;
+            self.update();
+        }
     }
 
     pub fn damp(&self) -> f32 {
@@ -397,8 +403,11 @@ impl Mareverbe {
     }
 
     pub fn set_wet(&mut self, value: f32) {
-        self.wet = value * SCALE_WET;
-        self.update();
+        let w = value * SCALE_WET;
+        if self.wet.to_bits() != w.to_bits() {
+            self.wet = w;
+            self.update();
+        }
     }
 
     pub fn wet(&self) -> f32 {
@@ -414,8 +423,10 @@ impl Mareverbe {
     }
 
     pub fn set_width(&mut self, value: f32) {
-        self.width = value;
-        self.update();
+        if self.width.to_bits() != value.to_bits() {
+            self.width = value;
+            self.update();
+        }
     }
 
     pub fn width(&self) -> f32 {
@@ -423,8 +434,10 @@ impl Mareverbe {
     }
 
     pub fn set_mode(&mut self, value: f32) {
-        self.mode = value;
-        self.update();
+        if self.mode.to_bits() != value.to_bits() {
+            self.mode = value;
+            self.update();
+        }
     }
 
     pub fn mode(&self) -> f32 {

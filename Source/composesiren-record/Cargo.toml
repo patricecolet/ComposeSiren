@@ -29,6 +29,9 @@ cbindgen = { version = "0.29.4", default-features = false }
 
 # flacenc unoptimised encodes at 4x real time; optimised, over 100x. Debug
 # builds of ComposeSiren build this crate with the dev profile.
+[profile.dev]
+opt-level = 2
+
 [profile.dev.package.flacenc]
 opt-level = 3
 

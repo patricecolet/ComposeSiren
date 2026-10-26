@@ -122,7 +122,7 @@ fn main() {
             rust_ip.process_in_place(ol, or_);
         });
 
-        // 3. Rust FFI csr_reverb in-place
+        // 3. Rust FFI csr_reverb per-sample (n=1, as PluginProcessor::processBlock calls it)
         let ffi_ip = unsafe {
             let r = csr_reverb_new();
             csr_reverb_enable(r, true);
@@ -136,17 +136,12 @@ fn main() {
             r
         };
         let ns_ffi_ip = bench(rate, block, |il, ir, ol, or_| unsafe {
-            ol.copy_from_slice(il);
-            or_.copy_from_slice(ir);
             csr_reverb_begin_process_block(ffi_ip);
-            csr_reverb_process(
-                ffi_ip,
-                ol.as_ptr(),
-                or_.as_ptr(),
-                ol.as_mut_ptr(),
-                or_.as_mut_ptr(),
-                ol.len(),
-            );
+            for i in 0..ol.len() {
+                let l = il[i];
+                let r = ir[i];
+                csr_reverb_process(ffi_ip, &l, &r, &mut ol[i], &mut or_[i], 1);
+            }
         });
         unsafe { csr_reverb_free(ffi_ip) };
 

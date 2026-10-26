@@ -68,7 +68,7 @@ private:
         setup.outputDeviceName = name;
         setup.inputDeviceName = {};
         setup.sampleRate = 48000.0;
-        setup.bufferSize = 256;
+        setup.bufferSize = 0;
         const auto error = manager.initialise(0, 2, nullptr, true, {}, &setup);
         if (error.isNotEmpty()) {
             juce::ignoreUnused(error);
