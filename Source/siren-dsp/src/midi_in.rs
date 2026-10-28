@@ -76,6 +76,9 @@ impl MidiIn {
             is_rampe: false,
             is_release: false,
         };
+        // le volet ouvert (CC 7 à 127), comme reset_sirene() du firmware : une voix neuve sonne
+        // sans attendre que l'hôte envoie le volume
+        m.control[7] = 127.0;
         m.set_sample_rate(44100.0);
         m
     }

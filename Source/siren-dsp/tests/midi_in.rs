@@ -184,3 +184,14 @@ fn midi_in_matches_the_cpp() {
         check(&lib, cases.iter().find(|c| c.name == name).unwrap(), sr);
     }
 }
+
+/// Une voix neuve a le volet ouvert (CC 7 à 127), comme après `reset_sirene()` du firmware,
+/// en Rust comme dans le C++ (l'oracle ci-dessus le compare échantillon par échantillon).
+#[test]
+fn une_voix_neuve_a_le_volet_ouvert() {
+    let lib = Library::new(siren_dsp::default_resources());
+    for s in ["S1", "S3", "S7"] {
+        let v = lib.voice(SirenId::parse(s).unwrap(), 44100.0).unwrap();
+        assert_eq!(v.midi().control(7), 127.0, "{s}");
+    }
+}
