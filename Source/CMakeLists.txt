@@ -52,6 +52,13 @@ target_link_libraries(ComposeSirenCore PUBLIC ${BaseTargetName}BinaryData)
 # macOS needs nothing.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   target_link_libraries(ComposeSirenCore PUBLIC atomic)
+  # TouchInput.cpp reads touches with Xlib and XInput2 (JUCE loads Xlib at run time
+  # and links neither).
+  find_package(X11 REQUIRED)
+  if(NOT X11_Xi_FOUND)
+    message(FATAL_ERROR "TouchInput needs XInput2 (Debian: libxi-dev)")
+  endif()
+  target_link_libraries(ComposeSirenCore PUBLIC X11::X11 X11::Xi)
 endif()
 
 # ------------------------------------------------------------------------------
@@ -102,6 +109,15 @@ function(add_plugin_variant TARGET_NAME PLUGIN_CODE BUNDLE_ID)
 
   if(COMPOSESIREN_SIREN_WAVES)
     target_link_libraries(${TARGET_NAME} PRIVATE juce::juce_opengl)
+  endif()
+
+  # MIDI keeps running in the standalone when no audio output is chosen
+  # (ComposeSirenCore/StandaloneAudio.h).
+  if(TARGET ${TARGET_NAME}_Standalone)
+    target_sources(${TARGET_NAME}_Standalone
+      PRIVATE
+        "${CMAKE_CURRENT_LIST_DIR}/ComposeSirenCore/StandaloneAudioless.cpp"
+    )
   endif()
 
   if(COMPOSESIREN_MCP AND TARGET ${TARGET_NAME}_Standalone)

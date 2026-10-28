@@ -222,6 +222,30 @@ composesiren_option(COMPOSESIREN_SIREN_WAVES
 set(PLUGIN_TARGETS OneSiren SirenOrchestra)
 #set(PLUGIN_TARGETS CustomMix)
 
+# JUCE patches (Dependencies/patches), applied to the submodule's working tree, once.
+# juce-linux-touch.patch: JUCE creates touch sources on Linux, for the multi-touch that
+# Source/ComposeSirenCore/TouchInput.cpp reads from XInput2.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  find_program(COMPOSESIREN_GIT git REQUIRED)
+  foreach(_patch juce-linux-touch.patch)
+    set(_patch_file "${CMAKE_SOURCE_DIR}/Dependencies/patches/${_patch}")
+    execute_process(
+      COMMAND "${COMPOSESIREN_GIT}" apply --reverse --check "${_patch_file}"
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Dependencies/JUCE"
+      RESULT_VARIABLE _already OUTPUT_QUIET ERROR_QUIET)
+    if(NOT _already EQUAL 0)
+      execute_process(
+        COMMAND "${COMPOSESIREN_GIT}" apply "${_patch_file}"
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/Dependencies/JUCE"
+        RESULT_VARIABLE _applied ERROR_VARIABLE _apply_error)
+      if(NOT _applied EQUAL 0)
+        message(FATAL_ERROR "Could not apply Dependencies/patches/${_patch} to JUCE: ${_apply_error}")
+      endif()
+      message(STATUS "Applied Dependencies/patches/${_patch} to JUCE")
+    endif()
+  endforeach()
+endif()
+
 add_subdirectory(Dependencies/JUCE)
 
 set(FORMATS "VST3" "Standalone")

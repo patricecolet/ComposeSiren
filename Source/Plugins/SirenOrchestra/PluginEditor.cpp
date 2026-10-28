@@ -50,6 +50,8 @@ SirenOrchestraPluginEditor::SirenOrchestraPluginEditor(SirenOrchestraPluginProce
     sirenStripMenu.setListener(this);
 
     addAndMakeVisible(mainButtons);
+    addChildComponent(noAudioNotice); // above the top bar, shown while there is no audio device
+    audioKeeper = cs::standalone::keepRunningWithoutAudio();
 
     for (auto i : sirenOrder) {
         addAndMakeVisible(sirenTracks.at(i).get());
@@ -155,6 +157,8 @@ void SirenOrchestraPluginEditor::resized()
 
     constexpr int mainButtonsHeight = 30;
     mainButtons.setBounds(0, 0, sirenWidth, mainButtonsHeight);
+    // The left of the top bar is free (the buttons are on the right).
+    noAudioNotice.setBounds(6, 0, juce::jmin(430, sirenWidth / 2), mainButtonsHeight);
 
     constexpr int tracksY = mainButtonsHeight;
     for (std::size_t i = 0; i < sirenOrder.size(); ++i) {

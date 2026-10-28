@@ -5,3 +5,6 @@
 *.bat  text eol=crlf
 *.cmd  text eol=crlf
 *.ps1  text eol=crlf
+
+# Patches keep their bytes: JUCE sources are CRLF (Dependencies/patches)
+*.patch -text
