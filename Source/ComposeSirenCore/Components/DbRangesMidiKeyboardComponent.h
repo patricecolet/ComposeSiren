@@ -403,6 +403,16 @@ private:
 class DbRangesMidiKeyboardComponent : public juce::Component,
                                       public VoiceManagerState::Listener
 {
+public:
+    // The keyboard's MIDI notes. The lowest notes the sirens play are 24 (S1 to S4),
+    // 36 (S5, S6) and 48 (S7): the category ranges of sirenProperties.h are 12 below
+    // MIDI (SirenVoice adds 12). The keys from A (21) to B (23) are below every
+    // siren's range: a note there shuts the siren down.
+    static constexpr int lowestKey = 21;
+    static constexpr int highestKey = 95;
+    // A siren's category notes (sirenProperties.h) to MIDI notes.
+    static constexpr int categoryToMidi = 12;
+
 private:
     MidiKeyboardLookAndFeel mklaf;
     MidiKeyboardLabelLookAndFeel mkllaf;
@@ -438,8 +448,7 @@ public:
         );
 
         // keyboard.setEnabled(false);
-        keyboard.setAvailableRange(24, 95);
-        // keyboard.setAvailableRange(36, 107);
+        keyboard.setAvailableRange(lowestKey, highestKey);
         keyboard.setBlackNoteLengthProportion(0.5f);
         keyboard.setScrollButtonsVisible(false);
         // keyboard.setScrollButtonWidth(0);
@@ -568,7 +577,7 @@ public:
         keyboardBounds.setLeft(keyboardBounds.getX() - 1);
         keyboardBounds.setBottom(keyboardBounds.getBottom() + 1);
         keyboard.setBounds(keyboardBounds);
-        keyboard.setKeyWidth(keyboardBounds.getWidth() / 42.0f);
+        keyboard.setKeyWidth(keyboardBounds.getWidth() / static_cast<float>(whiteKeys()));
 
         dbRangesBounds = bounds;
         dbRangesBounds.setHeight(dbRangesHeight);
@@ -583,11 +592,34 @@ public:
             auto minMaxNote = data->velocityRanges[i];
             auto [ min, max ] = minMaxNote;
 
-            ranges[i]->setLeft(keyboard.getKeyPosition(min - 12).getStart() + xspacer);
-            ranges[i]->setRight(keyboard.getKeyPosition(max - 12).getEnd() + xspacer);
+            ranges[i]->setLeft(keyboard.getX() + keyStart(min + categoryToMidi));
+            ranges[i]->setRight(keyboard.getX() + keyEnd(max + categoryToMidi));
             ranges[i]->reduce(0,1);
             labels[i]->setBounds(*ranges[i]);
         }
+    }
+
+private:
+    static bool isWhite(int note) { return juce::MidiMessage::isMidiNoteBlack(note) == false; }
+
+    static int whiteKeys()
+    {
+        int n = 0;
+        for (int note = lowestKey; note <= highestKey; ++note)
+            n += isWhite(note) ? 1 : 0;
+        return n;
+    }
+
+    // Where a key starts and ends, from the keyboard's left edge.
+    int keyStart(int note) const
+    {
+        return juce::roundToInt(keyboard.getKeyStartPosition(note));
+    }
+
+    int keyEnd(int note) const
+    {
+        const float width = isWhite(note) ? keyboard.getKeyWidth() : keyboard.getBlackNoteWidth();
+        return juce::roundToInt(keyboard.getKeyStartPosition(note) + width);
     }
 };
 

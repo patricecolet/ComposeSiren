@@ -29,6 +29,8 @@ target_sources(ComposeSirenCore
   PRIVATE
   # Synth.cpp
   Reverb.cpp
+  StandaloneAudio.cpp
+  TouchInput.cpp
 
   lib/definitions/sirenProperties.cpp
   lib/definitions/parameterDefinitions.cpp
