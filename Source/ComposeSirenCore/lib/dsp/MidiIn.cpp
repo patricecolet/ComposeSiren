@@ -13,6 +13,9 @@ MidiIn::MidiIn(sirenId sid,
     onNoteChanged(noteChanged)
 {
     data = sirenPropertiesById.at(id);
+    // volet ouvert (CC 7 a 127), comme reset_sirene() du firmware : une voix neuve sonne
+    // sans attendre que l'hote envoie le volume
+    control[7] = 127;
 }
 
 MidiIn::~MidiIn() = default;
