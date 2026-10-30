@@ -245,7 +245,8 @@ void OneSirenPluginProcessor::processBlock(juce::AudioBuffer<float>& audio,
 
     audio.clear();
     auto* lch = audio.getWritePointer(0);
-    auto* rch = audio.getWritePointer(1);
+    // mono output (isBusesLayoutSupported accepts it, Logic and auval try it): no right channel
+    auto* rch = audio.getNumChannels() > 1 ? audio.getWritePointer(1) : nullptr;
 
     siren.beginProcessBlock();
 
@@ -276,7 +277,8 @@ void OneSirenPluginProcessor::processBlock(juce::AudioBuffer<float>& audio,
         }
 
         float sample = siren.process();
-        lch[i] = rch[i] = sample;
+        lch[i] = sample;
+        if (rch != nullptr) rch[i] = sample;
     }
 
     // security inspired from SurgeSynthProcessor.cpp

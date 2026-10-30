@@ -396,8 +396,11 @@ void SirenOrchestraPluginProcessor::processBlock(juce::AudioBuffer<float>& audio
     // WE HAVE ALL SIRENS SO WE PROCEED TO USE THEM :
 
     audio.clear();
-    auto* lch = audio.getWritePointer(0);
-    auto* rch = audio.getWritePointer(1);
+    // the main bus only: with the Clic bus, audio's channel 1 is not the right channel when the
+    // main output is mono (isBusesLayoutSupported accepts it, Logic and auval try it)
+    auto main = getBusBuffer(audio, false, 0);
+    auto* lch = main.getWritePointer(0);
+    auto* rch = main.getNumChannels() > 1 ? main.getWritePointer(1) : nullptr;
 
     ensemble.beginProcessBlock();
     reverb.beginProcessBlock();
@@ -430,7 +433,13 @@ void SirenOrchestraPluginProcessor::processBlock(juce::AudioBuffer<float>& audio
 
         float l, r;
         ensemble.process(&l, &r);
-        reverb.process(&l, &r, &lch[i], &rch[i], 1);
+        if (rch != nullptr) {
+            reverb.process(&l, &r, &lch[i], &rch[i], 1);
+        } else {
+            float outL, outR;
+            reverb.process(&l, &r, &outL, &outR, 1);
+            lch[i] = 0.5f * (outL + outR);
+        }
     }
 
     // security inspired from SurgeSynthProcessor.cpp
